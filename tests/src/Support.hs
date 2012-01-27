@@ -15,10 +15,20 @@ import qualified Data.Vector.Generic.New     as N
 import qualified Data.Vector.Unboxed         as U
 import Data.Vector.Unboxed.Bit (wordSize)
 import Test.QuickCheck
+import Test.QuickCheck.Function
 
 instance Arbitrary Bit where
     arbitrary = fromBool <$> arbitrary
     shrink = fmap fromBool . shrink . toBool
+
+instance CoArbitrary Bit where
+    coarbitrary = coarbitrary . toBool
+
+instance Function Bit where
+    function f = functionMap toBool fromBool f
+
+instance Function Word where
+    function f = functionMap (fromIntegral :: Word -> Int) fromIntegral f
 
 instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
     arbitrary = V.new <$> arbitrary
@@ -50,17 +60,23 @@ trimSlice s n l = (s', n')
 
 sliceList s n = take n . drop s
 
-readWordL :: [Bit] -> Int -> Word
-readWordL xs 0 = loop 0 0 xs
+packBitsToWord :: [Bit] -> (Word, [Bit])
+packBitsToWord = loop 0 0
     where
-        loop _ w [] = w
+        loop _ w [] = (w, [])
         loop i w (x:xs)
-            | i >= wordSize = w
+            | i >= wordSize = (w, x:xs)
             | otherwise     = loop (i+1) (if toBool x then setBit w i else w) xs
+
+readWordL :: [Bit] -> Int -> Word
+readWordL xs 0 = fst (packBitsToWord xs)
 readWordL xs n = readWordL (drop n xs) 0
 
+wordToBitList :: Word -> [Bit]
+wordToBitList w = [ fromBool (testBit w i) | i <- [0 .. wordSize - 1] ]
+
 writeWordL :: [Bit] -> Int -> Word -> [Bit]
-writeWordL xs 0 w = zipWith const ([ fromBool (testBit w i) | i <- [0 .. wordSize - 1] ]) xs ++ post
+writeWordL xs 0 w = zipWith const (wordToBitList w) xs ++ post
     where (pre, post) = splitAt wordSize xs
 writeWordL xs n w = pre ++ writeWordL post 0 w
     where (pre, post) = splitAt n xs

@@ -18,13 +18,13 @@ instance Read Bit where
 
 
 liftBool2 :: (Bool -> Bool -> Bool) -> (Bit -> Bit -> Bit)
-liftBool2 op x y = Bit    (toBool   x `op` toBool   y)
+liftBool2 op x y = fromBool (toBool x `op` toBool y)
 liftInt2  :: (Int -> Int -> Int) -> (Bit -> Bit -> Bit)
-liftInt2  op x y = toEnum (fromEnum x `op` fromEnum y)
+liftInt2  op x y = fromIntegral (fromIntegral x `op` fromIntegral y)
 
+-- | The 'Num' instance is currently based on integers mod 2, so (+) and (-) are XOR, (*) is AND, and all the unary operations are identities.  Saturating operations would also be a sensible alternative.  TODO: before actually releasing, decide which is likely to be more useful more often.
 instance Num Bit where
-    fromInteger 0 = Bit False
-    fromInteger _ = Bit True
+    fromInteger = fromBool . odd
     (+) = liftInt2 (+)
     (-) = liftInt2 (-)
     (*) = liftInt2 (*)

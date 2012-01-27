@@ -16,8 +16,10 @@ Executable bitvec-tests
   main-is:              Main.hs
   build-depends:        base >= 3,
                         bitvec,
+                        HUnit,
                         vector,
                         test-framework,
+                        test-framework-hunit,
                         test-framework-quickcheck2,
                         QuickCheck
                         

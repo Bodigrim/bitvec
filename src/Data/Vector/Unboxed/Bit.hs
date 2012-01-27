@@ -9,7 +9,10 @@ module Data.Vector.Unboxed.Bit
      , toWords
      , indexWord
      
-     , bitwiseZip
+     , pad
+     , padWith
+     
+     , zipWords
      
      , union
      , unions
@@ -61,32 +64,31 @@ import           Prelude                            as P
 -- |Given a number of bits and a vector of words, concatenate them to a vector of bits (interpreting the words in little-endian order, as described at 'indexWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
 fromWords :: Int -> U.Vector Word -> U.Vector Bit
 fromWords n ws
-    | n < m     = pad n (BitVec 0 m ws)
-    | otherwise = BitVec 0 n (V.take (nWords n) ws)
+    | n <= m    = BitVec 0 n (V.take (nWords n) ws)
+    | otherwise = pad n (BitVec 0 m ws)
     where 
          m = nBits (V.length ws)
 
 -- |Given a vector of bits, extract an unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
 toWords :: U.Vector Bit -> U.Vector Word
 toWords v@(BitVec s n ws)
-    | aligned s && (aligned n || isMasked (modWordSize n) (indexWord v (alignDown n)))
-         = V.slice (divWordSize s) (divWordSize n) ws
+    | aligned s && (aligned n || isMasked (modWordSize n) (ws V.! divWordSize n))
+         = V.slice (divWordSize s) (nWords n) ws
     | otherwise = runST (V.unsafeThaw v >>= cloneWords >>= V.unsafeFreeze)
 
--- |For a bitwise operation @op@ (whose 1-bit equivalent is @op'@),
--- @bitwiseZip op xs ys == V.fromList (zipWith op' (V.toList xs) (V.toList ys))@, and the former is computed much more quickly.
-{-# INLINE bitwiseZip #-}
-bitwiseZip :: (Word -> Word -> Word) -> U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-bitwiseZip op xs ys
+-- | @zipWords f xs ys@ = @fromWords (min (length xs) (length ys)) (zipWith f (toWords xs) (toWords ys))@
+{-# INLINE zipWords #-}
+zipWords :: (Word -> Word -> Word) -> U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+zipWords op xs ys
     | V.length xs < V.length ys =
-        bitwiseZip (flip op) ys xs
+        zipWords (flip op) ys xs
     | otherwise =  runST $ do
         ys <- V.thaw ys
         let f i y = return (indexWord xs i `op` y)
         B.mapMInPlaceWithIndex f ys
         V.unsafeFreeze ys
 
--- |(internal) N-ary 'bitwiseZip' with a unit value and specified output length.  The first input is assumed to be a unit of the operation (on both sides).
+-- |(internal) N-ary 'zipWords' with a unit value and specified output length.  The first input is assumed to be a unit of the operation (on both sides).
 {-# INLINE zipMany #-}
 zipMany :: Word -> (Word -> Word -> Word) -> Int -> [U.Vector Bit] -> U.Vector Bit
 zipMany z op n xss = runST $ do
@@ -95,10 +97,10 @@ zipMany z op n xss = runST $ do
     P.mapM_ (B.zipInPlace op ys) xss
     V.unsafeFreeze ys
 
-union        = bitwiseZip (.|.)
-intersection = bitwiseZip (.&.)
-difference   = bitwiseZip diff
-symDiff      = bitwiseZip xor
+union        = zipWords (.|.)
+intersection = zipWords (.&.)
+difference   = zipWords diff
+symDiff      = zipWords xor
 
 unions        = zipMany 0 (.|.)
 intersections = zipMany (complement 0) (.&.)

@@ -72,18 +72,12 @@ cloneFromWords n ws = do
 -- |clone a vector of bits to a new unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
 cloneToWords :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
 cloneToWords v@(BitMVec s n ws)
-    | aligned s =
-        if aligned n
-            then justClone
-            else do
-                lastWord <- readWord v (alignDown n)
-                if isMasked (modWordSize n) lastWord
-                    then justClone
-                    else cloneWords v
-        
+    | aligned s = do
+        ws <- MV.clone (MV.slice (divWordSize s) (nWords n) ws)
+        when (not (aligned n)) $ do
+            readWord v (alignDown n) >>= MV.write ws (divWordSize n)
+        return ws
     | otherwise = cloneWords v
-    where
-        justClone = MV.clone (MV.slice (divWordSize s) (divWordSize n) ws)
 
 -- |Map a function over a bit vector one 'Word' at a time ('wordSize' bits at a time).  The function will be passed the bit index (which will always be 'wordSize'-aligned) and the current value of the corresponding word.  The returned word will be written back to the vector.  If there is a partial word at the end of the vector, it will be zero-padded when passed to the function and truncated when the result is written back to the array.
 {-# INLINE mapMInPlaceWithIndex #-}
