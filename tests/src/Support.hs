@@ -32,10 +32,10 @@ newFromList xs = N.create (V.unsafeThaw (V.fromList xs :: v a))
 -- this instance is designed to make sure that the arbitrary vectors we work with are not all nicely aligned; we need to deal with cases where the vector is a weird slice of some other vector.
 instance (V.Vector v a, Arbitrary a) => Arbitrary (N.New v a) where
     arbitrary = frequency
-        [ (1, newFromList <$> arbitrary) 
---        , (1,  N.drop <$> arbitrary <*> arbitrary)
---        , (1,  N.take <$> arbitrary <*> arbitrary)
---        , (1,  slice <$> arbitrary <*> arbitrary <*> arbitrary)
+        [ (10, newFromList <$> arbitrary) 
+        , (1,  N.drop <$> arbitrary <*> arbitrary)
+        , (1,  N.take <$> arbitrary <*> arbitrary)
+        , (1,  slice <$> arbitrary <*> arbitrary <*> arbitrary)
         ]
         where slice s n = N.apply $ \v ->
                  let (s', n') = trimSlice s n (M.length v)

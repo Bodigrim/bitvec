@@ -7,7 +7,7 @@ module Data.Vector.Unboxed.Bit
      , wordSize
      , fromWords
      , toWords
-     , readWord
+     , indexWord
      
      , bitwiseZip
      
@@ -53,14 +53,25 @@ import qualified Data.Vector.Generic.Mutable        as MV
 import           Data.Vector.Unboxed                as U
     hiding (and, or, any, all, reverse, findIndex)
 import qualified Data.Vector.Unboxed.Mutable.Bit    as B
-import           Data.Vector.Unboxed.Bit.Instance
+import           Data.Vector.Unboxed.Bit.Internal
 import           Data.Word
 import           Prelude                            as P
     hiding (and, or, any, all, reverse)
 
+-- |Given a number of bits and a vector of words, concatenate them to a vector of bits (interpreting the words in little-endian order, as described at 'indexWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
+fromWords :: Int -> U.Vector Word -> U.Vector Bit
+fromWords n ws
+    | n < m     = pad n (BitVec 0 m ws)
+    | otherwise = BitVec 0 n (V.take (nWords n) ws)
+    where 
+         m = nBits (V.length ws)
 
--- TODO: make names more consistent, especially use of "M" in map/zip/etc functions.
--- Consider splitting part of this module into a "dense IntSet" interface.
+-- |Given a vector of bits, extract an unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
+toWords :: U.Vector Bit -> U.Vector Word
+toWords v@(BitVec s n ws)
+    | aligned s && (aligned n || isMasked (modWordSize n) (indexWord v (alignDown n)))
+         = V.slice (divWordSize s) (divWordSize n) ws
+    | otherwise = runST (V.unsafeThaw v >>= cloneWords >>= V.unsafeFreeze)
 
 -- |For a bitwise operation @op@ (whose 1-bit equivalent is @op'@),
 -- @bitwiseZip op xs ys == V.fromList (zipWith op' (V.toList xs) (V.toList ys))@, and the former is computed much more quickly.
@@ -71,8 +82,8 @@ bitwiseZip op xs ys
         bitwiseZip (flip op) ys xs
     | otherwise =  runST $ do
         ys <- V.thaw ys
-        let f i y = return (readWord xs i `op` y)
-        B.mapInPlaceWithIndex f ys
+        let f i y = return (indexWord xs i `op` y)
+        B.mapMInPlaceWithIndex f ys
         V.unsafeFreeze ys
 
 -- |(internal) N-ary 'bitwiseZip' with a unit value and specified output length.  The first input is assumed to be a unit of the operation (on both sides).
@@ -80,7 +91,7 @@ bitwiseZip op xs ys
 zipMany :: Word -> (Word -> Word -> Word) -> Int -> [U.Vector Bit] -> U.Vector Bit
 zipMany z op n xss = runST $ do
     ys <- MV.new n
-    B.mapInPlace (return . const z) ys
+    B.mapMInPlace (return . const z) ys
     P.mapM_ (B.zipInPlace op ys) xss
     V.unsafeFreeze ys
 
@@ -96,8 +107,8 @@ intersections = zipMany (complement 0) (.&.)
 invert :: U.Vector Bit -> U.Vector Bit
 invert xs = runST $ do
     ys <- MV.new (V.length xs)
-    let f i _ = return (complement (readWord xs i))
-    B.mapInPlaceWithIndex f ys
+    let f i _ = return (complement (indexWord xs i))
+    B.mapMInPlaceWithIndex f ys
     V.unsafeFreeze ys
 
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is set.
@@ -145,7 +156,7 @@ countBits v = loop 0 0
         !n = alignUp (V.length v)
         loop !s !i
             | i >= n    = s
-            | otherwise = loop (s + popCount (readWord v i)) (i + wordSize)
+            | otherwise = loop (s + popCount (indexWord v i)) (i + wordSize)
 
 -- | 'True' if all bits in the vector are set
 and :: U.Vector Bit -> Bool
@@ -154,7 +165,7 @@ and v = loop 0
         !n = V.length v
         loop !i
             | i >= n    = True
-            | otherwise = (readWord v i == mask (n-i))
+            | otherwise = (indexWord v i == mask (n-i))
                         && loop (i + wordSize)
 
 -- | 'True' if any bit in the vector is set
@@ -164,7 +175,7 @@ or v = loop 0
         !n = V.length v
         loop !i
             | i >= n    = False
-            | otherwise = (readWord v i /= 0)
+            | otherwise = (indexWord v i /= 0)
                         || loop (i + wordSize)
 
 all p = case (p 0, p 1) of
@@ -189,9 +200,9 @@ anyBits 1 = or
 reverse :: U.Vector Bit -> U.Vector Bit
 reverse xs = runST $ do
     let !n = V.length xs
-        f i _ = return (reversePartialWord (n - i) (readWord xs (max 0 (n - i - wordSize))))
+        f i _ = return (reversePartialWord (n - i) (indexWord xs (max 0 (n - i - wordSize))))
     ys <- MV.new n
-    B.mapInPlaceWithIndex f ys
+    B.mapMInPlaceWithIndex f ys
     V.unsafeFreeze ys
 
 -- |Return the address of the first bit in the vector with the specified value, if any
@@ -204,7 +215,7 @@ first b xs = mfilter (< n) (loop 0)
         
         loop !i
             | i >= n    = Nothing
-            | otherwise = fmap (i +) (ff (readWord xs i)) `mplus` loop (i + wordSize)
+            | otherwise = fmap (i +) (ff (indexWord xs i)) `mplus` loop (i + wordSize)
 
 findIndex p xs = case (p 0, p 1) of
     (False, False) -> Nothing

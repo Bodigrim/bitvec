@@ -21,8 +21,12 @@ lg2 :: Int -> Int
 lg2 n = i
     where Just i = findIndex (>= toInteger n) (iterate (`shiftL` 1) 1)
 
-wordSize, lgWordSize, wordSizeMask, wordSizeMaskC :: Int
+
+-- |The number of 'Bit's in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
+wordSize :: Int
 wordSize = bitSize (0 :: Word)
+
+lgWordSize, wordSizeMask, wordSizeMaskC :: Int
 lgWordSize = lg2 wordSize
 wordSizeMask = wordSize - 1
 wordSizeMaskC = complement wordSizeMask
@@ -65,6 +69,7 @@ mask b = m
             | otherwise         = bit b - 1
 
 masked b x = x .&. mask b
+isMasked b x = (masked b x == x)
 
 -- meld 2 words by taking the low 'b' bits from 'lo' and the rest from 'hi'
 meld b lo hi = (lo .&. m) .|. (hi .&. complement m)

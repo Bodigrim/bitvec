@@ -1,17 +1,18 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-module Data.Vector.Unboxed.Bit.Instance
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE BangPatterns          #-}
+module Data.Vector.Unboxed.Bit.Internal
      ( Bit
-     
-     , fromWords
-     , toWords
+     , U.Vector(BitVec)
+     , U.MVector(BitMVec)
      
      , padWith
      , pad
      
+     , indexWord
      , readWord
-     , readWordM
      , writeWord
+     , cloneWords
      ) where
 
 import           Control.Monad
@@ -31,8 +32,8 @@ data instance U.Vector    Bit = BitVec  !Int !Int !(U.Vector    Word)
 -- TODO: allow partial words to be read/written at beginning?
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
-readWord :: U.Vector Bit -> Int -> Word
-readWord (BitVec 0 n v) i 
+indexWord :: U.Vector Bit -> Int -> Word
+indexWord (BitVec 0 n v) i 
     | aligned i         = masked b lo
     | j + 1 == nWords n = masked b (extractWord k lo 0 )
     | otherwise         = masked b (extractWord k lo hi)
@@ -42,11 +43,11 @@ readWord (BitVec 0 n v) i
             k  = modWordSize i
             lo = v V.!  j
             hi = v V.! (j+1)
-readWord (BitVec s n v) i = readWord (BitVec 0 (n + s) v) (i + s)
+indexWord (BitVec s n v) i = indexWord (BitVec 0 (n + s) v) (i + s)
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
-readWordM :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m Word
-readWordM (BitMVec 0 n v) i
+readWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m Word
+readWord (BitMVec 0 n v) i
     | aligned i         = liftM (masked b) lo
     | j + 1 == nWords n = liftM (masked b) (liftM2 (extractWord k) lo (return 0))
     | otherwise         = liftM (masked b) (liftM2 (extractWord k) lo hi)
@@ -56,7 +57,7 @@ readWordM (BitMVec 0 n v) i
             k = modWordSize i
             lo = MV.read v  j
             hi = MV.read v (j+1)
-readWordM (BitMVec s n v) i = readWordM (BitMVec 0 (n + s) v) (i + s)
+readWord (BitMVec s n v) i = readWord (BitMVec 0 (n + s) v) (i + s)
 
 -- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
 writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()
@@ -91,6 +92,19 @@ writeWord (BitMVec 0 n v) i x
         k  = modWordSize i
 writeWord (BitMVec s n v) i x = writeWord (BitMVec 0 (n + s) v) (i + s) x
 
+-- clone words from a bit-array into a new word array, without attempting any shortcuts (such as recognizing that they are already aligned, etc.)
+{-# INLINE cloneWords #-}
+cloneWords :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
+cloneWords v@(BitMVec _ n _) = do
+    ws <- MV.new (nWords n)
+    let loop !i !j
+            | i >= n    = return ()
+            | otherwise = do
+                readWord v i >>= MV.write ws j
+                loop (i + wordSize) (j + 1)
+    loop 0 0
+    return ws
+
 instance U.Unbox Bit
 
 instance MV.MVector U.MVector Bit where
@@ -120,7 +134,7 @@ instance MV.MVector U.MVector Bit where
         
         do_copy i
             | i < n = do
-                x <- readWordM src i
+                x <- readWord src i
                 writeWord dst i x
                 do_copy (i+wordSize)
             | otherwise = return ()
@@ -178,31 +192,3 @@ padWith b n' bitvec@(BitVec s n v)
 
 pad :: Int -> U.Vector Bit -> U.Vector Bit
 pad = padWith (fromBool False)
-
--- |Given a number of bits and a vector of words, concatenate them to a vector of bits (interpreting the words in little-endian order, as described at 'readWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
-fromWords :: Int -> U.Vector Word -> U.Vector Bit
-fromWords n ws
-    | n < m     = pad n (BitVec 0 m ws)
-    | otherwise = BitVec 0 n (V.take (nWords n) ws)
-    where 
-         m = nBits (V.length ws)
-
--- |Given a vector of bits, extract an unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
-toWords :: U.Vector Bit -> U.Vector Word
--- TODO: check for case where n is not aligned but ws is already zero-padded to the end of the partial word; in that case, no work is needed except to slice 'ws'.
-toWords (BitVec s n ws)
-    | aligned n 
-    && V.length ws == nBits n
-        = ws
-toWords v = runST $ do
-    let n = nWords (V.length v)
-    ws <- MV.new n
-    let loop i
-            | i >= n    = return ()
-            | otherwise = do
-                MV.write ws i (readWord v i)
-                loop $! (i + 1)
-    loop 0
-    V.unsafeFreeze ws
-
-

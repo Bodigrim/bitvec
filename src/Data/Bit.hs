@@ -6,7 +6,7 @@ module Data.Bit
 
 import Data.Bit.Internal
 import Data.Bits
-import Data.Vector.Unboxed.Bit.Instance ({- instance Unbox Bit -})
+import Data.Vector.Unboxed.Bit.Internal ({- instance Unbox Bit -})
 
 instance Show Bit where
     showsPrec _ (Bit False) = showString "0"
