@@ -110,6 +110,9 @@ reversePartialWord n w
     | n >= wordSize = reverseWord w
     | otherwise     = reverseWord w `shiftR` (wordSize - n)
 
+diff :: Word -> Word -> Word
+diff w1 w2 = w1 .&. complement w2
+
 ffs :: Word -> Maybe Int
 ffs 0 = Nothing
 ffs x = Just $! (popCount (x `xor` complement (-x)) - 1)

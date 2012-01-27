@@ -24,6 +24,7 @@ Library
   ghc-options:          -fwarn-unused-imports -fwarn-unused-binds
   exposed-modules:      Data.Bit
                         Data.Vector.Unboxed.Bit
+                        Data.Vector.Unboxed.Mutable.Bit
   other-modules:        Data.Bit.Internal
                         Data.Vector.Unboxed.Bit.Instance
   build-depends:        base >= 3 && < 5,
