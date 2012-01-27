@@ -1,0 +1,19 @@
+name:                   bitvec-tests
+version:                0.0.0.1
+stability:              experimental
+
+cabal-version:          >= 1.2
+build-type:             Simple
+
+author:                 James Cook <mokus@deepbondi.net>
+maintainer:             James Cook <mokus@deepbondi.net>
+license:                PublicDomain
+homepage:               /dev/null
+
+Executable bitvec-tests
+  hs-source-dirs:       src
+  build-depends:        base >= 3,
+                        bitvec,
+                        vector,
+                        QuickCheck
+                        

@@ -1,0 +1,9 @@
+1. more coverage in tests
+2. criterion benchmark suite
+2b. compare criterion results to other bit-array libraries, speed things up if needed
+
+Misc tasks not prioritized:
+* clean up API
+* separate the IntSet-like operations into new module Data.IntSet.Dense (maybe even new package depending on this one)
+* expand/generalize 'vector-rope' package to support lazy and/or sparse vectors and generalize existing interface to support operating on sparse bit vectors and/or bit-vectors implemented on top of sparse word-vectors
+* consider lobbying to have this code merged into vector and/or containers as "instance Unbox Bool" and IntSet (using the sparse rope versions hinted at above), respectively.
