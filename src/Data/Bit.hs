@@ -1,11 +1,17 @@
+{-# LANGUAGE CPP #-}
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
+{-# LANGUAGE Trustworthy #-}
+#else
+#define safe
+#endif
 module Data.Bit
      ( Bit
      , fromBool
      , toBool
      ) where
 
-import Data.Bit.Internal
-import Data.Bits
+import safe Data.Bit.Internal
+import safe Data.Bits
 import Data.Vector.Unboxed.Bit.Internal ({- instance Unbox Bit -})
 
 instance Show Bit where
@@ -74,4 +80,8 @@ instance Bits Bit where
     
     isSigned _ = False
     
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 704
+
     popCount = fromEnum
+
+#endif

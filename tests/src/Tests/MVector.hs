@@ -7,7 +7,7 @@ import Data.Bit
 import Data.STRef
 import qualified Data.Vector.Generic             as V
 import qualified Data.Vector.Generic.New         as N
-import qualified Data.Vector.Unboxed.Bit         as U (unsafeFreeze, reverse, fromWords, toWords)
+import qualified Data.Vector.Unboxed.Bit         as U (reverse, fromWords, toWords)
 import qualified Data.Vector.Unboxed.Mutable.Bit as U
 import qualified Data.Vector.Unboxed.Mutable     as M
 import Data.Word
@@ -35,7 +35,7 @@ prop_slice_def s n xs
     =  sliceList s' n' (U.toList xs')
     == U.toList (runST (do
         xs <- N.run xs
-        U.unsafeFreeze (M.slice s' n' xs)))
+        V.unsafeFreeze (M.slice s' n' xs)))
     where
         xs' = V.new xs
         (s', n') = trimSlice s n (U.length xs')
@@ -48,17 +48,17 @@ prop_writeWord_def n w = withNonEmptyMVec
     (\xs -> U.fromList
                $ writeWordL (U.toList xs) (n `mod` U.length xs) w)
     (\xs -> do U.writeWord            xs  (n `mod` M.length xs) w
-               U.unsafeFreeze xs)
+               V.unsafeFreeze xs)
 
 prop_cloneFromWords_def :: Int -> Int -> N.New U.Vector Word -> Bool
 prop_cloneFromWords_def maxN n' ws 
-    =  runST (N.run ws >>= U.cloneFromWords n >>= U.unsafeFreeze)
+    =  runST (N.run ws >>= U.cloneFromWords n >>= V.unsafeFreeze)
     == U.fromWords n (V.new ws)
     where n = n' `mod` maxN
 
 prop_cloneToWords_def :: N.New U.Vector Bit -> Bool
 prop_cloneToWords_def xs
-    =  runST (N.run xs >>= U.cloneToWords >>= U.unsafeFreeze)
+    =  runST (N.run xs >>= U.cloneToWords >>= V.unsafeFreeze)
     == U.toWords (V.new xs)
 
 prop_mapMInPlaceWithIndex_leftToRight :: N.New U.Vector Bit -> Bool
@@ -71,7 +71,7 @@ prop_mapMInPlaceWithIndex_leftToRight xs
                 writeSTRef x i
                 return (if i > j then maxBound else 0)
         U.mapMInPlaceWithIndex f xs
-        xs <- U.unsafeFreeze xs
+        xs <- V.unsafeFreeze xs
         return (all toBool (U.toList xs))
 
 prop_reverseInPlace_def xs
@@ -79,5 +79,5 @@ prop_reverseInPlace_def xs
     == runST (do
         xs <- N.run xs
         U.reverseInPlace xs
-        U.unsafeFreeze xs)
+        V.unsafeFreeze xs)
 

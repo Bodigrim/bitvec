@@ -1,19 +1,36 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP #-}
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
+{-# LANGUAGE Safe #-}
+#else
+#define safe
+#endif
 module Data.Bit.Internal where
 
-import Data.Bits
-import Data.List
-import Data.Typeable
-import Data.Word
+import safe Data.Bits
+import safe Data.List
+import safe Data.Typeable
+import safe Data.Word
+
+#if !MIN_VERSION_base(4,3,0)
+import safe Control.Monad
+
+mfilter :: MonadPlus m => (a -> Bool) -> m a -> m a
+mfilter p xs = do x <- xs; guard (p x); return x
+
+#endif
+
 
 newtype Bit = Bit Bool
-    deriving (Bounded, Enum, Eq, Ord, Typeable)
+    deriving (Bounded, Eq, Ord, Typeable)
 
 fromBool    b  = Bit b
 toBool (Bit b) =     b
 
+instance Enum Bit where
+    toEnum      = fromBool . toEnum
+    fromEnum    = fromEnum . toBool
 
 -- various internal utility functions and constants
 
@@ -117,6 +134,16 @@ reversePartialWord n w
 
 diff :: Word -> Word -> Word
 diff w1 w2 = w1 .&. complement w2
+
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 704
+
+popCount :: Bits a => a -> Int
+popCount = loop 0
+    where
+        loop !n 0 = n
+        loop !n x = loop (n+1) (x .&. (x - 1))
+
+#endif
 
 ffs :: Word -> Maybe Int
 ffs 0 = Nothing

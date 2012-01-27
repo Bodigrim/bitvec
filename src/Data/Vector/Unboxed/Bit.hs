@@ -1,5 +1,11 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP #-}
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
+{-# LANGUAGE Trustworthy #-}
+#else
+#define safe
+#endif
 module Data.Vector.Unboxed.Bit
      ( module Data.Bit
      , module U
@@ -46,19 +52,26 @@ module Data.Vector.Unboxed.Bit
      , findIndex
      ) where
 
-import           Control.Monad
-import           Control.Monad.ST
-import           Data.Bit
-import           Data.Bit.Internal
-import           Data.Bits
-import qualified Data.Vector.Generic                as V
-import qualified Data.Vector.Generic.Mutable        as MV
-import           Data.Vector.Unboxed                as U
+import safe           Control.Monad
+import                Control.Monad.ST
+import safe           Data.Bit
+import safe           Data.Bit.Internal
+import safe           Data.Bits
+#if MIN_VERSION_vector(0,8,0)
+import safe qualified Data.Vector.Generic.Safe           as V
+import safe qualified Data.Vector.Generic.Mutable.Safe   as MV
+import safe           Data.Vector.Unboxed.Safe           as U
+#else
+import      qualified Data.Vector.Generic                as V
+import      qualified Data.Vector.Generic.Mutable        as MV
+import                Data.Vector.Unboxed                as U
+#endif
     hiding (and, or, any, all, reverse, findIndex)
-import qualified Data.Vector.Unboxed.Mutable.Bit    as B
-import           Data.Vector.Unboxed.Bit.Internal
-import           Data.Word
-import           Prelude                            as P
+import      qualified Data.Vector.Unboxed                as Unsafe
+import safe qualified Data.Vector.Unboxed.Mutable.Bit    as B
+import                Data.Vector.Unboxed.Bit.Internal
+import safe           Data.Word
+import safe           Prelude                            as P
     hiding (and, or, any, all, reverse)
 
 -- |Given a number of bits and a vector of words, concatenate them to a vector of bits (interpreting the words in little-endian order, as described at 'indexWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
@@ -74,7 +87,7 @@ toWords :: U.Vector Bit -> U.Vector Word
 toWords v@(BitVec s n ws)
     | aligned s && (aligned n || isMasked (modWordSize n) (ws V.! divWordSize n))
          = V.slice (divWordSize s) (nWords n) ws
-    | otherwise = runST (V.unsafeThaw v >>= cloneWords >>= V.unsafeFreeze)
+    | otherwise = runST (Unsafe.unsafeThaw v >>= cloneWords >>= Unsafe.unsafeFreeze)
 
 -- | @zipWords f xs ys@ = @fromWords (min (length xs) (length ys)) (zipWith f (toWords xs) (toWords ys))@
 {-# INLINE zipWords #-}
@@ -84,18 +97,18 @@ zipWords op xs ys
         zipWords (flip op) ys xs
     | otherwise =  runST $ do
         ys <- V.thaw ys
-        let f i y = return (indexWord xs i `op` y)
-        B.mapMInPlaceWithIndex f ys
-        V.unsafeFreeze ys
+        let f i y = indexWord xs i `op` y
+        B.mapInPlaceWithIndex f ys
+        Unsafe.unsafeFreeze ys
 
 -- |(internal) N-ary 'zipWords' with a unit value and specified output length.  The first input is assumed to be a unit of the operation (on both sides).
 {-# INLINE zipMany #-}
 zipMany :: Word -> (Word -> Word -> Word) -> Int -> [U.Vector Bit] -> U.Vector Bit
 zipMany z op n xss = runST $ do
     ys <- MV.new n
-    B.mapMInPlace (return . const z) ys
+    B.mapInPlace (const z) ys
     P.mapM_ (B.zipInPlace op ys) xss
-    V.unsafeFreeze ys
+    Unsafe.unsafeFreeze ys
 
 union        = zipWords (.|.)
 intersection = zipWords (.&.)
@@ -109,9 +122,9 @@ intersections = zipMany (complement 0) (.&.)
 invert :: U.Vector Bit -> U.Vector Bit
 invert xs = runST $ do
     ys <- MV.new (V.length xs)
-    let f i _ = return (complement (indexWord xs i))
-    B.mapMInPlaceWithIndex f ys
-    V.unsafeFreeze ys
+    let f i _ = complement (indexWord xs i)
+    B.mapInPlaceWithIndex f ys
+    Unsafe.unsafeFreeze ys
 
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is set.
 -- 
@@ -143,13 +156,13 @@ selectBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 selectBits is xs = runST $ do
     xs <- U.thaw xs
     n <- B.selectBitsInPlace is xs
-    U.unsafeFreeze (MV.take n xs)
+    Unsafe.unsafeFreeze (MV.take n xs)
 
 excludeBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 excludeBits is xs = runST $ do
     xs <- U.thaw xs
     n <- B.excludeBitsInPlace is xs
-    U.unsafeFreeze (MV.take n xs)
+    Unsafe.unsafeFreeze (MV.take n xs)
 
 -- |return the number of ones in a bit vector
 countBits :: U.Vector Bit -> Int
@@ -202,10 +215,10 @@ anyBits 1 = or
 reverse :: U.Vector Bit -> U.Vector Bit
 reverse xs = runST $ do
     let !n = V.length xs
-        f i _ = return (reversePartialWord (n - i) (indexWord xs (max 0 (n - i - wordSize))))
+        f i _ = reversePartialWord (n - i) (indexWord xs (max 0 (n - i - wordSize)))
     ys <- MV.new n
-    B.mapMInPlaceWithIndex f ys
-    V.unsafeFreeze ys
+    B.mapInPlaceWithIndex f ys
+    Unsafe.unsafeFreeze ys
 
 -- |Return the address of the first bit in the vector with the specified value, if any
 first :: Bit -> U.Vector Bit -> Maybe Int

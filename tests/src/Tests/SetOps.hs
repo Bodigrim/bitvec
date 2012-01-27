@@ -1,6 +1,6 @@
 module Tests.SetOps where
 
-import Support
+import Support ()
 
 import Data.Bit
 import Data.Bits

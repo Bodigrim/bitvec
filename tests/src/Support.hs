@@ -3,7 +3,6 @@
 {-# LANGUAGE RankNTypes          #-}
 module Support where
 
-import Debug.Trace
 import Control.Applicative
 import Control.Monad.ST
 import Data.Bit
@@ -76,8 +75,7 @@ wordToBitList :: Word -> [Bit]
 wordToBitList w = [ fromBool (testBit w i) | i <- [0 .. wordSize - 1] ]
 
 writeWordL :: [Bit] -> Int -> Word -> [Bit]
-writeWordL xs 0 w = zipWith const (wordToBitList w) xs ++ post
-    where (pre, post) = splitAt wordSize xs
+writeWordL xs 0 w = zipWith const (wordToBitList w) xs ++ drop wordSize xs
 writeWordL xs n w = pre ++ writeWordL post 0 w
     where (pre, post) = splitAt n xs
 

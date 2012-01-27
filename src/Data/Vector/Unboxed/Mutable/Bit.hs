@@ -1,5 +1,11 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE BangPatterns               #-}
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
+{-# LANGUAGE Trustworthy #-}
+#else
+#define safe
+#endif
 module Data.Vector.Unboxed.Mutable.Bit
      ( module Data.Bit
      , module U
@@ -11,7 +17,10 @@ module Data.Vector.Unboxed.Mutable.Bit
      , writeWord
      
      , mapMInPlaceWithIndex
+     , mapInPlaceWithIndex
      , mapMInPlace
+     , mapInPlace
+     
      , zipInPlace
      
      , unionInPlace
@@ -35,17 +44,22 @@ module Data.Vector.Unboxed.Mutable.Bit
      , reverseInPlace
      ) where
 
-import           Control.Monad
-import           Control.Monad.Primitive
-import           Data.Bit
-import           Data.Bit.Internal
-import           Data.Bits
+import safe     Control.Monad
+import          Control.Monad.Primitive
+import safe     Data.Bit
+import safe     Data.Bit.Internal
+import safe     Data.Bits
 import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as MV
-import           Data.Vector.Unboxed.Safe    as U hiding (and, or, any, all, reverse, findIndex)
+#if MIN_VERSION_vector(0,8,0)
+import safe      Data.Vector.Unboxed.Safe    as U
+#else
+import           Data.Vector.Unboxed         as U
+#endif
+    hiding (and, or, any, all, reverse, findIndex)
 import           Data.Vector.Unboxed.Bit.Internal
-import           Data.Word
-import           Prelude                     as P hiding (and, or, any, all, reverse)
+import safe      Data.Word
+import safe      Prelude                     as P hiding (and, or, any, all, reverse)
 
 
 -- TODO: make names more consistent, especially use of "M" in map/zip/etc functions.
@@ -95,19 +109,30 @@ mapMInPlaceWithIndex f xs = loop 0
                 writeWord xs i =<< f i x
                 loop (i + wordSize)
 
+{-# INLINE mapInPlaceWithIndex #-}
+mapInPlaceWithIndex ::
+    PrimMonad m =>
+        (Int -> Word -> Word)
+     -> U.MVector (PrimState m) Bit -> m ()
+mapInPlaceWithIndex f = mapMInPlaceWithIndex (\i x -> return (f i x))
+
 -- |Same as 'mapMInPlaceWithIndex' but without the index.
 {-# INLINE mapMInPlace #-}
 mapMInPlace :: PrimMonad m => (Word -> m Word) -> U.MVector (PrimState m) Bit -> m ()
 mapMInPlace f = mapMInPlaceWithIndex (const f)
 
+{-# INLINE mapInPlace #-}
+mapInPlace :: PrimMonad m => (Word -> Word) -> U.MVector (PrimState m) Bit -> m ()
+mapInPlace f = mapMInPlaceWithIndex (\_ x -> return (f x))
+
 {-# INLINE zipInPlace #-}
 zipInPlace :: PrimMonad m => (Word -> Word -> Word) -> U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
 zipInPlace f xs ys =
-    mapMInPlaceWithIndex g (MV.basicUnsafeSlice 0 (min n m) xs)
+    mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 (min n m) xs)
     where 
         n = MV.length xs
         m =  V.length ys
-        g i x = return (f x (indexWord ys i))
+        g i x = f x (indexWord ys i)
 
 unionInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
 unionInPlace = zipInPlace (.|.)
@@ -123,7 +148,7 @@ symDiffInPlace = zipInPlace xor
 
 -- |Flip every bit in the given vector
 invertInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
-invertInPlace = mapMInPlace (return . complement)
+invertInPlace = mapInPlace complement
 
 selectBitsInPlace :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 selectBitsInPlace is xs = loop 0 0
