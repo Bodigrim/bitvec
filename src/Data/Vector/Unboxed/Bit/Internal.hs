@@ -171,8 +171,6 @@ instance V.Vector U.Vector Bit where
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
 
--- TODO: tests... i assume there's an existing test suite in the vector package?
-
 padWith :: Bit -> Int -> U.Vector Bit -> U.Vector Bit
 padWith b n' bitvec@(BitVec s n v)
     | n' <= n   = bitvec

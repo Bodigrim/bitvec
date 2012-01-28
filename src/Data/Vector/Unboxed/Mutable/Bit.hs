@@ -59,8 +59,7 @@ import safe           Prelude                           as P
     hiding (and, or, any, all, reverse)
 
 
--- TODO: make names more consistent, especially use of "M" in map/zip/etc functions.
--- Consider splitting part of this module into a "dense IntSet" interface.
+-- TODO: this interface needs more work.
 
 -- |Clone a specified number of bits from a vector of words into a new vector of bits (interpreting the words in little-endian order, as described at 'indexWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
 cloneFromWords :: PrimMonad m => Int -> U.MVector (PrimState m) Word -> m (U.MVector (PrimState m) Bit)
