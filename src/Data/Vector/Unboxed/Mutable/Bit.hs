@@ -31,7 +31,7 @@ module Data.Vector.Unboxed.Mutable.Bit
      , selectBitsInPlace
      , excludeBitsInPlace
      
-     , countBitsM
+     , countBits
      
      , and
      , or
@@ -171,8 +171,8 @@ excludeBitsInPlace is xs = loop 0 0
                 loop (i + wordSize) (ct + nSet)
 
 -- |return the number of ones in a bit vector
-countBitsM :: PrimMonad m => U.MVector (PrimState m) Bit -> m Int
-countBitsM v = loop 0 0
+countBits :: PrimMonad m => U.MVector (PrimState m) Bit -> m Int
+countBits v = loop 0 0
     where
         !n = alignUp (MV.length v)
         loop !s !i

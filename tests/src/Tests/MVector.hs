@@ -2,12 +2,13 @@ module Tests.MVector where
 
 import Support
 
+import Control.Monad
 import Control.Monad.ST
 import Data.Bit
 import Data.STRef
 import qualified Data.Vector.Generic             as V
 import qualified Data.Vector.Generic.New         as N
-import qualified Data.Vector.Unboxed.Bit         as U (reverse, fromWords, toWords)
+import qualified Data.Vector.Unboxed.Bit         as B
 import qualified Data.Vector.Unboxed.Mutable.Bit as U
 import qualified Data.Vector.Unboxed.Mutable     as M
 import Data.Word
@@ -26,40 +27,42 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
         ]
     , testGroup "mapMInPlaceWithIndex"
         [ testProperty "maps left to right" prop_mapMInPlaceWithIndex_leftToRight
+        , testProperty "wordSize-aligned"   prop_mapMInPlaceWithIndex_aligned
         ]
+    , testProperty "countBits"      prop_countBits_def
     , testProperty "reverseInPlace" prop_reverseInPlace_def
     ]
 
 prop_slice_def :: Int -> Int -> N.New U.Vector Bit -> Bool
 prop_slice_def s n xs
-    =  sliceList s' n' (U.toList xs')
-    == U.toList (runST (do
+    =  sliceList s' n' (B.toList xs')
+    == B.toList (runST (do
         xs <- N.run xs
         V.unsafeFreeze (M.slice s' n' xs)))
     where
         xs' = V.new xs
-        (s', n') = trimSlice s n (U.length xs')
+        (s', n') = trimSlice s n (V.length xs')
 
 prop_readWord_def n = withNonEmptyMVec
-    (\xs ->   readWordL (U.toList xs) (n `mod` U.length xs))
+    (\xs ->   readWordL (B.toList xs) (n `mod` V.length xs))
     (\xs -> U.readWord            xs  (n `mod` M.length xs))
 
 prop_writeWord_def n w = withNonEmptyMVec
-    (\xs -> U.fromList
-               $ writeWordL (U.toList xs) (n `mod` U.length xs) w)
+    (\xs -> B.fromList
+               $ writeWordL (B.toList xs) (n `mod` V.length xs) w)
     (\xs -> do U.writeWord            xs  (n `mod` M.length xs) w
                V.unsafeFreeze xs)
 
 prop_cloneFromWords_def :: Int -> Int -> N.New U.Vector Word -> Bool
 prop_cloneFromWords_def maxN n' ws 
     =  runST (N.run ws >>= U.cloneFromWords n >>= V.unsafeFreeze)
-    == U.fromWords n (V.new ws)
+    == B.fromWords n (V.new ws)
     where n = n' `mod` maxN
 
 prop_cloneToWords_def :: N.New U.Vector Bit -> Bool
 prop_cloneToWords_def xs
     =  runST (N.run xs >>= U.cloneToWords >>= V.unsafeFreeze)
-    == U.toWords (V.new xs)
+    == B.toWords (V.new xs)
 
 prop_mapMInPlaceWithIndex_leftToRight :: N.New U.Vector Bit -> Bool
 prop_mapMInPlaceWithIndex_leftToRight xs 
@@ -72,10 +75,30 @@ prop_mapMInPlaceWithIndex_leftToRight xs
                 return (if i > j then maxBound else 0)
         U.mapMInPlaceWithIndex f xs
         xs <- V.unsafeFreeze xs
-        return (all toBool (U.toList xs))
+        return (all toBool (B.toList xs))
 
+prop_mapMInPlaceWithIndex_aligned :: N.New U.Vector Bit -> Bool
+prop_mapMInPlaceWithIndex_aligned xs = runST $ do
+    ok <- newSTRef True
+    xs <- N.run xs
+    let aligned i   = i `mod` U.wordSize == 0
+        f i x = do
+            when (not (aligned i)) (writeSTRef ok False)
+            return x
+    U.mapMInPlaceWithIndex f xs
+    readSTRef ok
+
+prop_countBits_def :: N.New U.Vector Bit -> Bool
+prop_countBits_def xs = runST $ do
+    let xs' = V.new xs
+    xs <- N.run xs
+    n <- U.countBits xs
+    return (n == B.countBits xs')
+    
+
+prop_reverseInPlace_def :: N.New U.Vector Bit -> Bool
 prop_reverseInPlace_def xs
-    =  U.reverse (V.new xs)
+    =  B.reverse (V.new xs)
     == runST (do
         xs <- N.run xs
         U.reverseInPlace xs
