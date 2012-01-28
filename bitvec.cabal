@@ -18,7 +18,6 @@ description:            Unboxed vectors of bits / dense IntSets
 tested-with:            GHC == 6.10.4, GHC == 6.12.3, GHC == 7.0.4,
                         GHC == 7.2.1, GHC == 7.2.2, GHC == 7.4.1-rc1
 
-
 source-repository head
   type: git
   location: git://github.com/mokus0/bitvec.git
@@ -33,11 +32,6 @@ Library
                         Data.Vector.Unboxed.Bit.Internal
   build-depends:        base >= 3 && < 5,
                         primitive,
-                        vector
+                        vector >= 0.8
   if impl(ghc == 7.2.1)
     ghc-options:        -trust vector 
-  if impl(ghc >= 7.2)
-    -- if GHC supports Safe Haskell, require newer vector so we can easily
-    -- export only the "Safe" modules.
-    -- TODO: add explicit export lists so only the safe stuff gets exported when using older ones
-    build-depends:      vector >= 0.8

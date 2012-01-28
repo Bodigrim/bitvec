@@ -44,22 +44,19 @@ module Data.Vector.Unboxed.Mutable.Bit
      , reverseInPlace
      ) where
 
-import safe     Control.Monad
-import          Control.Monad.Primitive
-import safe     Data.Bit
-import safe     Data.Bit.Internal
-import safe     Data.Bits
-import qualified Data.Vector.Generic         as V
-import qualified Data.Vector.Generic.Mutable as MV
-#if MIN_VERSION_vector(0,8,0)
-import safe      Data.Vector.Unboxed.Safe    as U
-#else
-import           Data.Vector.Unboxed         as U
-#endif
-    hiding (and, or, any, all, reverse, findIndex)
-import           Data.Vector.Unboxed.Bit.Internal
-import safe      Data.Word
-import safe      Prelude                     as P hiding (and, or, any, all, reverse)
+import safe           Control.Monad
+import                Control.Monad.Primitive
+import safe           Data.Bit
+import safe           Data.Bit.Internal
+import safe           Data.Bits
+import      qualified Data.Vector.Generic.Mutable       as MV
+import safe qualified Data.Vector.Generic.Safe          as V
+import safe qualified Data.Vector.Unboxed.Safe          as U (Vector)
+import safe           Data.Vector.Unboxed.Mutable.Safe  as U
+import                Data.Vector.Unboxed.Bit.Internal
+import safe           Data.Word
+import safe           Prelude                           as P
+    hiding (and, or, any, all, reverse)
 
 
 -- TODO: make names more consistent, especially use of "M" in map/zip/etc functions.
