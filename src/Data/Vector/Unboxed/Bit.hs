@@ -37,6 +37,7 @@ module Data.Vector.Unboxed.Bit
      , excludeBits
      
      , countBits
+     , listBits
      
      , and
      , or
@@ -166,6 +167,15 @@ countBits v = loop 0 0
         loop !s !i
             | i >= n    = s
             | otherwise = loop (s + popCount (indexWord v i)) (i + wordSize)
+
+listBits :: U.Vector Bit -> [Int]
+listBits v = loop id 0
+    where
+        !n = V.length v
+        loop bs !i
+            | i >= n    = bs []
+            | otherwise = 
+                loop (bs . bitsInWord i (indexWord v i)) (i + wordSize)
 
 -- | 'True' if all bits in the vector are set
 and :: U.Vector Bit -> Bool

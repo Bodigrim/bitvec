@@ -30,18 +30,18 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
         , testProperty "wordSize-aligned"   prop_mapMInPlaceWithIndex_aligned
         ]
     , testProperty "countBits"      prop_countBits_def
+    , testProperty "listBits"       prop_listBits_def
     , testProperty "reverseInPlace" prop_reverseInPlace_def
     ]
 
 prop_slice_def :: Int -> Int -> N.New U.Vector Bit -> Bool
-prop_slice_def s n xs
-    =  sliceList s' n' (B.toList xs')
-    == B.toList (runST (do
-        xs <- N.run xs
-        V.unsafeFreeze (M.slice s' n' xs)))
-    where
-        xs' = V.new xs
+prop_slice_def s n xs = runST $ do
+    let xs' = V.new xs
         (s', n') = trimSlice s n (V.length xs')
+    xs <- N.run xs
+    xs <- V.unsafeFreeze (M.slice s' n' xs)
+    
+    return (B.toList xs == sliceList s' n' (B.toList xs'))
 
 prop_readWord_def n = withNonEmptyMVec
     (\xs ->   readWordL (B.toList xs) (n `mod` V.length xs))
@@ -89,18 +89,17 @@ prop_mapMInPlaceWithIndex_aligned xs = runST $ do
     readSTRef ok
 
 prop_countBits_def :: N.New U.Vector Bit -> Bool
-prop_countBits_def xs = runST $ do
-    let xs' = V.new xs
-    xs <- N.run xs
-    n <- U.countBits xs
-    return (n == B.countBits xs')
-    
+prop_countBits_def xs
+    =  runST (N.run xs >>= U.countBits)
+    == B.countBits (V.new xs)
+
+prop_listBits_def :: N.New U.Vector Bit -> Bool
+prop_listBits_def xs
+    =  runST (N.run xs >>= U.listBits)
+    == B.listBits (V.new xs)
 
 prop_reverseInPlace_def :: N.New U.Vector Bit -> Bool
 prop_reverseInPlace_def xs
-    =  B.reverse (V.new xs)
-    == runST (do
-        xs <- N.run xs
-        U.reverseInPlace xs
-        V.unsafeFreeze xs)
+    =  runST (N.run xs >>= \v -> U.reverseInPlace v >> V.unsafeFreeze v)
+    == B.reverse (V.new xs)
 

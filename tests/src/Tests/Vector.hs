@@ -26,6 +26,8 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     , testProperty "indexWord"                  prop_indexWord_def
     , testProperty "zipWords"                   prop_zipWords_def
     , testProperty "reverse"                    prop_reverse_def
+    , testProperty "countBits"                  prop_countBits_def
+    , testProperty "listBits"                   prop_listBits_def
     , testGroup "Boolean operations"
         [ testProperty "and"                        prop_and_def
         , testProperty "or"                         prop_or_def
@@ -88,6 +90,16 @@ prop_reverse_def :: U.Vector Bit -> Bool
 prop_reverse_def xs
     =   reverse  (U.toList xs)
     ==  U.toList (U.reverse xs)
+
+prop_countBits_def :: U.Vector Bit -> Bool
+prop_countBits_def xs
+    =  U.countBits xs
+    == length (filter toBool (U.toList xs))
+
+prop_listBits_def :: U.Vector Bit -> Bool
+prop_listBits_def xs
+    =  U.listBits xs
+    == [ i | (i,x) <- zip [0..] (U.toList xs), toBool x]
 
 prop_and_def :: U.Vector Bit -> Bool
 prop_and_def xs

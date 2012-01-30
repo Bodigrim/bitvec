@@ -149,6 +149,15 @@ ffs :: Word -> Maybe Int
 ffs 0 = Nothing
 ffs x = Just $! (popCount (x `xor` complement (-x)) - 1)
 
+-- TODO: this can probably be faster
+-- the interface is very specialized here; 'j' is an offset to add to every bit index and the result is a difference list
+bitsInWord :: Int -> Word -> [Int] -> [Int]
+bitsInWord j = loop id
+    where
+        loop is !w = case ffs w of
+            Nothing -> is
+            Just i  -> loop (is . (j + i :)) (clearBit w i)
+
 -- TODO: faster!
 selectWord :: Word -> Word -> (Int, Word)
 selectWord m x = loop 0 0 0

@@ -32,6 +32,7 @@ module Data.Vector.Unboxed.Mutable.Bit
      , excludeBitsInPlace
      
      , countBits
+     , listBits
      
      , and
      , or
@@ -180,6 +181,16 @@ countBits v = loop 0 0
             | otherwise = do
                 x <- readWord v i
                 loop (s + popCount x) (i + wordSize)
+
+listBits :: PrimMonad m => U.MVector (PrimState m) Bit -> m [Int]
+listBits v = loop id 0
+    where
+        !n = MV.length v
+        loop bs !i
+            | i >= n    = return $! bs []
+            | otherwise = do
+                w <- readWord v i
+                loop (bs . bitsInWord i w) (i + wordSize)
 
 -- | Returns 'True' if all bits in the vector are set
 and :: PrimMonad m => U.MVector (PrimState m) Bit -> m Bool

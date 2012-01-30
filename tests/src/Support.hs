@@ -36,7 +36,7 @@ instance (Show (v a), V.Vector v a) => Show (N.New v a) where
     showsPrec p = showsPrec p . V.new
 
 newFromList :: forall a v. V.Vector v a => [a] -> N.New v a
-newFromList xs = N.create (V.unsafeThaw (V.fromList xs :: v a))
+newFromList xs = N.create (V.thaw (V.fromList xs :: v a))
 
 -- this instance is designed to make sure that the arbitrary vectors we work with are not all nicely aligned; we need to deal with cases where the vector is a weird slice of some other vector.
 instance (V.Vector v a, Arbitrary a) => Arbitrary (N.New v a) where

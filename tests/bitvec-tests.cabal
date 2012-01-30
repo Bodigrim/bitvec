@@ -12,7 +12,7 @@ homepage:               /dev/null
 
 Executable bitvec-tests
   hs-source-dirs:       src
-  ghc-options:          -fwarn-unused-imports -fwarn-unused-binds
+  ghc-options:          -threaded -fwarn-unused-imports -fwarn-unused-binds
   main-is:              Main.hs
   build-depends:        base >= 3,
                         bitvec,
