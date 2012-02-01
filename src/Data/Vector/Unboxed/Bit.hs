@@ -58,6 +58,7 @@ import                Control.Monad.ST
 import safe           Data.Bit
 import safe           Data.Bit.Internal
 import safe           Data.Bits
+import safe qualified Data.List                          as L
 import safe qualified Data.Vector.Generic.Safe           as V
 import safe qualified Data.Vector.Generic.Mutable.Safe   as MV
 import safe           Data.Vector.Unboxed.Safe           as U
@@ -110,7 +111,10 @@ intersection = zipWords (.&.)
 difference   = zipWords diff
 symDiff      = zipWords xor
 
-unions        = zipMany 0 (.|.)
+unions :: Int -> [U.Vector Bit] -> U.Vector Bit
+unions = zipMany 0 (.|.)
+
+intersections :: Int -> [U.Vector Bit] -> U.Vector Bit
 intersections = zipMany (complement 0) (.&.)
 
 -- |Flip every bit in the given vector
@@ -124,8 +128,8 @@ invert xs = runST $ do
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is set.
 -- 
 -- For example, @select (V.map (fromBool . p) x) x == V.filter p x@.
-select :: (V.Vector v1 Bit, V.Vector v2 t) => v1 Bit -> v2 t -> v2 t
-select is xs = V.unfoldr next 0
+select :: (V.Vector v1 Bit, V.Vector v2 t) => v1 Bit -> v2 t -> [t]
+select is xs = L.unfoldr next 0
     where
         n = min (V.length is) (V.length xs)
         
@@ -137,8 +141,8 @@ select is xs = V.unfoldr next 0
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is unset.
 -- 
 -- For example, @exclude (V.map (fromBool . p) x) x == V.filter (not . p) x@.
-exclude :: (V.Vector v1 Bit, V.Vector v2 t) => v1 Bit -> v2 t -> v2 t
-exclude is xs = V.unfoldr next 0
+exclude :: (V.Vector v1 Bit, V.Vector v2 t) => v1 Bit -> v2 t -> [t]
+exclude is xs = L.unfoldr next 0
     where
         n = min (V.length is) (V.length xs)
         

@@ -96,14 +96,23 @@ mapMInPlaceWithIndex ::
     PrimMonad m =>
         (Int -> Word -> m Word)
      -> U.MVector (PrimState m) Bit -> m ()
+mapMInPlaceWithIndex f xs@(BitMVec 0 n v) = loop 0 0
+    where
+        !n_ = alignDown (MV.length xs)
+        loop !i !j
+            | i >= n_   = when (n_ /= MV.length xs) $ do
+                readWord xs i >>= f i >>= writeWord xs i
+                
+            | otherwise = do
+                MV.read v j >>= f i >>= MV.write v j
+                loop (i + wordSize) (j + 1)
 mapMInPlaceWithIndex f xs = loop 0
     where
         !n = MV.length xs
         loop !i
             | i >= n    = return ()
             | otherwise = do
-                x <- readWord xs i
-                writeWord xs i =<< f i x
+                readWord xs i >>= f i >>= writeWord xs i
                 loop (i + wordSize)
 
 {-# INLINE mapInPlaceWithIndex #-}
@@ -111,7 +120,10 @@ mapInPlaceWithIndex ::
     PrimMonad m =>
         (Int -> Word -> Word)
      -> U.MVector (PrimState m) Bit -> m ()
-mapInPlaceWithIndex f = mapMInPlaceWithIndex (\i x -> return (f i x))
+mapInPlaceWithIndex f = mapMInPlaceWithIndex g
+    where
+        {-# INLINE g #-}
+        g i x = return $! f i x
 
 -- |Same as 'mapMInPlaceWithIndex' but without the index.
 {-# INLINE mapMInPlace #-}
@@ -124,12 +136,23 @@ mapInPlace f = mapMInPlaceWithIndex (\_ x -> return (f x))
 
 {-# INLINE zipInPlace #-}
 zipInPlace :: PrimMonad m => (Word -> Word -> Word) -> U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
+zipInPlace f xs ys@(BitVec 0 n2 v) =
+    mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
+    where
+        -- WARNING: relies on guarantee by mapMInPlaceWithIndex that index will always be aligned!
+        !n = min (MV.length xs) (V.length ys)
+        {-# INLINE g #-}
+        g !i !x = 
+            let !w = masked (n2 - i) (v V.! divWordSize i)
+             in f x w
 zipInPlace f xs ys =
-    mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 (min n m) xs)
+    mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
     where 
-        n = MV.length xs
-        m =  V.length ys
-        g i x = f x (indexWord ys i)
+        !n = min (MV.length xs) (V.length ys)
+        {-# INLINE g #-}
+        g !i !x = 
+            let !w = indexWord ys i
+             in f x w
 
 unionInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
 unionInPlace = zipInPlace (.|.)

@@ -70,23 +70,23 @@ prop_invert_def xs
 
 prop_select_def :: U.Vector Bit -> U.Vector Word -> Bool
 prop_select_def xs ys
-    =  U.toList (U.select xs ys)
+    =  U.select xs ys
     == [ x | (1, x) <- zip (U.toList xs) (U.toList ys)]
 
 prop_exclude_def :: U.Vector Bit -> U.Vector Word -> Bool
 prop_exclude_def xs ys
-    =  U.toList (U.exclude xs ys)
+    =  U.exclude xs ys
     == [ x | (0, x) <- zip (U.toList xs) (U.toList ys)]
 
 prop_selectBits_def :: U.Vector Bit -> U.Vector Bit -> Bool
 prop_selectBits_def xs ys
     =  U.selectBits xs ys
-    == U.select     xs ys
+    == U.fromList (U.select xs ys)
 
 prop_excludeBits_def :: U.Vector Bit -> U.Vector Bit -> Bool
 prop_excludeBits_def xs ys
     =  U.excludeBits xs ys
-    == U.exclude     xs ys
+    == U.fromList (U.exclude xs ys)
 
 prop_countBits_def :: U.Vector Bit -> Bool
 prop_countBits_def xs

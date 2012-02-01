@@ -24,7 +24,7 @@ source-repository head
 
 Library
   hs-source-dirs:       src
-  ghc-options:          -fwarn-unused-imports -fwarn-unused-binds
+  ghc-options:          -fwarn-unused-imports -fwarn-unused-binds -fwarn-type-defaults
   exposed-modules:      Data.Bit
                         Data.Vector.Unboxed.Bit
                         Data.Vector.Unboxed.Mutable.Bit

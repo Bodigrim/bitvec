@@ -59,7 +59,7 @@ nWords nBits = divWordSize (nBits + wordSize - 1)
 -- number of bits storable in n words
 nBits nWords = mulWordSize nWords
 
-aligned    x = x == alignDown x
+aligned    x = (x .&. wordSizeMask == 0)
 notAligned x = x /= alignDown x
 
 -- round a number of bits up to the nearest multiple of word size
