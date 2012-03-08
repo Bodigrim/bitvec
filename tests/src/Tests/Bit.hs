@@ -1,7 +1,5 @@
 module Tests.Bit where
 
-import Support
-
 import Data.Bit
 import Data.Bits
 import Test.HUnit
