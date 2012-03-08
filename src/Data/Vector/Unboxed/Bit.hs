@@ -89,15 +89,15 @@ toWords v@(BitVec s n ws)
 {-# INLINE zipWords #-}
 zipWords :: (Word -> Word -> Word) -> U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 zipWords op xs ys
-    | V.length xs < V.length ys =
+    | V.length xs > V.length ys =
         zipWords (flip op) ys xs
     | otherwise =  runST $ do
-        ys <- V.thaw ys
-        let f i y = indexWord xs i `op` y
-        B.mapInPlaceWithIndex f ys
-        Unsafe.unsafeFreeze ys
+        -- TODO: eliminate this extra traversal
+        xs <- V.thaw xs
+        B.zipInPlace op xs ys
+        Unsafe.unsafeFreeze xs
 
--- |(internal) N-ary 'zipWords' with a unit value and specified output length.  The first input is assumed to be a unit of the operation (on both sides).
+-- |(internal) N-ary 'zipWords' with specified output length.  Makes all kinds of assumptions; mainly only valid for union and intersection.
 {-# INLINE zipMany #-}
 zipMany :: Word -> (Word -> Word -> Word) -> Int -> [U.Vector Bit] -> U.Vector Bit
 zipMany z op n xss = runST $ do
