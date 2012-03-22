@@ -27,6 +27,11 @@ Test-Suite bitvec-tests
   hs-source-dirs:       src test
   ghc-options:          -threaded -fwarn-unused-imports -fwarn-unused-binds
   main-is:              Main.hs
+  other-modules:        Support
+                        Tests.Bit
+                        Tests.MVector
+                        Tests.SetOps
+                        Tests.Vector
   build-depends:        base >= 3,
                         HUnit,
                         primitive,
