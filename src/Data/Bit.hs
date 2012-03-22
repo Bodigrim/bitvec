@@ -28,7 +28,10 @@ liftBool2 op x y = fromBool (toBool x `op` toBool y)
 liftInt2  :: (Int -> Int -> Int) -> (Bit -> Bit -> Bit)
 liftInt2  op x y = fromIntegral (fromIntegral x `op` fromIntegral y)
 
--- | The 'Num' instance is currently based on integers mod 2, so (+) and (-) are XOR, (*) is AND, and all the unary operations are identities.  Saturating operations would also be a sensible alternative.  TODO: before actually releasing, decide which is likely to be more useful more often.
+-- | The 'Num' instance is currently based on integers mod 2, so (+) and (-) are 
+-- XOR, (*) is AND, and all the unary operations are identities.  Saturating 
+-- operations would also be a sensible alternative.
+-- TODO: before actually releasing, decide which is likely to be more useful more often.
 instance Num Bit where
     fromInteger = fromBool . odd
     (+) = liftInt2 (+)
