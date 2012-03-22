@@ -21,6 +21,7 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
         , testProperty "fromList . toList == id"    prop_fromList_toList
         , testProperty "slice"                      prop_slice_def
         ]
+    , testProperty "wordLength"                 prop_wordLength_def
     , testProperty "fromWords"                  (prop_fromWords_def 10000)
     , testProperty "toWords"                    prop_toWords_def
     , testProperty "indexWord"                  prop_indexWord_def
@@ -56,6 +57,11 @@ prop_slice_def s n xs
     == U.toList (U.slice s' n' xs)
     where
         (s', n') = trimSlice s n (U.length xs)
+
+prop_wordLength_def :: U.Vector Bit -> Bool
+prop_wordLength_def xs
+    =  U.wordLength xs
+    == U.length (U.toWords xs)
 
 prop_fromWords_def :: Int -> Int -> U.Vector Word -> Bool
 prop_fromWords_def maxN n ws

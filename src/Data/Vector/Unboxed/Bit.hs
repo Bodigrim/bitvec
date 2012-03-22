@@ -11,6 +11,7 @@ module Data.Vector.Unboxed.Bit
      , module U
      
      , wordSize
+     , wordLength
      , fromWords
      , toWords
      , indexWord
@@ -69,6 +70,9 @@ import                Data.Vector.Unboxed.Bit.Internal
 import safe           Data.Word
 import safe           Prelude                            as P
     hiding (and, or, any, all, reverse)
+
+wordLength :: U.Vector Bit -> Int
+wordLength = nWords . U.length
 
 -- |Given a number of bits and a vector of words, concatenate them to a vector of bits (interpreting the words in little-endian order, as described at 'indexWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
 fromWords :: Int -> U.Vector Word -> U.Vector Bit
