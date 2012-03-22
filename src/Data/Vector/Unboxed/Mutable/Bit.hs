@@ -11,6 +11,7 @@ module Data.Vector.Unboxed.Mutable.Bit
      , module U
      
      , wordSize
+     , wordLength
      , cloneFromWords
      , cloneToWords
      , readWord
@@ -61,6 +62,10 @@ import safe           Prelude                           as P
 
 
 -- TODO: this interface needs more work.
+
+-- |Get the length of the vector that would be created by 'cloneToWords'
+wordLength :: U.MVector s Bit -> Int
+wordLength = nWords . MV.length
 
 -- |Clone a specified number of bits from a vector of words into a new vector of bits (interpreting the words in little-endian order, as described at 'indexWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
 cloneFromWords :: PrimMonad m => Int -> U.MVector (PrimState m) Word -> m (U.MVector (PrimState m) Bit)
