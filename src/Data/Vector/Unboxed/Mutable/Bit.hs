@@ -52,9 +52,9 @@ import safe           Data.Bit
 import safe           Data.Bit.Internal
 import safe           Data.Bits
 import      qualified Data.Vector.Generic.Mutable       as MV
-import safe qualified Data.Vector.Generic.Safe          as V
-import safe qualified Data.Vector.Unboxed.Safe          as U (Vector)
-import safe           Data.Vector.Unboxed.Mutable.Safe  as U
+import      qualified Data.Vector.Generic               as V
+import      qualified Data.Vector.Unboxed               as U (Vector)
+import                Data.Vector.Unboxed.Mutable       as U
 import                Data.Vector.Unboxed.Bit.Internal
 import safe           Data.Word
 import safe           Prelude                           as P

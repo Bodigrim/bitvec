@@ -60,9 +60,9 @@ import safe           Data.Bit
 import safe           Data.Bit.Internal
 import safe           Data.Bits
 import safe qualified Data.List                          as L
-import safe qualified Data.Vector.Generic.Safe           as V
-import safe qualified Data.Vector.Generic.Mutable.Safe   as MV
-import safe           Data.Vector.Unboxed.Safe           as U
+import      qualified Data.Vector.Generic                as V
+import      qualified Data.Vector.Generic.Mutable        as MV
+import                Data.Vector.Unboxed                as U
     hiding (and, or, any, all, reverse, findIndex)
 import      qualified Data.Vector.Unboxed                as Unsafe
 import safe qualified Data.Vector.Unboxed.Mutable.Bit    as B
