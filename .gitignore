@@ -24,3 +24,5 @@ dist
 *.chs.h
 
 
+cabal.sandbox.config
+.cabal-sandbox
