@@ -25,8 +25,13 @@ description:            Another bit-array library for Haskell.  This one defines
                         operations and some low-level ones suitable for building new bulk
                         operations by viewing the bit-vector as a word vector.
 
-tested-with:            GHC == 6.10.4, GHC == 6.12.3, GHC == 7.0.4,
-                        GHC == 7.2.1, GHC == 7.2.2, GHC == 7.4.1
+tested-with:            GHC == 7.0.4,
+                        GHC == 7.2.2,
+                        GHC == 7.4.2,
+                        GHC == 7.6.3,
+                        GHC == 7.8.4,
+                        GHC == 7.10.1,
+                        GHC == 7.11
 
 source-repository head
   type: git
