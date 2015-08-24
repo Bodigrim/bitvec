@@ -1,6 +1,7 @@
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 module Data.Vector.Unboxed.Bit.Internal
      ( Bit
      , U.Vector(BitVec)
@@ -108,6 +109,10 @@ cloneWords v@(BitMVec _ n _) = do
 instance U.Unbox Bit
 
 instance MV.MVector U.MVector Bit where
+#if MIN_VERSION_vector(0,11,0)
+    basicInitialize (BitMVec _ _ v) = MV.basicInitialize v
+#endif
+    
     basicUnsafeNew       n   = liftM (BitMVec 0 n) (MV.basicUnsafeNew       (nWords n))
     basicUnsafeReplicate n x = liftM (BitMVec 0 n) (MV.basicUnsafeReplicate (nWords n) (extendToWord x))
     
