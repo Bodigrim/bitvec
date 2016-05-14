@@ -1,5 +1,5 @@
 name:                   bitvec
-version:                0.1.0.1
+version:                0.1.0.2
 stability:              experimental
 
 cabal-version:          >= 1.9.2
