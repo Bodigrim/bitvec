@@ -14,10 +14,12 @@ import qualified Data.Vector.Unboxed.Mutable     as M
 import Data.Word
 import Test.Framework (testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.QuickCheck
 
 mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     [ testGroup "Data.Vector.Unboxed.Mutable functions"
         [ testProperty "slice"          prop_slice_def
+        , testProperty "grow"           prop_grow_def
         ]
     , testProperty "wordLength"     prop_wordLength_def
     , testGroup "Read/write Words"
@@ -43,6 +45,15 @@ prop_slice_def s n xs = runST $ do
     xs <- V.unsafeFreeze (M.slice s' n' xs)
     
     return (B.toList xs == sliceList s' n' (B.toList xs'))
+
+prop_grow_def :: B.Vector Bit -> NonNegative Int -> Bool
+prop_grow_def xs (NonNegative m) = runST $ do
+    let n = B.length xs
+    v0 <- B.thaw xs
+    v1 <- M.grow v0 m
+    fv0 <- B.freeze v0
+    fv1 <- B.freeze v1
+    return (fv0 == B.take n fv1)
 
 prop_readWord_def n = withNonEmptyMVec
     (\xs ->   readWordL (B.toList xs) (n `mod` V.length xs))
