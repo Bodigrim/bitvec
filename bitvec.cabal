@@ -54,7 +54,7 @@ Test-Suite bitvec-tests
                         test-framework,
                         test-framework-hunit,
                         test-framework-quickcheck2,
-                        QuickCheck
+                        QuickCheck >= 2.10
 
 Library
   hs-source-dirs:       src

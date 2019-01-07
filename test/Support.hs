@@ -26,9 +26,6 @@ instance CoArbitrary Bit where
 instance Function Bit where
     function f = functionMap toBool fromBool f
 
-instance Function Word where
-    function f = functionMap (fromIntegral :: Word -> Int) fromIntegral f
-
 instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
     arbitrary = V.new <$> arbitrary
 
