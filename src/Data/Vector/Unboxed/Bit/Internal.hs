@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -110,9 +111,35 @@ cloneWords v@(BitMVec _ n _) = do
 
 instance U.Unbox Bit
 
+loMask :: Int -> Word
+loMask n = 1 `shiftL` n - 1
+
+hiMask :: Int -> Word
+hiMask n = complement (1 `shiftL` n - 1)
+
 instance MV.MVector U.MVector Bit where
 #if MIN_VERSION_vector(0,11,0)
-    basicInitialize (BitMVec _ _ v) = MV.basicInitialize v
+    basicInitialize (BitMVec _ 0 _) = pure ()
+    basicInitialize (BitMVec 0 n v) = case modWordSize n of
+        0 -> MV.basicInitialize v
+        nMod -> do
+            let vLen = MV.basicLength v
+            MV.basicInitialize (MV.slice 0 (vLen - 1) v)
+            MV.modify v (\val -> val .&. hiMask nMod) (vLen - 1)
+    basicInitialize (BitMVec s n v) = case modWordSize (s + n) of
+        0 -> do
+            let vLen = MV.basicLength v
+            MV.basicInitialize (MV.slice 1 (vLen - 1) v)
+            MV.modify v (\val -> val .&. loMask s) 0
+        nMod -> do
+            let vLen = MV.basicLength v
+                lohiMask = loMask s .|. hiMask nMod
+            if vLen == 1
+                then MV.modify v (\val -> val .&. lohiMask) 0
+                else do
+                    MV.basicInitialize (MV.slice 1 (vLen - 2) v)
+                    MV.modify v (\val -> val .&. loMask s) 0
+                    MV.modify v (\val -> val .&. hiMask nMod) (vLen - 1)
 #endif
 
     basicUnsafeNew       n   = liftM (BitMVec 0 n) (MV.basicUnsafeNew       (nWords n))
@@ -132,7 +159,28 @@ instance MV.MVector U.MVector Bit where
 
     basicUnsafeWrite (BitMVec s n v) i x =
          MV.basicUnsafeWrite (BitMVec 0 (n + s) v) (i + s) x
-    basicSet         (BitMVec _ _ v)   x = MV.basicSet v (extendToWord x)
+
+    basicSet (BitMVec _ 0 _) _ = pure ()
+    basicSet (BitMVec 0 n v) (extendToWord -> x) = case modWordSize n of
+        0 ->  MV.basicSet v x
+        nMod -> do
+            let vLen = MV.basicLength v
+            MV.basicSet (MV.slice 0 (vLen - 1) v) x
+            MV.modify v (\val -> val .&. hiMask nMod .|. x .&. loMask nMod) (vLen - 1)
+    basicSet (BitMVec s n v) (extendToWord -> x) = case modWordSize (s + n) of
+        0 -> do
+            let vLen = MV.basicLength v
+            MV.basicSet (MV.slice 1 (vLen - 1) v) x
+            MV.modify v (\val -> val .&. loMask s .|. x .&. hiMask s) 0
+        nMod -> do
+            let vLen = MV.basicLength v
+                lohiMask = loMask s .|. hiMask nMod
+            if vLen == 1
+                then MV.modify v (\val -> val .&. lohiMask .|. x .&. complement lohiMask) 0
+                else do
+                    MV.basicSet (MV.slice 1 (vLen - 2) v) x
+                    MV.modify v (\val -> val .&. loMask s .|. x .&. hiMask s) 0
+                    MV.modify v (\val -> val .&. hiMask nMod .|. x .&. loMask nMod) (vLen - 1)
 
     {-# INLINE basicUnsafeCopy #-}
     basicUnsafeCopy dst@(BitMVec _ len _) src = do_copy 0
