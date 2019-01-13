@@ -13,7 +13,7 @@ homepage:               https://github.com/mokus0/bitvec
 
 category:               Data, Bit Vectors
 synopsis:               Unboxed vectors of bits / dense IntSets
-description:            Another bit-array library for Haskell.  This one defines a `Bit` 
+description:            Another bit-array library for Haskell.  This one defines a `Bit`
                         type (which is an instance of all the "expected" classes, including
                         numeric ones) and makes that type an instance of `Data.Vector.Unboxed.
                         Unbox`, so we get a lot of nice APIs for free.  `Bool` is already an
@@ -39,7 +39,7 @@ source-repository head
 
 Test-Suite bitvec-tests
   type:                 exitcode-stdio-1.0
-  hs-source-dirs:       src test
+  hs-source-dirs:       test
   ghc-options:          -threaded -fwarn-unused-imports -fwarn-unused-binds
   main-is:              Main.hs
   other-modules:        Support
@@ -48,13 +48,15 @@ Test-Suite bitvec-tests
                         Tests.SetOps
                         Tests.Vector
   build-depends:        base >= 3,
+                        bitvec,
                         HUnit,
                         primitive,
                         vector >= 0.8,
                         test-framework,
                         test-framework-hunit,
                         test-framework-quickcheck2,
-                        QuickCheck >= 2.10
+                        QuickCheck >= 2.10,
+                        quickcheck-classes >= 0.6.1
 
 Library
   hs-source-dirs:       src
@@ -68,4 +70,4 @@ Library
                         primitive,
                         vector >= 0.8
   if impl(ghc == 7.2.1)
-    ghc-options:        -trust vector 
+    ghc-options:        -trust vector
