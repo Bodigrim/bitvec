@@ -9,47 +9,47 @@
 module Data.Vector.Unboxed.Bit
      ( module Data.Bit
      , module U
-     
+
      , wordSize
      , wordLength
      , fromWords
      , toWords
      , indexWord
-     
+
      , pad
      , padWith
-     
+
      , zipWords
-     
+
      , union
      , unions
-     
+
      , intersection
      , intersections
      , difference
      , symDiff
-     
+
      , invert
-     
+
      , select
      , selectBits
-     
+
      , exclude
      , excludeBits
-     
+
      , countBits
      , listBits
-     
+
      , and
      , or
-     
+
      , any
      , anyBits
      , all
      , allBits
-     
+
      , reverse
-     
+
      , first
      , findIndex
      ) where
@@ -79,7 +79,7 @@ fromWords :: Int -> U.Vector Word -> U.Vector Bit
 fromWords n ws
     | n <= m    = BitVec 0 n (V.take (nWords n) ws)
     | otherwise = pad n (BitVec 0 m ws)
-    where 
+    where
          m = nBits (V.length ws)
 
 -- |Given a vector of bits, extract an unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
@@ -97,9 +97,9 @@ zipWords op xs ys
         zipWords (flip op) ys xs
     | otherwise =  runST $ do
         -- TODO: eliminate this extra traversal
-        xs <- V.thaw xs
-        B.zipInPlace op xs ys
-        Unsafe.unsafeFreeze xs
+        xs1 <- V.thaw xs
+        B.zipInPlace op xs1 ys
+        Unsafe.unsafeFreeze xs1
 
 -- |(internal) N-ary 'zipWords' with specified output length.  Makes all kinds of assumptions; mainly only valid for union and intersection.
 {-# INLINE zipMany #-}
@@ -110,10 +110,17 @@ zipMany z op n xss = runST $ do
     P.mapM_ (B.zipInPlace op ys) xss
     Unsafe.unsafeFreeze ys
 
-union        = zipWords (.|.)
+union :: Vector Bit -> Vector Bit -> Vector Bit
+union = zipWords (.|.)
+
+intersection :: Vector Bit -> Vector Bit -> Vector Bit
 intersection = zipWords (.&.)
-difference   = zipWords diff
-symDiff      = zipWords xor
+
+difference :: Vector Bit -> Vector Bit -> Vector Bit
+difference = zipWords diff
+
+symDiff :: Vector Bit -> Vector Bit -> Vector Bit
+symDiff = zipWords xor
 
 unions :: Int -> [U.Vector Bit] -> U.Vector Bit
 unions = zipMany 0 (.|.)
@@ -130,26 +137,26 @@ invert xs = runST $ do
     Unsafe.unsafeFreeze ys
 
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is set.
--- 
+--
 -- For example, @select (V.map (fromBool . p) x) x == V.filter p x@.
 select :: (V.Vector v1 Bit, V.Vector v2 t) => v1 Bit -> v2 t -> [t]
 select is xs = L.unfoldr next 0
     where
         n = min (V.length is) (V.length xs)
-        
+
         next j
             | j >= n             = Nothing
             | toBool (is V.! j)  = Just (xs V.! j, j + 1)
             | otherwise          = next           (j + 1)
 
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is unset.
--- 
+--
 -- For example, @exclude (V.map (fromBool . p) x) x == V.filter (not . p) x@.
 exclude :: (V.Vector v1 Bit, V.Vector v2 t) => v1 Bit -> v2 t -> [t]
 exclude is xs = L.unfoldr next 0
     where
         n = min (V.length is) (V.length xs)
-        
+
         next j
             | j >= n             = Nothing
             | toBool (is V.! j)  = next           (j + 1)
@@ -157,15 +164,15 @@ exclude is xs = L.unfoldr next 0
 
 selectBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 selectBits is xs = runST $ do
-    xs <- U.thaw xs
-    n <- B.selectBitsInPlace is xs
-    Unsafe.unsafeFreeze (MV.take n xs)
+    xs1 <- U.thaw xs
+    n <- B.selectBitsInPlace is xs1
+    Unsafe.unsafeFreeze (MV.take n xs1)
 
 excludeBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 excludeBits is xs = runST $ do
-    xs <- U.thaw xs
-    n <- B.excludeBitsInPlace is xs
-    Unsafe.unsafeFreeze (MV.take n xs)
+    xs1 <- U.thaw xs
+    n <- B.excludeBitsInPlace is xs1
+    Unsafe.unsafeFreeze (MV.take n xs1)
 
 -- |return the number of ones in a bit vector
 countBits :: U.Vector Bit -> Int
@@ -182,7 +189,7 @@ listBits v = loop id 0
         !n = V.length v
         loop bs !i
             | i >= n    = bs []
-            | otherwise = 
+            | otherwise =
                 loop (bs . bitsInWord i (indexWord v i)) (i + wordSize)
 
 -- | 'True' if all bits in the vector are set
@@ -205,12 +212,14 @@ or v = loop 0
             | otherwise = (indexWord v i /= 0)
                         || loop (i + wordSize)
 
+all :: (Bit -> Bool) -> Vector Bit -> Bool
 all p = case (p 0, p 1) of
     (False, False) -> U.null
     (False,  True) -> allBits 1
     (True,  False) -> allBits 0
     (True,   True) -> flip seq True
 
+any :: (Bit -> Bool) -> Vector Bit -> Bool
 any p = case (p 0, p 1) of
     (False, False) -> flip seq False
     (False,  True) -> anyBits 1
@@ -218,11 +227,11 @@ any p = case (p 0, p 1) of
     (True,   True) -> not . U.null
 
 allBits, anyBits :: Bit -> U.Vector Bit -> Bool
-allBits 0 = not . or
-allBits 1 = and
+allBits (Bit False) = not . or
+allBits (Bit True) = and
 
-anyBits 0 = not . and
-anyBits 1 = or
+anyBits (Bit False) = not . and
+anyBits (Bit True) = or
 
 reverse :: U.Vector Bit -> U.Vector Bit
 reverse xs = runST $ do
@@ -239,11 +248,12 @@ first b xs = mfilter (< n) (loop 0)
         !n = V.length xs
         !ff | toBool b  = ffs
             | otherwise = ffs . complement
-        
+
         loop !i
             | i >= n    = Nothing
             | otherwise = fmap (i +) (ff (indexWord xs i)) `mplus` loop (i + wordSize)
 
+findIndex :: (Bit -> Bool) -> Vector Bit -> Maybe Int
 findIndex p xs = case (p 0, p 1) of
     (False, False) -> Nothing
     (False,  True) -> first 1 xs

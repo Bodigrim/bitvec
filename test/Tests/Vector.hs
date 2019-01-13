@@ -6,16 +6,16 @@ import Data.Bit
 import Data.Bits
 import Data.List
 import qualified Data.Vector.Unboxed.Bit as U
-import Data.Word
-import Test.Framework (testGroup)
+import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.HUnit
+import Test.HUnit ((@?=))
 import Test.QuickCheck
 import Test.QuickCheck.Function
 
+vectorTests :: Test
 vectorTests = testGroup "Data.Vector.Unboxed.Bit"
-    [ testCase     "wordSize correct"           (U.wordSize @?= bitSize (0 :: Word))
+    [ testCase     "wordSize correct"           (U.wordSize @?= finiteBitSize (0 :: Word))
     , testGroup "Data.Vector.Unboxed functions"
         [ testProperty "toList . fromList == id"    prop_toList_fromList
         , testProperty "fromList . toList == id"    prop_fromList_toList
@@ -79,7 +79,7 @@ prop_toWords_def xs
                 (w, bs') -> w : loop bs'
 
 prop_indexWord_def :: Int -> U.Vector Bit -> Property
-prop_indexWord_def n xs 
+prop_indexWord_def n xs
     = not (U.null xs)
     ==> readWordL  (U.toList xs) n'
      == U.indexWord xs           n'

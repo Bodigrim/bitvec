@@ -11,7 +11,6 @@ module Data.Bit.Internal where
 import safe Data.Bits
 import safe Data.List
 import safe Data.Typeable
-import safe Data.Word
 
 #if !MIN_VERSION_base(4,3,0)
 import safe Control.Monad
@@ -22,11 +21,11 @@ mfilter p xs = do x <- xs; guard (p x); return x
 #endif
 
 
-newtype Bit = Bit Bool
+newtype Bit = Bit { toBool :: Bool }
     deriving (Bounded, Eq, Ord, Typeable)
 
-fromBool    b  = Bit b
-toBool (Bit b) =     b
+fromBool :: Bool -> Bit
+fromBool b  = Bit b
 
 instance Enum Bit where
     toEnum      = fromBool . toEnum
@@ -41,33 +40,45 @@ lg2 n = i
 
 -- |The number of 'Bit's in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
 wordSize :: Int
-wordSize = bitSize (0 :: Word)
+wordSize = finiteBitSize (0 :: Word)
 
 lgWordSize, wordSizeMask, wordSizeMaskC :: Int
 lgWordSize = lg2 wordSize
 wordSizeMask = wordSize - 1
 wordSizeMaskC = complement wordSizeMask
 
+divWordSize :: Bits a => a -> a
 divWordSize x = shiftR x lgWordSize
+
+modWordSize :: Int -> Int
 modWordSize x = x .&. (wordSize - 1)
 
+mulWordSize :: Bits a => a -> a
 mulWordSize x = shiftL x lgWordSize
 
 -- number of words needed to store n bits
-nWords nBits = divWordSize (nBits + wordSize - 1)
+nWords :: Int -> Int
+nWords ns = divWordSize (ns + wordSize - 1)
 
 -- number of bits storable in n words
-nBits nWords = mulWordSize nWords
+nBits :: Bits a => a -> a
+nBits ns = mulWordSize ns
 
+aligned :: Int -> Bool
 aligned    x = (x .&. wordSizeMask == 0)
+
+notAligned :: Int -> Bool
 notAligned x = x /= alignDown x
 
 -- round a number of bits up to the nearest multiple of word size
+alignUp :: Int -> Int
 alignUp x
     | x == x'   = x'
     | otherwise = x' + wordSize
     where x' = alignDown x
+
 -- round a number of bits down to the nearest multiple of word size
+alignDown :: Int -> Int
 alignDown x = x .&. wordSizeMaskC
 
 readBit :: Int -> Word -> Bit
@@ -81,14 +92,18 @@ extendToWord (Bit True)  = complement 0
 mask :: Int -> Word
 mask b = m
     where
-        m   | b >= bitSize m    = complement 0
-            | b < 0             = 0
-            | otherwise         = bit b - 1
+        m   | b >= finiteBitSize m = complement 0
+            | b < 0                = 0
+            | otherwise            = bit b - 1
 
+masked :: Int -> Word -> Word
 masked b x = x .&. mask b
+
+isMasked :: Int -> Word -> Bool
 isMasked b x = (masked b x == x)
 
 -- meld 2 words by taking the low 'b' bits from 'lo' and the rest from 'hi'
+meld :: Int -> Word -> Word -> Word
 meld b lo hi = (lo .&. m) .|. (hi .&. complement m)
     where m = mask b
 
@@ -107,17 +122,17 @@ spliceWord k lo hi x =
 
 -- this could be given a more general type, but it would be wrong; it works for any fixed word size, but only for unsigned types
 reverseWord :: Word -> Word
-reverseWord x = foldr swap x masks
+reverseWord xx = foldr swap xx masks
     where
         nextMask (d, x) = (d', x `xor` shift x d')
             where !d' = d `shiftR` 1
-        
-        !(_:masks) = 
+
+        !(_:masks) =
             takeWhile ((0 /=) . snd)
-            (iterate nextMask (bitSize x, maxBound))
-        
+            (iterate nextMask (finiteBitSize xx, maxBound))
+
         swap (n, m) x = ((x .&. m) `shiftL`  n) .|. ((x .&. complement m) `shiftR`  n)
-        
+
         -- TODO: is an unrolled version like "loop lgWordSize" faster than the generic implementation above?  If so, can that be fixed?
         -- loop 0 x = x
         -- loop 1 x = loop 0 (((x .&. 0x5555555555555555) `shiftL`  1) .|. ((x .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1))
@@ -128,6 +143,7 @@ reverseWord x = foldr swap x masks
         -- loop 6 x = loop 5 (((x .&. 0x00000000FFFFFFFF) `shiftL` 32) .|. ((x .&. 0xFFFFFFFF00000000) `shiftR` 32))
         -- loop _ _ = error "reverseWord only implemented for up to 64 bit words!"
 
+reversePartialWord :: Int -> Word -> Word
 reversePartialWord n w
     | n >= wordSize = reverseWord w
     | otherwise     = reverseWord w `shiftR` (wordSize - n)

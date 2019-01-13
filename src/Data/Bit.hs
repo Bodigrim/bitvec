@@ -4,6 +4,9 @@
 #else
 #define safe
 #endif
+
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Data.Bit
      ( Bit
      , fromBool
@@ -28,8 +31,8 @@ liftBool2 op x y = fromBool (toBool x `op` toBool y)
 liftInt2  :: (Int -> Int -> Int) -> (Bit -> Bit -> Bit)
 liftInt2  op x y = fromIntegral (fromIntegral x `op` fromIntegral y)
 
--- | The 'Num' instance is currently based on integers mod 2, so (+) and (-) are 
--- XOR, (*) is AND, and all the unary operations are identities.  Saturating 
+-- | The 'Num' instance is currently based on integers mod 2, so (+) and (-) are
+-- XOR, (*) is AND, and all the unary operations are identities.  Saturating
 -- operations would also be a sensible alternative.
 instance Num Bit where
     fromInteger = fromBool . odd
@@ -44,9 +47,9 @@ instance Real Bit where
     toRational (Bit True ) = 1
 
 instance Integral Bit where
-    quotRem _ 0 = error "divide by zero"
-    quotRem x 1 = (x, 0)
-    
+    quotRem _ (Bit False) = error "divide by zero"
+    quotRem x (Bit True ) = (x, 0)
+
     divMod = quotRem
     toInteger (Bit False) = 0
     toInteger (Bit True ) = 1
@@ -55,33 +58,34 @@ instance Bits Bit where
     (.&.) = liftBool2 (&&)
     (.|.) = liftBool2 (||)
     xor = liftBool2 (/=)
-    
+
     complement (Bit x) = Bit (not x)
-    
+
     shift b 0 = b
-    shift b _ = 0
-    
+    shift _ _ = 0
+
     rotate = const
-    
+
     bit 0 = 1
     bit _ = 0
-    
+
     setBit _ 0 = 1
     setBit b _ = b
-    
+
     clearBit _ 0 = 0
     clearBit b _ = b
-    
+
     complementBit b 0 = complement b
     complementBit b _ = b
-    
+
     testBit b 0 = toBool b
     testBit _ _ = False
-    
-    bitSize  _ = 1
-    
+
+    bitSizeMaybe _ = Just 1
+    bitSize _ = 1
+
     isSigned _ = False
-    
+
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 704
 
     popCount = fromEnum

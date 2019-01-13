@@ -2,20 +2,25 @@ module Tests.Bit where
 
 import Data.Bit
 import Data.Bits
-import Test.HUnit
-import Test.Framework (testGroup)
+import Test.HUnit ((@?=))
+import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
-b0 = 0 :: Bit
-b1 = 1 :: Bit
+b0 :: Bit
+b0 = 0
 
+b1 :: Bit
+b1 = 1
+
+testOp :: (Eq a, Show a) => String -> (Bit -> a) -> (Bit -> a) -> [Test]
 testOp opName op rOp =
     [ testCase (unwords [opName, show x])
         (op x @?= rOp x)
     | x <- [0, 1 :: Bit]
     ]
 
+testBinop :: (Eq a, Show a) => String -> (Bit -> Bit -> a) -> (Bit -> Bit -> a) -> [Test]
 testBinop opName op rOp =
     [ testCase (unwords [show x, opName, show y])
         (op x y @?= rOp x y)
@@ -23,6 +28,7 @@ testBinop opName op rOp =
     , y <- [0, 1 :: Bit]
     ]
 
+bitTests :: Test
 bitTests = testGroup "Data.Bit"
     [ testGroup "basic assertions"
         [ testCase "toBool 0"       (toBool 0       @?= False)
@@ -43,4 +49,5 @@ bitTests = testGroup "Data.Bit"
         ]
     ]
 
+prop_fromInteger :: Integer -> Bool
 prop_fromInteger x = fromInteger x == fromBool (odd x)

@@ -5,27 +5,27 @@ import Support ()
 import Data.Bit
 import Data.Bits
 import qualified Data.Vector.Unboxed.Bit as U
-import Data.Word
-import Test.Framework (testGroup)
+import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
+setOpTests :: Test
 setOpTests = testGroup "Set operations"
     [ testProperty "union"          prop_union_def
     , testProperty "intersection"   prop_intersection_def
     , testProperty "difference"     prop_difference_def
     , testProperty "symDiff"        prop_symDiff_def
-    
+
     , testProperty "unions"         (prop_unions_def 1000)
     , testProperty "intersections"  (prop_unions_def 1000)
-    
+
     , testProperty "invert"         prop_invert_def
-    
+
     , testProperty "select"         prop_select_def
     , testProperty "exclude"        prop_exclude_def
 
     , testProperty "selectBits"     prop_selectBits_def
     , testProperty "excludeBits"    prop_excludeBits_def
-    
+
     , testProperty "countBits"      prop_countBits_def
     ]
 

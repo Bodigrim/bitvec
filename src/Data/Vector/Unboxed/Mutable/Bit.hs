@@ -9,21 +9,21 @@
 module Data.Vector.Unboxed.Mutable.Bit
      ( module Data.Bit
      , module U
-     
+
      , wordSize
      , wordLength
      , cloneFromWords
      , cloneToWords
      , readWord
      , writeWord
-     
+
      , mapMInPlaceWithIndex
      , mapInPlaceWithIndex
      , mapMInPlace
      , mapInPlace
-     
+
      , zipInPlace
-     
+
      , unionInPlace
      , intersectionInPlace
      , differenceInPlace
@@ -31,18 +31,18 @@ module Data.Vector.Unboxed.Mutable.Bit
      , invertInPlace
      , selectBitsInPlace
      , excludeBitsInPlace
-     
+
      , countBits
      , listBits
-     
+
      , and
      , or
-     
+
      , any
      , anyBits
      , all
      , allBits
-     
+
      , reverseInPlace
      ) where
 
@@ -73,26 +73,26 @@ cloneFromWords n ws = do
     let wordsNeeded = nWords n
         wordsGiven  = MV.length ws
         fillNeeded  = wordsNeeded - wordsGiven
-    
+
     v <- MV.new wordsNeeded
-    
+
     if fillNeeded > 0
         then do
             MV.copy (MV.slice          0 wordsGiven v) ws
             MV.set  (MV.slice wordsGiven fillNeeded v) 0
         else do
             MV.copy v (MV.slice 0 wordsNeeded ws)
-    
+
     return (BitMVec 0 n v)
 
 -- |clone a vector of bits to a new unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
 cloneToWords :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
 cloneToWords v@(BitMVec s n ws)
     | aligned s = do
-        ws <- MV.clone (MV.slice (divWordSize s) (nWords n) ws)
+        ws1 <- MV.clone (MV.slice (divWordSize s) (nWords n) ws)
         when (not (aligned n)) $ do
-            readWord v (alignDown n) >>= MV.write ws (divWordSize n)
-        return ws
+            readWord v (alignDown n) >>= MV.write ws1 (divWordSize n)
+        return ws1
     | otherwise = cloneWords v
 
 -- |Map a function over a bit vector one 'Word' at a time ('wordSize' bits at a time).  The function will be passed the bit index (which will always be 'wordSize'-aligned) and the current value of the corresponding word.  The returned word will be written back to the vector.  If there is a partial word at the end of the vector, it will be zero-padded when passed to the function and truncated when the result is written back to the array.
@@ -101,13 +101,13 @@ mapMInPlaceWithIndex ::
     PrimMonad m =>
         (Int -> Word -> m Word)
      -> U.MVector (PrimState m) Bit -> m ()
-mapMInPlaceWithIndex f xs@(BitMVec 0 n v) = loop 0 0
+mapMInPlaceWithIndex f xs@(BitMVec 0 _ v) = loop 0 0
     where
         !n_ = alignDown (MV.length xs)
         loop !i !j
             | i >= n_   = when (n_ /= MV.length xs) $ do
                 readWord xs i >>= f i >>= writeWord xs i
-                
+
             | otherwise = do
                 MV.read v j >>= f i >>= MV.write v j
                 loop (i + wordSize) (j + 1)
@@ -147,15 +147,15 @@ zipInPlace f xs ys@(BitVec 0 n2 v) =
         -- WARNING: relies on guarantee by mapMInPlaceWithIndex that index will always be aligned!
         !n = min (MV.length xs) (V.length ys)
         {-# INLINE g #-}
-        g !i !x = 
+        g !i !x =
             let !w = masked (n2 - i) (v V.! divWordSize i)
              in f x w
 zipInPlace f xs ys =
     mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
-    where 
+    where
         !n = min (MV.length xs) (V.length ys)
         {-# INLINE g #-}
-        g !i !x = 
+        g !i !x =
             let !w = indexWord ys i
              in f x w
 
@@ -261,11 +261,11 @@ any p = case (p 0, p 1) of
     (True,   True) -> return . not . MV.null
 
 allBits, anyBits :: PrimMonad m => Bit -> U.MVector (PrimState m) Bit -> m Bool
-allBits 0 = liftM not . or
-allBits 1 = and
+allBits (Bit False) = liftM not . or
+allBits (Bit True) = and
 
-anyBits 0 = liftM not . and
-anyBits 1 = or
+anyBits (Bit False) = liftM not . and
+anyBits (Bit True) = or
 
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 reverseInPlace xs = loop 0 (MV.length xs)
@@ -274,26 +274,26 @@ reverseInPlace xs = loop 0 (MV.length xs)
             | i' <= j'  = do
                 x <- readWord xs i
                 y <- readWord xs j'
-                
+
                 writeWord xs i  (reverseWord y)
                 writeWord xs j' (reverseWord x)
-                
+
                 loop i' j'
             | i' < j    = do
                 let w = (j - i) `shiftR` 1
                     k  = j - w
                 x <- readWord xs i
                 y <- readWord xs k
-                
+
                 writeWord xs i (meld w (reversePartialWord w y) x)
                 writeWord xs k (meld w (reversePartialWord w x) y)
-                
+
                 loop i' j'
             | i  < j    = do
                 let w = j - i
                 x <- readWord xs i
                 writeWord xs i (meld w (reversePartialWord w x) x)
             | otherwise = return ()
-            where    
+            where
                 !i' = i + wordSize
                 !j' = j - wordSize

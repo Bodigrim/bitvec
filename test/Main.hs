@@ -8,7 +8,8 @@ import Tests.SetOps (setOpTests)
 import Tests.MVector (mvectorTests)
 import Tests.Vector (vectorTests)
 
-main = defaultMain 
+main :: IO ()
+main = defaultMain
     [ bitTests
     , mvectorTests
     , setOpTests

@@ -11,11 +11,11 @@ import qualified Data.Vector.Generic.New         as N
 import qualified Data.Vector.Unboxed.Bit         as B
 import qualified Data.Vector.Unboxed.Mutable.Bit as U
 import qualified Data.Vector.Unboxed.Mutable     as M
-import Data.Word
-import Test.Framework (testGroup)
+import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck
 
+mvectorTests :: Test
 mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     [ testGroup "Data.Vector.Unboxed.Mutable functions"
         [ testProperty "slice"          prop_slice_def
@@ -41,10 +41,10 @@ prop_slice_def :: Int -> Int -> N.New U.Vector Bit -> Bool
 prop_slice_def s n xs = runST $ do
     let xs' = V.new xs
         (s', n') = trimSlice s n (V.length xs')
-    xs <- N.run xs
-    xs <- V.unsafeFreeze (M.slice s' n' xs)
-    
-    return (B.toList xs == sliceList s' n' (B.toList xs'))
+    xs1 <- N.run xs
+    xs2 <- V.unsafeFreeze (M.slice s' n' xs1)
+
+    return (B.toList xs2 == sliceList s' n' (B.toList xs'))
 
 prop_grow_def :: B.Vector Bit -> NonNegative Int -> Bool
 prop_grow_def xs (NonNegative m) = runST $ do
@@ -55,10 +55,12 @@ prop_grow_def xs (NonNegative m) = runST $ do
     fv1 <- B.freeze v1
     return (fv0 == B.take n fv1)
 
+prop_readWord_def :: Int -> Property
 prop_readWord_def n = withNonEmptyMVec
     (\xs ->   readWordL (B.toList xs) (n `mod` V.length xs))
     (\xs -> U.readWord            xs  (n `mod` M.length xs))
 
+prop_writeWord_def :: Int -> Word -> Property
 prop_writeWord_def n w = withNonEmptyMVec
     (\xs -> B.fromList
                $ writeWordL (B.toList xs) (n `mod` V.length xs) w)
@@ -71,7 +73,7 @@ prop_wordLength_def xs
     == runST (fmap U.length (N.run xs >>= U.cloneToWords))
 
 prop_cloneFromWords_def :: Int -> Int -> N.New U.Vector Word -> Bool
-prop_cloneFromWords_def maxN n' ws 
+prop_cloneFromWords_def maxN n' ws
     =  runST (N.run ws >>= U.cloneFromWords n >>= V.unsafeFreeze)
     == B.fromWords n (V.new ws)
     where n = n' `mod` maxN
@@ -82,27 +84,27 @@ prop_cloneToWords_def xs
     == B.toWords (V.new xs)
 
 prop_mapMInPlaceWithIndex_leftToRight :: N.New U.Vector Bit -> Bool
-prop_mapMInPlaceWithIndex_leftToRight xs 
+prop_mapMInPlaceWithIndex_leftToRight xs
     = runST $ do
         x <- newSTRef (-1)
-        xs <- N.run xs
+        xs1 <- N.run xs
         let f i _ = do
                 j <- readSTRef x
                 writeSTRef x i
                 return (if i > j then maxBound else 0)
-        U.mapMInPlaceWithIndex f xs
-        xs <- V.unsafeFreeze xs
-        return (all toBool (B.toList xs))
+        U.mapMInPlaceWithIndex f xs1
+        xs2 <- V.unsafeFreeze xs1
+        return (all toBool (B.toList xs2))
 
 prop_mapMInPlaceWithIndex_aligned :: N.New U.Vector Bit -> Bool
 prop_mapMInPlaceWithIndex_aligned xs = runST $ do
     ok <- newSTRef True
-    xs <- N.run xs
+    xs1 <- N.run xs
     let aligned i   = i `mod` U.wordSize == 0
         f i x = do
             when (not (aligned i)) (writeSTRef ok False)
             return x
-    U.mapMInPlaceWithIndex f xs
+    U.mapMInPlaceWithIndex f xs1
     readSTRef ok
 
 prop_countBits_def :: N.New U.Vector Bit -> Bool
