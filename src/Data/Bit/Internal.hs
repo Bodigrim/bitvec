@@ -43,7 +43,11 @@ wordSize :: Int
 wordSize = finiteBitSize (0 :: Word)
 
 lgWordSize, wordSizeMask, wordSizeMaskC :: Int
-lgWordSize = lg2 wordSize
+lgWordSize = case wordSize of
+    32 -> 5
+    64 -> 6
+    _  -> lg2 wordSize
+
 wordSizeMask = wordSize - 1
 wordSizeMaskC = complement wordSizeMask
 
@@ -82,7 +86,7 @@ alignDown :: Int -> Int
 alignDown x = x .&. wordSizeMaskC
 
 readBit :: Int -> Word -> Bit
-readBit i w = fromBool (testBit w i)
+readBit i w = fromBool (w .&. (1 `unsafeShiftL` i) /= 0)
 
 extendToWord :: Bit -> Word
 extendToWord (Bit False) = 0

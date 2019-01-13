@@ -119,6 +119,7 @@ hiMask n = complement (1 `shiftL` n - 1)
 
 instance MV.MVector U.MVector Bit where
 #if MIN_VERSION_vector(0,11,0)
+    {-# INLINE basicInitialize #-}
     basicInitialize (BitMVec _ 0 _) = pure ()
     basicInitialize (BitMVec 0 n v) = case modWordSize n of
         0 -> MV.basicInitialize v
@@ -142,24 +143,33 @@ instance MV.MVector U.MVector Bit where
                     MV.modify v (\val -> val .&. hiMask nMod) (vLen - 1)
 #endif
 
+    {-# INLINE basicUnsafeNew #-}
     basicUnsafeNew       n   = liftM (BitMVec 0 n) (MV.basicUnsafeNew       (nWords n))
+
+    {-# INLINE basicUnsafeReplicate #-}
     basicUnsafeReplicate n x = liftM (BitMVec 0 n) (MV.basicUnsafeReplicate (nWords n) (extendToWord x))
 
+    {-# INLINE basicOverlaps #-}
     basicOverlaps (BitMVec _ _ v1) (BitMVec _ _ v2) = MV.basicOverlaps v1 v2
 
+    {-# INLINE basicLength #-}
     basicLength      (BitMVec _ n _)     = n
-    basicUnsafeRead  (BitMVec 0 _ v) i   = liftM (readBit (modWordSize i)) (MV.basicUnsafeRead v (divWordSize i))
-    basicUnsafeRead  (BitMVec s n v) i   = MV.basicUnsafeRead (BitMVec 0 (n + s) v) (i + s)
-    basicUnsafeWrite (BitMVec 0 _ v) i x = do
-        let j = divWordSize i; k = modWordSize i
+
+    {-# INLINE basicUnsafeRead #-}
+    basicUnsafeRead  (BitMVec s _ v) !i'   = let i = s + i' in liftM (readBit (modWordSize i)) (MV.basicUnsafeRead v (divWordSize i))
+
+    {-# INLINE basicUnsafeWrite #-}
+    basicUnsafeWrite (BitMVec s _ v) !i' !x = do
+        let i = s + i'
+        let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
         w <- MV.basicUnsafeRead v j
-        MV.basicUnsafeWrite v j $ if toBool x
-            then setBit   w k
-            else clearBit w k
+        when (fromBool (w .&. kk /= 0) /= x) $
+            MV.basicUnsafeWrite v j (w `xor` kk)
 
-    basicUnsafeWrite (BitMVec s n v) i x =
-         MV.basicUnsafeWrite (BitMVec 0 (n + s) v) (i + s) x
+    {-# INLINE basicClear #-}
+    basicClear _ = pure ()
 
+    {-# INLINE basicSet #-}
     basicSet (BitMVec _ 0 _) _ = pure ()
     basicSet (BitMVec 0 n v) (extendToWord -> x) = case modWordSize n of
         0 ->  MV.basicSet v x
@@ -183,6 +193,35 @@ instance MV.MVector U.MVector Bit where
                     MV.modify v (\val -> val .&. hiMask nMod .|. x .&. loMask nMod) (vLen - 1)
 
     {-# INLINE basicUnsafeCopy #-}
+    basicUnsafeCopy _ (BitMVec _ 0 _) = pure ()
+    basicUnsafeCopy (BitMVec 0 _ dst) (BitMVec 0 n src) = case modWordSize n of
+        0 -> MV.basicUnsafeCopy dst src
+        nMod -> do
+            let vLen = MV.basicLength src
+            MV.basicUnsafeCopy (MV.slice 0 (vLen - 1) dst) (MV.slice 0 (vLen - 1) src)
+            valSrc <- MV.basicUnsafeRead src (vLen - 1)
+            MV.modify dst (\val -> val .&. hiMask nMod .|. valSrc .&. loMask nMod) (vLen - 1)
+    basicUnsafeCopy (BitMVec dstShift _ dst) (BitMVec s n src)
+        | dstShift == s = case modWordSize (s + n) of
+            0 -> do
+                let vLen = MV.basicLength src
+                MV.basicUnsafeCopy (MV.slice 1 (vLen - 1) dst) (MV.slice 1 (vLen - 1) src)
+                valSrc <- MV.basicUnsafeRead src 0
+                MV.modify dst (\val -> val .&. loMask s .|. valSrc .&. hiMask s) 0
+            nMod -> do
+                let vLen = MV.basicLength src
+                    lohiMask = loMask s .|. hiMask nMod
+                if vLen == 1
+                    then do
+                        valSrc <- MV.basicUnsafeRead src 0
+                        MV.modify dst (\val -> val .&. lohiMask .|. valSrc .&. complement lohiMask) 0
+                    else do
+                        MV.basicUnsafeCopy (MV.slice 1 (vLen - 2) dst) (MV.slice 1 (vLen - 2) src)
+                        valSrcFirst <- MV.basicUnsafeRead src 0
+                        MV.modify dst (\val -> val .&. loMask s .|. valSrcFirst .&. hiMask s) 0
+                        valSrcLast <- MV.basicUnsafeRead src (vLen - 1)
+                        MV.modify dst (\val -> val .&. hiMask nMod .|. valSrcLast .&. loMask nMod) (vLen - 1)
+
     basicUnsafeCopy dst@(BitMVec _ len _) src = do_copy 0
       where
         n = alignUp len
@@ -194,6 +233,16 @@ instance MV.MVector U.MVector Bit where
                 do_copy (i+wordSize)
             | otherwise = return ()
 
+    {-# INLINE basicUnsafeMove #-}
+    basicUnsafeMove !dst !src@(BitMVec srcShift srcLen _)
+        | MV.basicOverlaps dst src = do
+            -- Align shifts of src and srcCopy to speed up basicUnsafeCopy srcCopy src
+            -- TODO write tests on copy and move inside array
+            srcCopy <- BitMVec srcShift srcLen <$> MV.basicUnsafeNew (nWords (srcShift + srcLen))
+            MV.basicUnsafeCopy srcCopy src
+            MV.basicUnsafeCopy dst srcCopy
+        | otherwise = MV.basicUnsafeCopy dst src
+
     {-# INLINE basicUnsafeSlice #-}
     basicUnsafeSlice offset n (BitMVec s _ v) =
         BitMVec relStartBit n (MV.basicUnsafeSlice startWord (endWord - startWord) v)
@@ -204,13 +253,19 @@ instance MV.MVector U.MVector Bit where
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
 
+    {-# INLINE basicUnsafeGrow #-}
+    basicUnsafeGrow (BitMVec s n v) by =
+        BitMVec s (n + by) <$> if delta == 0 then pure v else MV.basicUnsafeGrow v delta
+        where
+            delta = nWords (s + n + by) - nWords (s + n)
+
+
 instance V.Vector U.Vector Bit where
     basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (V.basicUnsafeFreeze v)
     basicUnsafeThaw   (BitVec  s n v) = liftM (BitMVec s n) (V.basicUnsafeThaw   v)
     basicLength       (BitVec  _ n _) = n
 
-    basicUnsafeIndexM (BitVec 0 _ v) i = liftM (readBit (modWordSize i)) (V.basicUnsafeIndexM v (divWordSize i))
-    basicUnsafeIndexM (BitVec s n v) i = V.basicUnsafeIndexM (BitVec 0 (n + s) v) (i + s)
+    basicUnsafeIndexM (BitVec s _ v) !i' = let i = s + i' in liftM (readBit (modWordSize i)) (V.basicUnsafeIndexM v (divWordSize i))
 
     basicUnsafeCopy dst src = do
         src1 <- V.basicUnsafeThaw src
