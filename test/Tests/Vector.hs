@@ -5,6 +5,7 @@ import Support
 import Data.Bit
 import Data.Bits
 import Data.List
+import qualified Data.Vector.Unboxed as U hiding (reverse, and, or, any, all, findIndex)
 import qualified Data.Vector.Unboxed.Bit as U
 import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.HUnit (testCase)

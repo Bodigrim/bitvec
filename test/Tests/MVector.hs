@@ -10,7 +10,8 @@ import Data.STRef
 import qualified Data.Vector.Generic             as V
 import qualified Data.Vector.Generic.Mutable     as M (basicInitialize, basicSet)
 import qualified Data.Vector.Generic.New         as N
-import qualified Data.Vector.Unboxed.Bit         as B
+import qualified Data.Vector.Unboxed.Bit         as B hiding (reverse)
+import qualified Data.Vector.Unboxed             as B
 import qualified Data.Vector.Unboxed.Mutable.Bit as U
 import qualified Data.Vector.Unboxed.Mutable     as M
 import Test.Framework (Test, testGroup)
@@ -177,7 +178,7 @@ case_write_copy_read5 = assertEqual "should be equal" (Bit True) $ runST $ do
     M.copy dst src
     M.read dst 46
 
-prop_slice_def :: Int -> Int -> N.New U.Vector Bit -> Bool
+prop_slice_def :: Int -> Int -> N.New B.Vector Bit -> Bool
 prop_slice_def s n xs = runST $ do
     let xs' = V.new xs
         (s', n') = trimSlice s n (V.length xs')
@@ -207,23 +208,23 @@ prop_writeWord_def n w = withNonEmptyMVec
     (\xs -> do U.writeWord            xs  (n `mod` M.length xs) w
                V.unsafeFreeze xs)
 
-prop_wordLength_def :: N.New U.Vector Bit -> Bool
+prop_wordLength_def :: N.New B.Vector Bit -> Bool
 prop_wordLength_def xs
     =  runST (fmap U.wordLength (N.run xs))
-    == runST (fmap U.length (N.run xs >>= U.cloneToWords))
+    == runST (fmap M.length (N.run xs >>= U.cloneToWords))
 
-prop_cloneFromWords_def :: Int -> Int -> N.New U.Vector Word -> Bool
+prop_cloneFromWords_def :: Int -> Int -> N.New B.Vector Word -> Bool
 prop_cloneFromWords_def maxN n' ws
     =  runST (N.run ws >>= U.cloneFromWords n >>= V.unsafeFreeze)
     == B.fromWords n (V.new ws)
     where n = n' `mod` maxN
 
-prop_cloneToWords_def :: N.New U.Vector Bit -> Bool
+prop_cloneToWords_def :: N.New B.Vector Bit -> Bool
 prop_cloneToWords_def xs
     =  runST (N.run xs >>= U.cloneToWords >>= V.unsafeFreeze)
     == B.toWords (V.new xs)
 
-prop_mapMInPlaceWithIndex_leftToRight :: N.New U.Vector Bit -> Bool
+prop_mapMInPlaceWithIndex_leftToRight :: N.New B.Vector Bit -> Bool
 prop_mapMInPlaceWithIndex_leftToRight xs
     = runST $ do
         x <- newSTRef (-1)
@@ -236,7 +237,7 @@ prop_mapMInPlaceWithIndex_leftToRight xs
         xs2 <- V.unsafeFreeze xs1
         return (all unBit (B.toList xs2))
 
-prop_mapMInPlaceWithIndex_aligned :: N.New U.Vector Bit -> Bool
+prop_mapMInPlaceWithIndex_aligned :: N.New B.Vector Bit -> Bool
 prop_mapMInPlaceWithIndex_aligned xs = runST $ do
     ok <- newSTRef True
     xs1 <- N.run xs
@@ -247,17 +248,17 @@ prop_mapMInPlaceWithIndex_aligned xs = runST $ do
     U.mapMInPlaceWithIndex f xs1
     readSTRef ok
 
-prop_countBits_def :: N.New U.Vector Bit -> Bool
+prop_countBits_def :: N.New B.Vector Bit -> Bool
 prop_countBits_def xs
     =  runST (N.run xs >>= U.countBits)
     == B.countBits (V.new xs)
 
-prop_listBits_def :: N.New U.Vector Bit -> Bool
+prop_listBits_def :: N.New B.Vector Bit -> Bool
 prop_listBits_def xs
     =  runST (N.run xs >>= U.listBits)
     == B.listBits (V.new xs)
 
-prop_reverseInPlace_def :: N.New U.Vector Bit -> Bool
+prop_reverseInPlace_def :: N.New B.Vector Bit -> Bool
 prop_reverseInPlace_def xs
     =  runST (N.run xs >>= \v -> U.reverseInPlace v >> V.unsafeFreeze v)
     == B.reverse (V.new xs)

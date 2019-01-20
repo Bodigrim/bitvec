@@ -2,10 +2,7 @@
 {-# LANGUAGE BangPatterns               #-}
 
 module Data.Vector.Unboxed.Bit
-     ( module Data.Bit
-     , module U
-
-     , wordSize
+     ( wordSize
      , wordLength
      , fromWords
      , toWords
@@ -51,7 +48,6 @@ module Data.Vector.Unboxed.Bit
 
 import           Control.Monad
 import           Control.Monad.ST
-import           Data.Bit
 import           Data.Bit.Internal
 import           Data.Bits
 import qualified Data.List                          as L

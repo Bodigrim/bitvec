@@ -4,6 +4,7 @@ import Support ()
 
 import Data.Bit
 import Data.Bits
+import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Bit as U
 import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)

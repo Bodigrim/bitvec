@@ -2,10 +2,7 @@
 {-# LANGUAGE BangPatterns               #-}
 
 module Data.Vector.Unboxed.Mutable.Bit
-     ( module Data.Bit
-     , module U
-
-     , wordSize
+     ( wordSize
      , wordLength
      , cloneFromWords
      , cloneToWords
@@ -43,7 +40,6 @@ module Data.Vector.Unboxed.Mutable.Bit
 
 import           Control.Monad
 import           Control.Monad.Primitive
-import           Data.Bit
 import           Data.Bit.Internal
 import           Data.Bits
 import qualified Data.Vector.Generic.Mutable       as MV
