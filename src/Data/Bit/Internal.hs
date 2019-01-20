@@ -1,21 +1,11 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE CPP #-}
 
 module Data.Bit.Internal where
 
 import Data.Bits
 import Data.List
 import Data.Typeable
-
-#if !MIN_VERSION_base(4,3,0)
-import Control.Monad
-
-mfilter :: MonadPlus m => (a -> Bool) -> m a -> m a
-mfilter p xs = do x <- xs; guard (p x); return x
-
-#endif
-
 
 newtype Bit = Bit { toBool :: Bool }
     deriving (Bounded, Eq, Ord, Typeable)
@@ -150,16 +140,6 @@ reversePartialWord n w
 
 diff :: Word -> Word -> Word
 diff w1 w2 = w1 .&. complement w2
-
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 704
-
-popCount :: Bits a => a -> Int
-popCount = loop 0
-    where
-        loop !n 0 = n
-        loop !n x = loop (n+1) (x .&. (x - 1))
-
-#endif
 
 ffs :: Word -> Maybe Int
 ffs 0 = Nothing

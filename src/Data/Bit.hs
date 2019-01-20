@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.Bit
@@ -81,8 +79,4 @@ instance Bits Bit where
 
     isSigned _ = False
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 704
-
     popCount = fromEnum
-
-#endif

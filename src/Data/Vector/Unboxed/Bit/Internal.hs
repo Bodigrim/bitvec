@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns          #-}
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE ViewPatterns          #-}
@@ -118,7 +117,6 @@ hiMask :: Int -> Word
 hiMask n = complement (1 `shiftL` n - 1)
 
 instance MV.MVector U.MVector Bit where
-#if MIN_VERSION_vector(0,11,0)
     {-# INLINE basicInitialize #-}
     basicInitialize (BitMVec _ 0 _) = pure ()
     basicInitialize (BitMVec 0 n v) = case modWordSize n of
@@ -141,7 +139,6 @@ instance MV.MVector U.MVector Bit where
                     MV.basicInitialize (MV.slice 1 (vLen - 2) v)
                     MV.modify v (\val -> val .&. loMask s) 0
                     MV.modify v (\val -> val .&. hiMask nMod) (vLen - 1)
-#endif
 
     {-# INLINE basicUnsafeNew #-}
     basicUnsafeNew       n   = liftM (BitMVec 0 n) (MV.basicUnsafeNew       (nWords n))

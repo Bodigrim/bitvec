@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE CPP #-}
 
 module Data.Vector.Unboxed.Bit
      ( module Data.Bit
