@@ -17,14 +17,14 @@ import Data.Vector.Unboxed.Bit (wordSize)
 import Test.QuickCheck
 
 instance Arbitrary Bit where
-    arbitrary = fromBool <$> arbitrary
-    shrink = fmap fromBool . shrink . toBool
+    arbitrary = Bit <$> arbitrary
+    shrink = fmap Bit . shrink . toBool
 
 instance CoArbitrary Bit where
     coarbitrary = coarbitrary . toBool
 
 instance Function Bit where
-    function f = functionMap toBool fromBool f
+    function f = functionMap toBool Bit f
 
 instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
     arbitrary = V.new <$> arbitrary
@@ -71,7 +71,7 @@ readWordL xs 0 = fst (packBitsToWord xs)
 readWordL xs n = readWordL (drop n xs) 0
 
 wordToBitList :: Word -> [Bit]
-wordToBitList w = [ fromBool (testBit w i) | i <- [0 .. wordSize - 1] ]
+wordToBitList w = [ Bit (testBit w i) | i <- [0 .. wordSize - 1] ]
 
 writeWordL :: [Bit] -> Int -> Word -> [Bit]
 writeWordL xs 0 w = zipWith const (wordToBitList w) xs ++ drop wordSize xs

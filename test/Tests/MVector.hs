@@ -60,119 +60,119 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     ]
 
 case_write_init_read1 :: IO ()
-case_write_init_read1 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_init_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
     arr <- M.new 2
-    M.write arr 0 (fromBool True)
+    M.write arr 0 (Bit True)
     M.basicInitialize (M.slice 1 1 arr)
     M.read arr 0
 
 case_write_init_read2 :: IO ()
-case_write_init_read2 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_init_read2 = assertEqual "should be equal" (Bit True) $ runST $ do
     arr <- M.new 2
-    M.write arr 1 (fromBool True)
+    M.write arr 1 (Bit True)
     M.basicInitialize (M.slice 0 1 arr)
     M.read arr 1
 
 case_write_init_read3 :: IO ()
-case_write_init_read3 = assertEqual "should be equal" (fromBool True, fromBool True) $ runST $ do
+case_write_init_read3 = assertEqual "should be equal" (Bit True, Bit True) $ runST $ do
     arr <- M.new 2
-    M.write arr 0 (fromBool True)
-    M.write arr 1 (fromBool True)
+    M.write arr 0 (Bit True)
+    M.write arr 1 (Bit True)
     M.basicInitialize (M.slice 1 0 arr)
     (,) <$> M.read arr 0 <*> M.read arr 1
 
 case_write_init_read4 :: IO ()
-case_write_init_read4 = assertEqual "should be equal" (fromBool True, fromBool True) $ runST $ do
+case_write_init_read4 = assertEqual "should be equal" (Bit True, Bit True) $ runST $ do
     arr <- M.new 3
-    M.write arr 0 (fromBool True)
-    M.write arr 2 (fromBool True)
+    M.write arr 0 (Bit True)
+    M.write arr 2 (Bit True)
     M.basicInitialize (M.slice 1 1 arr)
     (,) <$> M.read arr 0 <*> M.read arr 2
 
 case_write_set_read1 :: IO ()
-case_write_set_read1 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_set_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
     arr <- M.new 2
-    M.write arr 0 (fromBool True)
-    M.basicSet (M.slice 1 1 arr) (fromBool False)
+    M.write arr 0 (Bit True)
+    M.basicSet (M.slice 1 1 arr) (Bit False)
     M.read arr 0
 
 case_write_set_read2 :: IO ()
-case_write_set_read2 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_set_read2 = assertEqual "should be equal" (Bit True) $ runST $ do
     arr <- M.new 2
-    M.write arr 1 (fromBool True)
-    M.basicSet (M.slice 0 1 arr) (fromBool False)
+    M.write arr 1 (Bit True)
+    M.basicSet (M.slice 0 1 arr) (Bit False)
     M.read arr 1
 
 case_write_set_read3 :: IO ()
-case_write_set_read3 = assertEqual "should be equal" (fromBool True, fromBool True) $ runST $ do
+case_write_set_read3 = assertEqual "should be equal" (Bit True, Bit True) $ runST $ do
     arr <- M.new 2
-    M.write arr 0 (fromBool True)
-    M.write arr 1 (fromBool True)
-    M.basicSet (M.slice 1 0 arr) (fromBool False)
+    M.write arr 0 (Bit True)
+    M.write arr 1 (Bit True)
+    M.basicSet (M.slice 1 0 arr) (Bit False)
     (,) <$> M.read arr 0 <*> M.read arr 1
 
 case_write_set_read4 :: IO ()
-case_write_set_read4 = assertEqual "should be equal" (fromBool True, fromBool True) $ runST $ do
+case_write_set_read4 = assertEqual "should be equal" (Bit True, Bit True) $ runST $ do
     arr <- M.new 3
-    M.write arr 0 (fromBool True)
-    M.write arr 2 (fromBool True)
-    M.basicSet (M.slice 1 1 arr) (fromBool False)
+    M.write arr 0 (Bit True)
+    M.write arr 2 (Bit True)
+    M.basicSet (M.slice 1 1 arr) (Bit False)
     (,) <$> M.read arr 0 <*> M.read arr 2
 
 case_set_read1 :: IO ()
-case_set_read1 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_set_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
     arr <- M.new 1
-    M.basicSet arr (fromBool True)
+    M.basicSet arr (Bit True)
     M.read arr 0
 
 case_set_read2 :: IO ()
-case_set_read2 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_set_read2 = assertEqual "should be equal" (Bit True) $ runST $ do
     arr <- M.new 2
-    M.basicSet (M.slice 1 1 arr) (fromBool True)
+    M.basicSet (M.slice 1 1 arr) (Bit True)
     M.read arr 1
 
 case_set_read3 :: IO ()
-case_set_read3 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_set_read3 = assertEqual "should be equal" (Bit True) $ runST $ do
     arr <- M.new 192
-    M.basicSet (M.slice 71 121 arr) (fromBool True)
+    M.basicSet (M.slice 71 121 arr) (Bit True)
     M.read arr 145
 
 case_write_copy_read1 :: IO ()
-case_write_copy_read1 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_copy_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
     src <- M.slice 37 28 <$> M.new 65
-    M.write src 27 (fromBool True)
+    M.write src 27 (Bit True)
     dst <- M.slice 37 28 <$> M.new 65
     M.copy dst src
     M.read dst 27
 
 case_write_copy_read2 :: IO ()
-case_write_copy_read2 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_copy_read2 = assertEqual "should be equal" (Bit True) $ runST $ do
     src <- M.slice 32 33 <$> M.new 65
-    M.write src 0 (fromBool True)
+    M.write src 0 (Bit True)
     dst <- M.slice 32 33 <$> M.new 65
     M.copy dst src
     M.read dst 0
 
 case_write_copy_read3 :: IO ()
-case_write_copy_read3 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_copy_read3 = assertEqual "should be equal" (Bit True) $ runST $ do
     src <- M.slice 1 1 <$> M.new 2
-    M.write src 0 (fromBool True)
+    M.write src 0 (Bit True)
     dst <- M.slice 1 1 <$> M.new 2
     M.copy dst src
     M.read dst 0
 
 case_write_copy_read4 :: IO ()
-case_write_copy_read4 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_copy_read4 = assertEqual "should be equal" (Bit True) $ runST $ do
     src <- M.slice 12 52 <$> M.new 64
-    M.write src 22 (fromBool True)
+    M.write src 22 (Bit True)
     dst <- M.slice 12 52 <$> M.new 64
     M.copy dst src
     M.read dst 22
 
 case_write_copy_read5 :: IO ()
-case_write_copy_read5 = assertEqual "should be equal" (fromBool True) $ runST $ do
+case_write_copy_read5 = assertEqual "should be equal" (Bit True) $ runST $ do
     src <- M.slice 48 80 <$> M.new 128
-    M.write src 46 (fromBool True)
+    M.write src 46 (Bit True)
     dst <- M.slice 48 80 <$> M.new 128
     M.copy dst src
     M.read dst 46

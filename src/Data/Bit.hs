@@ -1,6 +1,5 @@
 module Data.Bit
     ( Bit(..)
-    , fromBool
     ) where
 
 import Data.Bit.Internal
