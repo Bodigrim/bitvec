@@ -54,13 +54,13 @@ prop_symDiff_def xs ys
 prop_unions_def :: Int -> Int -> [U.Vector Bit] -> Bool
 prop_unions_def maxN n' xss
     =  U.unions n xss
-    == U.take n (foldr U.union (U.replicate n 0) (map (U.pad n) xss))
+    == U.take n (foldr U.union (U.replicate n (Bit False)) (map (U.pad n) xss))
     where n = n' `mod` maxN
 
 prop_intersections_def :: Int -> Int -> [U.Vector Bit] -> Bool
 prop_intersections_def maxN n' xss
     =  U.intersections n xss
-    == U.take n (foldr U.intersection (U.replicate n 1) (map (U.padWith 1 n) xss))
+    == U.take n (foldr U.intersection (U.replicate n (Bit True)) (map (U.padWith (Bit True) n) xss))
     where n = n' `mod` maxN
 
 prop_invert_def :: U.Vector Bit -> Bool
@@ -71,12 +71,12 @@ prop_invert_def xs
 prop_select_def :: U.Vector Bit -> U.Vector Word -> Bool
 prop_select_def xs ys
     =  U.select xs ys
-    == [ x | (1, x) <- zip (U.toList xs) (U.toList ys)]
+    == [ x | (Bit True, x) <- zip (U.toList xs) (U.toList ys)]
 
 prop_exclude_def :: U.Vector Bit -> U.Vector Word -> Bool
 prop_exclude_def xs ys
     =  U.exclude xs ys
-    == [ x | (0, x) <- zip (U.toList xs) (U.toList ys)]
+    == [ x | (Bit False, x) <- zip (U.toList xs) (U.toList ys)]
 
 prop_selectBits_def :: U.Vector Bit -> U.Vector Bit -> Bool
 prop_selectBits_def xs ys

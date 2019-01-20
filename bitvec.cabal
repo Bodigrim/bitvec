@@ -62,7 +62,6 @@ test-suite bitvec-tests
   hs-source-dirs: test
   other-modules:
     Support
-    Tests.Bit
     Tests.MVector
     Tests.SetOps
     Tests.Vector

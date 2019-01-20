@@ -66,7 +66,7 @@ prop_wordLength_def xs
 prop_fromWords_def :: Int -> Int -> U.Vector Word -> Bool
 prop_fromWords_def maxN n ws
     =  U.toList (U.fromWords n' ws)
-    == take n' (concatMap wordToBitList (U.toList ws) ++ repeat 0)
+    == take n' (concatMap wordToBitList (U.toList ws) ++ repeat (Bit False))
     where n' = n `mod` maxN
 
 prop_toWords_def :: U.Vector Bit -> Bool

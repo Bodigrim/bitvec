@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.Bit.Internal where
 
@@ -8,14 +9,19 @@ import Data.List
 import Data.Typeable
 
 newtype Bit = Bit { toBool :: Bool }
-    deriving (Bounded, Eq, Ord, Typeable)
+    deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
 
 fromBool :: Bool -> Bit
-fromBool b  = Bit b
+fromBool b = Bit b
 
-instance Enum Bit where
-    toEnum      = fromBool . toEnum
-    fromEnum    = fromEnum . toBool
+instance Show Bit where
+    showsPrec _ (Bit False) = showString "0"
+    showsPrec _ (Bit True ) = showString "1"
+
+instance Read Bit where
+    readsPrec _ ('0':rest) = [(Bit False, rest)]
+    readsPrec _ ('1':rest) = [(Bit False, rest)]
+    readsPrec _ _ = []
 
 -- various internal utility functions and constants
 

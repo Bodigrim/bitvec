@@ -242,17 +242,17 @@ or v = loop 0
                     else loop (i + wordSize)
 
 all :: PrimMonad m => (Bit -> Bool) -> U.MVector (PrimState m) Bit -> m Bool
-all p = case (p 0, p 1) of
+all p = case (p (Bit False), p (Bit True)) of
     (False, False) -> return . MV.null
-    (False,  True) -> allBits 1
-    (True,  False) -> allBits 0
+    (False,  True) -> allBits (Bit True)
+    (True,  False) -> allBits (Bit False)
     (True,   True) -> flip seq (return True)
 
 any :: PrimMonad m => (Bit -> Bool) -> U.MVector (PrimState m) Bit -> m Bool
-any p = case (p 0, p 1) of
+any p = case (p (Bit False), p (Bit True)) of
     (False, False) -> flip seq (return False)
-    (False,  True) -> anyBits 1
-    (True,  False) -> anyBits 0
+    (False,  True) -> anyBits (Bit True)
+    (True,  False) -> anyBits (Bit False)
     (True,   True) -> return . not . MV.null
 
 allBits, anyBits :: PrimMonad m => Bit -> U.MVector (PrimState m) Bit -> m Bool

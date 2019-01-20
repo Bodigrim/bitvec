@@ -208,17 +208,17 @@ or v = loop 0
                         || loop (i + wordSize)
 
 all :: (Bit -> Bool) -> Vector Bit -> Bool
-all p = case (p 0, p 1) of
+all p = case (p (Bit False), p (Bit True)) of
     (False, False) -> U.null
-    (False,  True) -> allBits 1
-    (True,  False) -> allBits 0
+    (False,  True) -> allBits (Bit True)
+    (True,  False) -> allBits (Bit False)
     (True,   True) -> flip seq True
 
 any :: (Bit -> Bool) -> Vector Bit -> Bool
-any p = case (p 0, p 1) of
+any p = case (p (Bit False), p (Bit True)) of
     (False, False) -> flip seq False
-    (False,  True) -> anyBits 1
-    (True,  False) -> anyBits 0
+    (False,  True) -> anyBits (Bit True)
+    (True,  False) -> anyBits (Bit False)
     (True,   True) -> not . U.null
 
 allBits, anyBits :: Bit -> U.Vector Bit -> Bool
@@ -249,8 +249,8 @@ first b xs = mfilter (< n) (loop 0)
             | otherwise = fmap (i +) (ff (indexWord xs i)) `mplus` loop (i + wordSize)
 
 findIndex :: (Bit -> Bool) -> Vector Bit -> Maybe Int
-findIndex p xs = case (p 0, p 1) of
+findIndex p xs = case (p (Bit False), p (Bit True)) of
     (False, False) -> Nothing
-    (False,  True) -> first 1 xs
-    (True,  False) -> first 0 xs
+    (False,  True) -> first (Bit True)  xs
+    (True,  False) -> first (Bit False) xs
     (True,   True) -> if V.null xs then Nothing else Just 0
