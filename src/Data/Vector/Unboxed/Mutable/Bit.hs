@@ -1,11 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE BangPatterns               #-}
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
-{-# LANGUAGE Trustworthy #-}
-#else
-#define safe
-#endif
+
 module Data.Vector.Unboxed.Mutable.Bit
      ( module Data.Bit
      , module U
@@ -46,18 +42,18 @@ module Data.Vector.Unboxed.Mutable.Bit
      , reverseInPlace
      ) where
 
-import safe           Control.Monad
-import                Control.Monad.Primitive
-import safe           Data.Bit
-import safe           Data.Bit.Internal
-import safe           Data.Bits
-import      qualified Data.Vector.Generic.Mutable       as MV
-import      qualified Data.Vector.Generic               as V
-import      qualified Data.Vector.Unboxed               as U (Vector)
-import                Data.Vector.Unboxed.Mutable       as U
-import                Data.Vector.Unboxed.Bit.Internal
-import safe           Data.Word
-import safe           Prelude                           as P
+import           Control.Monad
+import           Control.Monad.Primitive
+import           Data.Bit
+import           Data.Bit.Internal
+import           Data.Bits
+import qualified Data.Vector.Generic.Mutable       as MV
+import qualified Data.Vector.Generic               as V
+import qualified Data.Vector.Unboxed               as U (Vector)
+import           Data.Vector.Unboxed.Mutable       as U
+import           Data.Vector.Unboxed.Bit.Internal
+import           Data.Word
+import           Prelude                           as P
     hiding (and, or, any, all, reverse)
 
 

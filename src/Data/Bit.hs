@@ -1,9 +1,4 @@
 {-# LANGUAGE CPP #-}
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
-{-# LANGUAGE Trustworthy #-}
-#else
-#define safe
-#endif
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -13,8 +8,8 @@ module Data.Bit
      , toBool
      ) where
 
-import safe Data.Bit.Internal
-import safe Data.Bits
+import Data.Bit.Internal
+import Data.Bits
 import Data.Vector.Unboxed.Bit.Internal ({- instance Unbox Bit -})
 
 instance Show Bit where

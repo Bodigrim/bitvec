@@ -1,11 +1,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP #-}
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
-{-# LANGUAGE Trustworthy #-}
-#else
-#define safe
-#endif
+
 module Data.Vector.Unboxed.Bit
      ( module Data.Bit
      , module U
@@ -54,21 +50,21 @@ module Data.Vector.Unboxed.Bit
      , findIndex
      ) where
 
-import safe           Control.Monad
-import                Control.Monad.ST
-import safe           Data.Bit
-import safe           Data.Bit.Internal
-import safe           Data.Bits
-import safe qualified Data.List                          as L
-import      qualified Data.Vector.Generic                as V
-import      qualified Data.Vector.Generic.Mutable        as MV
-import                Data.Vector.Unboxed                as U
+import           Control.Monad
+import           Control.Monad.ST
+import           Data.Bit
+import           Data.Bit.Internal
+import           Data.Bits
+import qualified Data.List                          as L
+import qualified Data.Vector.Generic                as V
+import qualified Data.Vector.Generic.Mutable        as MV
+import           Data.Vector.Unboxed                as U
     hiding (and, or, any, all, reverse, findIndex)
-import      qualified Data.Vector.Unboxed                as Unsafe
-import safe qualified Data.Vector.Unboxed.Mutable.Bit    as B
-import                Data.Vector.Unboxed.Bit.Internal
-import safe           Data.Word
-import safe           Prelude                            as P
+import qualified Data.Vector.Unboxed                as Unsafe
+import qualified Data.Vector.Unboxed.Mutable.Bit    as B
+import           Data.Vector.Unboxed.Bit.Internal
+import           Data.Word
+import           Prelude                            as P
     hiding (and, or, any, all, reverse)
 
 wordLength :: U.Vector Bit -> Int

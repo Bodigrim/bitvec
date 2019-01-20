@@ -1,19 +1,15 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP #-}
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
-{-# LANGUAGE Safe #-}
-#else
-#define safe
-#endif
+
 module Data.Bit.Internal where
 
-import safe Data.Bits
-import safe Data.List
-import safe Data.Typeable
+import Data.Bits
+import Data.List
+import Data.Typeable
 
 #if !MIN_VERSION_base(4,3,0)
-import safe Control.Monad
+import Control.Monad
 
 mfilter :: MonadPlus m => (a -> Bool) -> m a -> m a
 mfilter p xs = do x <- xs; guard (p x); return x
