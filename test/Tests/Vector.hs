@@ -100,22 +100,22 @@ prop_reverse_def xs
 prop_countBits_def :: U.Vector Bit -> Bool
 prop_countBits_def xs
     =  U.countBits xs
-    == length (filter toBool (U.toList xs))
+    == length (filter unBit (U.toList xs))
 
 prop_listBits_def :: U.Vector Bit -> Bool
 prop_listBits_def xs
     =  U.listBits xs
-    == [ i | (i,x) <- zip [0..] (U.toList xs), toBool x]
+    == [ i | (i,x) <- zip [0..] (U.toList xs), unBit x]
 
 prop_and_def :: U.Vector Bit -> Bool
 prop_and_def xs
     =  U.and xs
-    == all toBool (U.toList xs)
+    == all unBit (U.toList xs)
 
 prop_or_def :: U.Vector Bit -> Bool
 prop_or_def xs
     =  U.or xs
-    == any toBool (U.toList xs)
+    == any unBit (U.toList xs)
 
 prop_any_def :: Fun Bit Bool -> U.Vector Bit -> Bool
 prop_any_def f' xs

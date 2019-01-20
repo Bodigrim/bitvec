@@ -234,7 +234,7 @@ prop_mapMInPlaceWithIndex_leftToRight xs
                 return (if i > j then maxBound else 0)
         U.mapMInPlaceWithIndex f xs1
         xs2 <- V.unsafeFreeze xs1
-        return (all toBool (B.toList xs2))
+        return (all unBit (B.toList xs2))
 
 prop_mapMInPlaceWithIndex_aligned :: N.New U.Vector Bit -> Bool
 prop_mapMInPlaceWithIndex_aligned xs = runST $ do

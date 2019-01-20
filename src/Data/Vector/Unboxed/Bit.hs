@@ -140,9 +140,9 @@ select is xs = L.unfoldr next 0
         n = min (V.length is) (V.length xs)
 
         next j
-            | j >= n             = Nothing
-            | toBool (is V.! j)  = Just (xs V.! j, j + 1)
-            | otherwise          = next           (j + 1)
+            | j >= n           = Nothing
+            | unBit (is V.! j) = Just (xs V.! j, j + 1)
+            | otherwise        = next           (j + 1)
 
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is unset.
 --
@@ -153,9 +153,9 @@ exclude is xs = L.unfoldr next 0
         n = min (V.length is) (V.length xs)
 
         next j
-            | j >= n             = Nothing
-            | toBool (is V.! j)  = next           (j + 1)
-            | otherwise          = Just (xs V.! j, j + 1)
+            | j >= n           = Nothing
+            | unBit (is V.! j) = next           (j + 1)
+            | otherwise        = Just (xs V.! j, j + 1)
 
 selectBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 selectBits is xs = runST $ do
@@ -241,7 +241,7 @@ first :: Bit -> U.Vector Bit -> Maybe Int
 first b xs = mfilter (< n) (loop 0)
     where
         !n = V.length xs
-        !ff | toBool b  = ffs
+        !ff | unBit b   = ffs
             | otherwise = ffs . complement
 
         loop !i

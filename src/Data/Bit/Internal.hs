@@ -8,7 +8,7 @@ import Data.Bits
 import Data.List
 import Data.Typeable
 
-newtype Bit = Bit { toBool :: Bool }
+newtype Bit = Bit { unBit :: Bool }
     deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
 
 fromBool :: Bool -> Bit

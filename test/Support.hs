@@ -18,13 +18,13 @@ import Test.QuickCheck
 
 instance Arbitrary Bit where
     arbitrary = Bit <$> arbitrary
-    shrink = fmap Bit . shrink . toBool
+    shrink = fmap Bit . shrink . unBit
 
 instance CoArbitrary Bit where
-    coarbitrary = coarbitrary . toBool
+    coarbitrary = coarbitrary . unBit
 
 instance Function Bit where
-    function f = functionMap toBool Bit f
+    function f = functionMap unBit Bit f
 
 instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
     arbitrary = V.new <$> arbitrary
@@ -64,7 +64,7 @@ packBitsToWord = loop 0 0
         loop _ w [] = (w, [])
         loop i w (x:xs)
             | i >= wordSize = (w, x:xs)
-            | otherwise     = loop (i+1) (if toBool x then setBit w i else w) xs
+            | otherwise     = loop (i+1) (if unBit x then setBit w i else w) xs
 
 readWordL :: [Bit] -> Int -> Word
 readWordL xs 0 = fst (packBitsToWord xs)
