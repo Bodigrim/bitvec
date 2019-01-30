@@ -1,73 +1,69 @@
-name:                   bitvec
-version:                0.1.0.2
-stability:              experimental
-
-cabal-version:          >= 1.9.2
-build-type:             Simple
-
-author:                 James Cook <mokus@deepbondi.net>
-maintainer:             James Cook <mokus@deepbondi.net>
-license:                PublicDomain
-license-file:           LICENSE
-homepage:               https://github.com/mokus0/bitvec
-
-category:               Data, Bit Vectors
-synopsis:               Unboxed vectors of bits / dense IntSets
-description:            Another bit-array library for Haskell.  This one defines a `Bit`
-                        type (which is an instance of all the "expected" classes, including
-                        numeric ones) and makes that type an instance of `Data.Vector.Unboxed.
-                        Unbox`, so we get a lot of nice APIs for free.  `Bool` is already an
-                        unboxable type, but the current unboxed `Vector` implementation packs
-                        each bit as a byte.  This one packs 8 bits per byte, as expected
-                        (`UArray` from the `array` package also uses one bit per `Bool`).
-                        .
-                        In addition to the `Vector` interface, there are several high-level
-                        operations and some low-level ones suitable for building new bulk
-                        operations by viewing the bit-vector as a word vector.
-
-tested-with:            GHC == 7.0.4,
-                        GHC == 7.2.2,
-                        GHC == 7.4.2,
-                        GHC == 7.6.3,
-                        GHC == 7.8.4,
-                        GHC == 7.10.1,
-                        GHC == 7.11
+name: bitvec
+version: 0.1.1.0
+cabal-version: >=1.10
+build-type: Simple
+license: PublicDomain
+license-file: LICENSE
+maintainer: Andrew Lelechenko <andrew.lelechenko@gmail.com>
+homepage: https://github.com/Bodigrim/bitvec
+synopsis: Unboxed vectors of bits / dense IntSets
+description:
+  Another bit-array library for Haskell.  This one defines a `Bit`
+  type (which is an instance of all the "expected" classes, including
+  numeric ones) and makes that type an instance of `Data.Vector.Unboxed.
+  Unbox`, so we get a lot of nice APIs for free.  `Bool` is already an
+  unboxable type, but the current unboxed `Vector` implementation packs
+  each bit as a byte.  This one packs 8 bits per byte, as expected
+  (`UArray` from the `array` package also uses one bit per `Bool`).
+  .
+  In addition to the `Vector` interface, there are several high-level
+  operations and some low-level ones suitable for building new bulk
+  operations by viewing the bit-vector as a word vector.
+category: Data, Bit Vectors
+author: James Cook <mokus@deepbondi.net>,
+        Andrew Lelechenko <andrew.lelechenko@gmail.com>
+tested-with: GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.3 GHC ==8.6.3
 
 source-repository head
   type: git
-  location: git://github.com/mokus0/bitvec.git
+  location: git://github.com/Bodigrim/bitvec.git
 
-Test-Suite bitvec-tests
-  type:                 exitcode-stdio-1.0
-  hs-source-dirs:       test
-  ghc-options:          -threaded -fwarn-unused-imports -fwarn-unused-binds
-  main-is:              Main.hs
-  other-modules:        Support
-                        Tests.Bit
-                        Tests.MVector
-                        Tests.SetOps
-                        Tests.Vector
-  build-depends:        base >= 3,
-                        bitvec,
-                        HUnit,
-                        primitive,
-                        vector >= 0.8,
-                        test-framework,
-                        test-framework-hunit,
-                        test-framework-quickcheck2,
-                        QuickCheck >= 2.10,
-                        quickcheck-classes >= 0.6.1
+library
+  exposed-modules:
+      Data.Bit
+      Data.Vector.Unboxed.Bit
+      Data.Vector.Unboxed.Mutable.Bit
+  build-depends:
+      base >=3 && <5,
+      primitive -any,
+      vector >=0.8
+  default-language: Haskell2010
+  hs-source-dirs: src
+  other-modules:
+      Data.Bit.Internal
+      Data.Vector.Unboxed.Bit.Internal
+  ghc-options: -fwarn-unused-imports -fwarn-unused-binds -fwarn-type-defaults
 
-Library
-  hs-source-dirs:       src
-  ghc-options:          -fwarn-unused-imports -fwarn-unused-binds -fwarn-type-defaults
-  exposed-modules:      Data.Bit
-                        Data.Vector.Unboxed.Bit
-                        Data.Vector.Unboxed.Mutable.Bit
-  other-modules:        Data.Bit.Internal
-                        Data.Vector.Unboxed.Bit.Internal
-  build-depends:        base >= 3 && < 5,
-                        primitive,
-                        vector >= 0.8
-  if impl(ghc == 7.2.1)
-    ghc-options:        -trust vector
+test-suite bitvec-tests
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  build-depends:
+    base >=3,
+    bitvec -any,
+    HUnit -any,
+    primitive -any,
+    vector >=0.8,
+    test-framework -any,
+    test-framework-hunit -any,
+    test-framework-quickcheck2 -any,
+    QuickCheck >=2.10,
+    quickcheck-classes >=0.6.1
+  default-language: Haskell2010
+  hs-source-dirs: test
+  other-modules:
+    Support
+    Tests.Bit
+    Tests.MVector
+    Tests.SetOps
+    Tests.Vector
+  ghc-options: -threaded -fwarn-unused-imports -fwarn-unused-binds
