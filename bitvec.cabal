@@ -23,6 +23,8 @@ category: Data, Bit Vectors
 author: James Cook <mokus@deepbondi.net>,
         Andrew Lelechenko <andrew.lelechenko@gmail.com>
 tested-with: GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.3 GHC ==8.6.3
+extra-source-files:
+  changelog.md
 
 source-repository head
   type: git
