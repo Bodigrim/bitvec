@@ -1,6 +1,12 @@
 bitvec [![Build Status](https://travis-ci.org/Bodigrim/bitvec.svg)](https://travis-ci.org/Bodigrim/bitvec)
 ======
 
-Another bit-array library for Haskell.  This one defines a `Bit` type (which is an instance of all the "expected" classes, including numeric ones) and makes that type an instance of `Data.Vector.Unboxed.Unbox`, so we get a lot of nice APIs for free.  `Bool` is already an unboxable type, but the current unboxed `Vector` implementation packs each bit as a byte.  This one packs 8 bits per byte, as expected (`UArray` from the `array` package also uses one bit per `Bool`).
+Bit vectors library for Haskell.
 
-In addition to the `Vector` interface, there are several high-level operations and some low-level ones suitable for building new bulk operations by viewing the bit-vector as a word vector.
+The current `vector` package represents unboxed arrays of `Bool`
+allocating one byte per boolean, which might be considered wasteful.
+This library provides a newtype wrapper `Bit` and a custom instance
+of unboxed `Vector`, which packs booleans densely.
+It is a time-memory tradeoff: 8x less memory footprint
+at the price of moderate performance penalty
+(mostly, for random writes).

@@ -8,6 +8,18 @@ import Data.Bits
 import Data.List
 import Data.Typeable
 
+-- | A newtype wrapper with a custom instance
+-- of "Data.Vector.Unboxed", which packs booleans
+-- as efficient as possible (8 values per byte).
+-- Vectors of `Bit` use 8x less memory
+-- than vectors of 'Bool' (which stores one value per byte),
+-- but random writes
+-- are slightly slower.
+--
+-- In addition to "Data.Vector.Unboxed" interface,
+-- one can also find assorted utilities
+-- from "Data.Vector.Unboxed.Bit"
+-- and "Data.Vector.Unboxed.Mutable.Bit".
 newtype Bit = Bit { unBit :: Bool }
     deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
 
