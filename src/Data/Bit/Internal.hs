@@ -32,7 +32,7 @@ instance Show Bit where
 
 instance Read Bit where
     readsPrec _ ('0':rest) = [(Bit False, rest)]
-    readsPrec _ ('1':rest) = [(Bit False, rest)]
+    readsPrec _ ('1':rest) = [(Bit True, rest)]
     readsPrec _ _ = []
 
 -- various internal utility functions and constants
