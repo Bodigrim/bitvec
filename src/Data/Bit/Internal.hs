@@ -31,6 +31,7 @@ instance Show Bit where
     showsPrec _ (Bit True ) = showString "1"
 
 instance Read Bit where
+    readsPrec p (' ':rest) = readsPrec p rest
     readsPrec _ ('0':rest) = [(Bit False, rest)]
     readsPrec _ ('1':rest) = [(Bit True, rest)]
     readsPrec _ _ = []
