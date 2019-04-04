@@ -1,3 +1,7 @@
+# 0.2.0.1
+
+* Fix 'Read' instance.
+
 # 0.2.0.0
 
 * Remove hand-written 'Num', 'Real', 'Integral', 'Bits' instances.
