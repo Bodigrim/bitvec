@@ -9,14 +9,27 @@ homepage: https://github.com/Bodigrim/bitvec
 synopsis: Unboxed bit vectors
 description:
   Bit vectors library for Haskell.
-
-  The current @vector@ package represents unboxed arrays of @Bool@
+  .
+  The current [vector](https://hackage.haskell.org/package/vector)
+  package represents unboxed arrays of 'Bool'
   allocating one byte per boolean, which might be considered wasteful.
-  This library provides a newtype wrapper @Bit@ and a custom instance
-  of unboxed @Vector@, which packs booleans densely.
+  This library provides a newtype wrapper 'Data.Bit.Bit' and a custom instance
+  of unboxed 'Data.Vector.Unboxed.Vector', which packs booleans densely.
   It is a time-memory tradeoff: 8x less memory footprint
   at the price of moderate performance penalty
   (mostly, for random writes).
+  .
+  === Similar packages
+  .
+  * [bv](https://hackage.haskell.org/package/bv)
+    and [bv-little](https://hackage.haskell.org/package/bv-little)
+    offer only immutable size-polymorphic bit vectors.
+    @bitvec@ provides an interface to mutable vectors as well.
+  .
+  * [array](https://hackage.haskell.org/package/array)
+    is memory-efficient for 'Bool', but lacks
+    a handy 'Vector' interface.
+
 category: Data, Bit Vectors
 author: James Cook <mokus@deepbondi.net>,
         Andrew Lelechenko <andrew.lelechenko@gmail.com>
