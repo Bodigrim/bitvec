@@ -23,9 +23,6 @@ import Data.Typeable
 newtype Bit = Bit { unBit :: Bool }
     deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
 
-fromBool :: Bool -> Bit
-fromBool b = Bit b
-
 instance Show Bit where
     showsPrec _ (Bit False) = showString "0"
     showsPrec _ (Bit True ) = showString "1"
@@ -91,7 +88,7 @@ alignDown :: Int -> Int
 alignDown x = x .&. wordSizeMaskC
 
 readBit :: Int -> Word -> Bit
-readBit i w = fromBool (w .&. (1 `unsafeShiftL` i) /= 0)
+readBit i w = Bit (w .&. (1 `unsafeShiftL` i) /= 0)
 
 extendToWord :: Bit -> Word
 extendToWord (Bit False) = 0

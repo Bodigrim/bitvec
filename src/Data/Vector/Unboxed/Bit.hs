@@ -129,7 +129,7 @@ invert xs = runST $ do
 
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is set.
 --
--- For example, @select (V.map (fromBool . p) x) x == V.filter p x@.
+-- For example, @select (V.map (Bit . p) x) x == V.filter p x@.
 select :: (V.Vector v1 Bit, V.Vector v2 t) => v1 Bit -> v2 t -> [t]
 select is xs = L.unfoldr next 0
     where
@@ -142,7 +142,7 @@ select is xs = L.unfoldr next 0
 
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is unset.
 --
--- For example, @exclude (V.map (fromBool . p) x) x == V.filter (not . p) x@.
+-- For example, @exclude (V.map (Bit . p) x) x == V.filter (not . p) x@.
 exclude :: (V.Vector v1 Bit, V.Vector v2 t) => v1 Bit -> v2 t -> [t]
 exclude is xs = L.unfoldr next 0
     where

@@ -160,7 +160,7 @@ instance MV.MVector U.MVector Bit where
         let i = s + i'
         let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
         w <- MV.basicUnsafeRead v j
-        when (fromBool (w .&. kk /= 0) /= x) $
+        when (Bit (w .&. kk /= 0) /= x) $
             MV.basicUnsafeWrite v j (w `xor` kk)
 
     {-# INLINE basicClear #-}
@@ -296,4 +296,4 @@ padWith b n' bitvec@(BitVec _ n _)
         V.unsafeFreeze mv
 
 pad :: Int -> U.Vector Bit -> U.Vector Bit
-pad = padWith (fromBool False)
+pad = padWith (Bit False)
