@@ -8,9 +8,6 @@ module Data.Vector.Unboxed.Bit
      , toWords
      , indexWord
 
-     , pad
-     , padWith
-
      , zipWords
 
      , union

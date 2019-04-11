@@ -2,6 +2,7 @@
 
 * Change arguments of 'unions' and 'intersections'.
 * 'fromWords' and 'cloneFromWords' no longer take a number of bits.
+* Remove 'pad' and 'padWith'.
 
 # 0.2.0.1
 

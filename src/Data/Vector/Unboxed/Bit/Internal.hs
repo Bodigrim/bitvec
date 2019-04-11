@@ -10,9 +10,6 @@ module Data.Vector.Unboxed.Bit.Internal
      , U.Vector(BitVec)
      , U.MVector(BitMVec)
 
-     , padWith
-     , pad
-
      , indexWord
      , readWord
      , writeWord
@@ -20,7 +17,6 @@ module Data.Vector.Unboxed.Bit.Internal
      ) where
 
 import           Control.Monad
-import           Control.Monad.ST
 import           Control.Monad.Primitive
 import           Data.Bit.Internal
 import           Data.Bits
@@ -277,23 +273,3 @@ instance V.Vector U.Vector Bit where
                 absEndBit   = absStartBit + n
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
-
-padWith :: Bit -> Int -> U.Vector Bit -> U.Vector Bit
-padWith b n' bitvec@(BitVec _ n _)
-    | n' <= n   = bitvec
-    | otherwise = runST $ do
-        mv@(BitMVec mvStart _ ws) <- MV.replicate n' b
-        when (mvStart /= 0) (fail "assertion failed: offset /= 0 after MV.new")
-
-        V.copy (MV.basicUnsafeSlice 0 n mv) bitvec
-
-        when (notAligned n) $ do
-            let i = divWordSize n
-                j = modWordSize n
-            x <- MV.read ws i
-            MV.write ws i (meld j x (extendToWord b))
-
-        V.unsafeFreeze mv
-
-pad :: Int -> U.Vector Bit -> U.Vector Bit
-pad = padWith (Bit False)
