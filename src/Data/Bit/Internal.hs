@@ -87,13 +87,6 @@ alignUp x
 alignDown :: Int -> Int
 alignDown x = x .&. wordSizeMaskC
 
-readBit :: Int -> Word -> Bit
-readBit i w = Bit (w .&. (1 `unsafeShiftL` i) /= 0)
-
-extendToWord :: Bit -> Word
-extendToWord (Bit False) = 0
-extendToWord (Bit True)  = complement 0
-
 -- create a mask consisting of the lower n bits
 mask :: Int -> Word
 mask b = m
