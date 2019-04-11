@@ -51,6 +51,7 @@ import           Control.Monad.ST
 import           Data.Bit.Internal
 import           Data.Bits
 import qualified Data.List                          as L
+import qualified Data.List.NonEmpty                 as NE
 import qualified Data.Vector.Generic                as V
 import qualified Data.Vector.Generic.Mutable        as MV
 import           Data.Vector.Unboxed                as U
@@ -94,12 +95,13 @@ zipWords op xs ys
 
 -- |(internal) N-ary 'zipWords' with specified output length.  Makes all kinds of assumptions; mainly only valid for union and intersection.
 {-# INLINE zipMany #-}
-zipMany :: Word -> (Word -> Word -> Word) -> Int -> [U.Vector Bit] -> U.Vector Bit
-zipMany z op n xss = runST $ do
-    ys <- MV.new n
-    B.mapInPlace (const z) ys
-    P.mapM_ (B.zipInPlace op ys) xss
-    Unsafe.unsafeFreeze ys
+zipMany :: (Word -> Word -> Word) -> NE.NonEmpty (U.Vector Bit) -> U.Vector Bit
+zipMany _ (v NE.:| []) = v
+zipMany op (v NE.:| vs) = runST $ do
+    let n = L.foldl' P.min (U.length v) (P.map U.length vs)
+    w <- V.thaw (V.slice 0 n v)
+    P.mapM_ (B.zipInPlace op w) vs
+    Unsafe.unsafeFreeze w
 
 union :: Vector Bit -> Vector Bit -> Vector Bit
 union = zipWords (.|.)
@@ -113,11 +115,11 @@ difference = zipWords diff
 symDiff :: Vector Bit -> Vector Bit -> Vector Bit
 symDiff = zipWords xor
 
-unions :: Int -> [U.Vector Bit] -> U.Vector Bit
-unions = zipMany 0 (.|.)
+unions :: NE.NonEmpty (U.Vector Bit) -> U.Vector Bit
+unions = zipMany (.|.)
 
-intersections :: Int -> [U.Vector Bit] -> U.Vector Bit
-intersections = zipMany (complement 0) (.&.)
+intersections :: NE.NonEmpty (U.Vector Bit) -> U.Vector Bit
+intersections = zipMany (.&.)
 
 -- |Flip every bit in the given vector
 invert :: U.Vector Bit -> U.Vector Bit

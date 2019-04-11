@@ -4,9 +4,11 @@ import Support ()
 
 import Data.Bit
 import Data.Bits
+import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Bit as U
 import Test.Framework (Test, testGroup)
+import Test.QuickCheck (Property, (===))
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
 setOpTests :: Test
@@ -16,8 +18,8 @@ setOpTests = testGroup "Set operations"
     , testProperty "difference"     prop_difference_def
     , testProperty "symDiff"        prop_symDiff_def
 
-    , testProperty "unions"         (prop_unions_def 1000)
-    , testProperty "intersections"  (prop_unions_def 1000)
+    , testProperty "unions"         prop_unions_def
+    , testProperty "intersections"  prop_unions_def
 
     , testProperty "invert"         prop_invert_def
 
@@ -52,17 +54,15 @@ prop_symDiff_def xs ys
     =  U.toList (U.symDiff xs ys)
     == zipWith xor (U.toList xs) (U.toList ys)
 
-prop_unions_def :: Int -> Int -> [U.Vector Bit] -> Bool
-prop_unions_def maxN n' xss
-    =  U.unions n xss
-    == U.take n (foldr U.union (U.replicate n (Bit False)) (map (U.pad n) xss))
-    where n = n' `mod` maxN
+prop_unions_def :: U.Vector Bit -> [U.Vector Bit] -> Property
+prop_unions_def xs xss
+    =   U.unions (xs :| xss)
+    === foldr U.union xs xss
 
-prop_intersections_def :: Int -> Int -> [U.Vector Bit] -> Bool
-prop_intersections_def maxN n' xss
-    =  U.intersections n xss
-    == U.take n (foldr U.intersection (U.replicate n (Bit True)) (map (U.padWith (Bit True) n) xss))
-    where n = n' `mod` maxN
+prop_intersections_def :: U.Vector Bit -> [U.Vector Bit] -> Property
+prop_intersections_def xs xss
+    =   U.intersections (xs :| xss)
+    === foldr U.intersection xs xss
 
 prop_invert_def :: U.Vector Bit -> Bool
 prop_invert_def xs

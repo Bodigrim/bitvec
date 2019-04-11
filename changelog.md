@@ -1,3 +1,7 @@
+# 0.3.0.0
+
+* Change arguments of 'unions' and 'intersections'.
+
 # 0.2.0.1
 
 * Fix 'Read' instance.
