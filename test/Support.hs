@@ -78,29 +78,30 @@ writeWordL xs 0 w = zipWith const (wordToBitList w) xs ++ drop wordSize xs
 writeWordL xs n w = pre ++ writeWordL post 0 w
     where (pre, post) = splitAt n xs
 
-prop_writeWordL_preserves_length :: [Bit] -> NonNegative Int -> Word -> Bool
+prop_writeWordL_preserves_length :: [Bit] -> NonNegative Int -> Word -> Property
 prop_writeWordL_preserves_length xs (NonNegative n) w =
-    length (writeWordL xs n w) == length xs
+    length (writeWordL xs n w) === length xs
 
-prop_writeWordL_preserves_prefix :: [Bit] -> NonNegative Int -> Word -> Bool
+prop_writeWordL_preserves_prefix :: [Bit] -> NonNegative Int -> Word -> Property
 prop_writeWordL_preserves_prefix xs (NonNegative n) w =
-    take n (writeWordL xs n w) == take n xs
+    take n (writeWordL xs n w) === take n xs
 
-prop_writeWordL_preserves_suffix :: [Bit] -> NonNegative Int -> Word -> Bool
+prop_writeWordL_preserves_suffix :: [Bit] -> NonNegative Int -> Word -> Property
 prop_writeWordL_preserves_suffix xs (NonNegative n) w =
-    drop (n + wordSize) (writeWordL xs n w) == drop (n + wordSize) xs
+    drop (n + wordSize) (writeWordL xs n w) === drop (n + wordSize) xs
 
-prop_writeWordL_readWordL :: [Bit] -> Int -> Bool
+prop_writeWordL_readWordL :: [Bit] -> Int -> Property
 prop_writeWordL_readWordL xs n =
-    writeWordL xs n (readWordL xs n) == xs
+    writeWordL xs n (readWordL xs n) === xs
 
 -- the opposite is more work to state, but these tests together with the simplicity of the definitions makes me reasonably confident in these as a reference implementation.
 
-withNonEmptyMVec :: Eq t =>
-       (U.Vector Bit -> t)
+withNonEmptyMVec
+    :: (Eq t, Show t)
+    => (U.Vector Bit -> t)
     -> (forall s. U.MVector s Bit -> ST s t)
     -> Property
 withNonEmptyMVec f g = forAll arbitrary $ \xs ->
-     let xs' = V.new xs
-      in not (U.null xs') ==> f xs' == runST (N.run xs >>= g)
+    let xs' = V.new xs in
+        not (U.null xs') ==> f xs' === runST (N.run xs >>= g)
 
