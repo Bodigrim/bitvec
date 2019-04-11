@@ -58,23 +58,9 @@ import           Prelude                           as P
 wordLength :: U.MVector s Bit -> Int
 wordLength = nWords . MV.length
 
--- |Clone a specified number of bits from a vector of words into a new vector of bits (interpreting the words in little-endian order, as described at 'indexWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
-cloneFromWords :: PrimMonad m => Int -> U.MVector (PrimState m) Word -> m (U.MVector (PrimState m) Bit)
-cloneFromWords n ws = do
-    let wordsNeeded = nWords n
-        wordsGiven  = MV.length ws
-        fillNeeded  = wordsNeeded - wordsGiven
-
-    v <- MV.new wordsNeeded
-
-    if fillNeeded > 0
-        then do
-            MV.copy (MV.slice          0 wordsGiven v) ws
-            MV.set  (MV.slice wordsGiven fillNeeded v) 0
-        else do
-            MV.copy v (MV.slice 0 wordsNeeded ws)
-
-    return (BitMVec 0 n v)
+-- |Clone a vector of words into a new vector of bits (interpreting the words in little-endian order, as described at 'indexWord').
+cloneFromWords :: PrimMonad m => U.MVector (PrimState m) Word -> m (U.MVector (PrimState m) Bit)
+cloneFromWords ws = BitMVec 0 (nBits (MV.length ws)) <$> MV.clone ws
 
 -- |clone a vector of bits to a new unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
 cloneToWords :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)

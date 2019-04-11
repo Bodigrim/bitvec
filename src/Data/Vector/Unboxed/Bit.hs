@@ -66,13 +66,9 @@ import           Prelude                            as P
 wordLength :: U.Vector Bit -> Int
 wordLength = nWords . U.length
 
--- |Given a number of bits and a vector of words, concatenate them to a vector of bits (interpreting the words in little-endian order, as described at 'indexWord').  If there are not enough words for the number of bits requested, the vector will be zero-padded.
-fromWords :: Int -> U.Vector Word -> U.Vector Bit
-fromWords n ws
-    | n <= m    = BitVec 0 n (V.take (nWords n) ws)
-    | otherwise = pad n (BitVec 0 m ws)
-    where
-         m = nBits (V.length ws)
+-- |Given a vector of words, concatenate them to a vector of bits (interpreting the words in little-endian order, as described at 'indexWord').
+fromWords :: U.Vector Word -> U.Vector Bit
+fromWords ws = BitVec 0 (nBits (V.length ws)) ws
 
 -- |Given a vector of bits, extract an unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
 toWords :: U.Vector Bit -> U.Vector Word

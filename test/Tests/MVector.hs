@@ -31,7 +31,7 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     , testGroup "Read/write Words"
         [ testProperty "readWord"       prop_readWord_def
         , testProperty "writeWord"      prop_writeWord_def
-        , testProperty "cloneFromWords" (prop_cloneFromWords_def 10000)
+        , testProperty "cloneFromWords" prop_cloneFromWords_def
         , testProperty "cloneToWords"   prop_cloneToWords_def
         ]
     , testGroup "mapMInPlaceWithIndex"
@@ -213,11 +213,10 @@ prop_wordLength_def xs
     =  runST (fmap U.wordLength (N.run xs))
     == runST (fmap M.length (N.run xs >>= U.cloneToWords))
 
-prop_cloneFromWords_def :: Int -> Int -> N.New B.Vector Word -> Bool
-prop_cloneFromWords_def maxN n' ws
-    =  runST (N.run ws >>= U.cloneFromWords n >>= V.unsafeFreeze)
-    == B.fromWords n (V.new ws)
-    where n = n' `mod` maxN
+prop_cloneFromWords_def :: N.New B.Vector Word -> Bool
+prop_cloneFromWords_def ws
+    =  runST (N.run ws >>= U.cloneFromWords >>= V.unsafeFreeze)
+    == B.fromWords (V.new ws)
 
 prop_cloneToWords_def :: N.New B.Vector Bit -> Bool
 prop_cloneToWords_def xs

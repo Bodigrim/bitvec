@@ -1,6 +1,7 @@
 # 0.3.0.0
 
 * Change arguments of 'unions' and 'intersections'.
+* 'fromWords' and 'cloneFromWords' no longer take a number of bits.
 
 # 0.2.0.1
 

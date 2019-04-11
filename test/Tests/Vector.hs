@@ -23,7 +23,7 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
         , testProperty "slice"                      prop_slice_def
         ]
     , testProperty "wordLength"                 prop_wordLength_def
-    , testProperty "fromWords"                  (prop_fromWords_def 10000)
+    , testProperty "fromWords"                  prop_fromWords_def
     , testProperty "toWords"                    prop_toWords_def
     , testProperty "indexWord"                  prop_indexWord_def
     , testProperty "zipWords"                   prop_zipWords_def
@@ -64,11 +64,10 @@ prop_wordLength_def xs
     =  U.wordLength xs
     == U.length (U.toWords xs)
 
-prop_fromWords_def :: Int -> Int -> U.Vector Word -> Bool
-prop_fromWords_def maxN n ws
-    =  U.toList (U.fromWords n' ws)
-    == take n' (concatMap wordToBitList (U.toList ws) ++ repeat (Bit False))
-    where n' = n `mod` maxN
+prop_fromWords_def :: U.Vector Word -> Property
+prop_fromWords_def ws
+    =   U.toList (U.fromWords ws)
+    === concatMap wordToBitList (U.toList ws)
 
 prop_toWords_def :: U.Vector Bit -> Bool
 prop_toWords_def xs
@@ -87,11 +86,13 @@ prop_indexWord_def n xs
     where
         n' = n `mod` U.length xs
 
-prop_zipWords_def :: Fun (Word, Word) Word -> U.Vector Bit -> U.Vector Bit -> Bool
+prop_zipWords_def :: Fun (Word, Word) Word -> U.Vector Bit -> U.Vector Bit -> Property
 prop_zipWords_def f' xs ys
-    =  U.zipWords f xs ys
-    == U.fromWords (min (U.length xs) (U.length ys)) (U.zipWith f (U.toWords xs) (U.toWords ys))
-    where f = curry (apply f')
+    =   U.zipWords f xs ys
+    === U.take l (U.fromWords (U.zipWith f (U.toWords xs) (U.toWords ys)))
+    where
+        f = curry (apply f')
+        l = U.length xs `min` U.length ys
 
 prop_reverse_def :: U.Vector Bit -> Bool
 prop_reverse_def xs
