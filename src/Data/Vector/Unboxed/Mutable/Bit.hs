@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes       #-}
 
 module Data.Vector.Unboxed.Mutable.Bit
      ( wordSize
@@ -112,7 +113,7 @@ mapInPlace :: PrimMonad m => (Word -> Word) -> U.MVector (PrimState m) Bit -> m 
 mapInPlace f = mapMInPlaceWithIndex (\_ x -> return (f x))
 
 {-# INLINE zipInPlace #-}
-zipInPlace :: PrimMonad m => (Word -> Word -> Word) -> U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
+zipInPlace :: PrimMonad m => (forall a. Bits a => a -> a -> a) -> U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
 zipInPlace f xs ys@(BitVec 0 n2 v) =
     mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
     where

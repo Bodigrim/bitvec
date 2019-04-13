@@ -12,7 +12,6 @@ import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.HUnit ((@?=))
 import Test.QuickCheck
-import Test.QuickCheck.Function
 
 vectorTests :: Test
 vectorTests = testGroup "Data.Vector.Unboxed.Bit"
@@ -26,7 +25,6 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     , testProperty "fromWords"                  prop_fromWords_def
     , testProperty "toWords"                    prop_toWords_def
     , testProperty "indexWord"                  prop_indexWord_def
-    , testProperty "zipWords"                   prop_zipWords_def
     , testProperty "reverse"                    prop_reverse_def
     , testProperty "countBits"                  prop_countBits_def
     , testProperty "listBits"                   prop_listBits_def
@@ -80,14 +78,6 @@ prop_indexWord_def n xs
      == U.indexWord xs           n'
     where
         n' = n `mod` U.length xs
-
-prop_zipWords_def :: Fun (Word, Word) Word -> U.Vector Bit -> U.Vector Bit -> Property
-prop_zipWords_def f' xs ys
-    =   U.zipWords f xs ys
-    === U.take l (U.fromWords (U.zipWith f (U.toWords xs) (U.toWords ys)))
-    where
-        f = curry (apply f')
-        l = U.length xs `min` U.length ys
 
 prop_reverse_def :: U.Vector Bit -> Bool
 prop_reverse_def xs

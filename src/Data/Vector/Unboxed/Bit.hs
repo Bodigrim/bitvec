@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes       #-}
 
 module Data.Vector.Unboxed.Bit
      ( wordSize
@@ -70,7 +71,7 @@ toWords v@(BitVec s n ws)
 
 -- | @zipWords f xs ys@ = @fromWords (min (length xs) (length ys)) (zipWith f (toWords xs) (toWords ys))@
 {-# INLINE zipWords #-}
-zipWords :: (Word -> Word -> Word) -> U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+zipWords :: (forall a. Bits a => a -> a -> a) -> U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 zipWords op xs ys
     | V.length xs > V.length ys =
         zipWords (flip op) ys xs
@@ -82,7 +83,7 @@ zipWords op xs ys
 
 -- |(internal) N-ary 'zipWords' with specified output length.  Makes all kinds of assumptions; mainly only valid for union and intersection.
 {-# INLINE zipMany #-}
-zipMany :: (Word -> Word -> Word) -> NE.NonEmpty (U.Vector Bit) -> U.Vector Bit
+zipMany :: (forall a. Bits a => a -> a -> a) -> NE.NonEmpty (U.Vector Bit) -> U.Vector Bit
 zipMany _ (v NE.:| []) = v
 zipMany op (v NE.:| vs) = runST $ do
     let n = L.foldl' P.min (U.length v) (P.map U.length vs)
