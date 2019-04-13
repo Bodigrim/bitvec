@@ -35,12 +35,7 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
         , testProperty "or"                         prop_or_def
         ]
     , testGroup "Search operations"
-        [ testProperty "any"                        prop_any_def
-        , testProperty "all"                        prop_all_def
-        , testProperty "anyBits"                    prop_anyBits_def
-        , testProperty "allBits"                    prop_allBits_def
-        , testProperty "first"                      prop_first_def
-        , testProperty "findIndex"                  prop_findIndex_def
+        [ testProperty "first"                      prop_first_def
         ]
     ]
 
@@ -119,35 +114,7 @@ prop_or_def xs
     =  U.or xs
     == any unBit (U.toList xs)
 
-prop_any_def :: Fun Bit Bool -> U.Vector Bit -> Bool
-prop_any_def f' xs
-    =  U.any f xs
-    == any f (U.toList xs)
-    where f = apply f'
-
-prop_all_def :: Fun Bit Bool -> U.Vector Bit -> Bool
-prop_all_def f' xs
-    =  U.all f xs
-    == all f (U.toList xs)
-    where f = apply f'
-
-prop_anyBits_def :: Bit -> U.Vector Bit -> Bool
-prop_anyBits_def b xs
-    =  U.anyBits b xs
-    == U.any (b ==) xs
-
-prop_allBits_def :: Bit -> U.Vector Bit -> Bool
-prop_allBits_def b xs
-    =  U.allBits b xs
-    == U.all (b ==) xs
-
 prop_first_def :: Bit -> U.Vector Bit -> Bool
 prop_first_def b xs
     =  U.first b xs
     == findIndex (b ==) (U.toList xs)
-
-prop_findIndex_def :: Fun Bit Bool -> U.Vector Bit -> Bool
-prop_findIndex_def f' xs
-    =  U.findIndex f xs
-    == findIndex f (U.toList xs)
-    where f = apply f'
