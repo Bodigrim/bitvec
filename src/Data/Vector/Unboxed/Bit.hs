@@ -112,9 +112,8 @@ intersections = zipMany (.&.)
 -- |Flip every bit in the given vector
 invert :: U.Vector Bit -> U.Vector Bit
 invert xs = runST $ do
-    ys <- MV.new (V.length xs)
-    let f i _ = complement (indexWord xs i)
-    B.mapInPlaceWithIndex f ys
+    ys <- U.thaw xs
+    B.invertInPlace ys
     Unsafe.unsafeFreeze ys
 
 -- | Given a vector of bits and a vector of things, extract those things for which the corresponding bit is set.
@@ -195,10 +194,8 @@ or v = loop 0
 
 reverse :: U.Vector Bit -> U.Vector Bit
 reverse xs = runST $ do
-    let !n = V.length xs
-        f i _ = reversePartialWord (n - i) (indexWord xs (max 0 (n - i - wordSize)))
-    ys <- MV.new n
-    B.mapInPlaceWithIndex f ys
+    ys <- U.thaw xs
+    B.reverseInPlace ys
     Unsafe.unsafeFreeze ys
 
 -- |Return the address of the first bit in the vector with the specified value, if any

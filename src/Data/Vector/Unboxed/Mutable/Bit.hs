@@ -10,11 +10,6 @@ module Data.Vector.Unboxed.Mutable.Bit
      , readWord
      , writeWord
 
-     , mapMInPlaceWithIndex
-     , mapInPlaceWithIndex
-     , mapMInPlace
-     , mapInPlace
-
      , zipInPlace
 
      , unionInPlace
@@ -102,11 +97,6 @@ mapInPlaceWithIndex f = mapMInPlaceWithIndex g
     where
         {-# INLINE g #-}
         g i x = return $! f i x
-
--- |Same as 'mapMInPlaceWithIndex' but without the index.
-{-# INLINE mapMInPlace #-}
-mapMInPlace :: PrimMonad m => (Word -> m Word) -> U.MVector (PrimState m) Bit -> m ()
-mapMInPlace f = mapMInPlaceWithIndex (const f)
 
 {-# INLINE mapInPlace #-}
 mapInPlace :: PrimMonad m => (Word -> Word) -> U.MVector (PrimState m) Bit -> m ()

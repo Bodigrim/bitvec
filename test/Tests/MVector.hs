@@ -2,11 +2,9 @@ module Tests.MVector where
 
 import Support
 
-import Control.Monad
 import Control.Monad.ST
 import Data.Bit
 import Data.Proxy
-import Data.STRef
 import qualified Data.Vector.Generic             as V
 import qualified Data.Vector.Generic.Mutable     as M (basicInitialize, basicSet)
 import qualified Data.Vector.Generic.New         as N
@@ -33,10 +31,6 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
         , testProperty "writeWord"      prop_writeWord_def
         , testProperty "cloneFromWords" prop_cloneFromWords_def
         , testProperty "cloneToWords"   prop_cloneToWords_def
-        ]
-    , testGroup "mapMInPlaceWithIndex"
-        [ testProperty "maps left to right" prop_mapMInPlaceWithIndex_leftToRight
-        , testProperty "wordSize-aligned"   prop_mapMInPlaceWithIndex_aligned
         ]
     , testProperty "countBits"      prop_countBits_def
     , testProperty "listBits"       prop_listBits_def
@@ -222,30 +216,6 @@ prop_cloneToWords_def :: N.New B.Vector Bit -> Bool
 prop_cloneToWords_def xs
     =  runST (N.run xs >>= U.cloneToWords >>= V.unsafeFreeze)
     == B.toWords (V.new xs)
-
-prop_mapMInPlaceWithIndex_leftToRight :: N.New B.Vector Bit -> Bool
-prop_mapMInPlaceWithIndex_leftToRight xs
-    = runST $ do
-        x <- newSTRef (-1)
-        xs1 <- N.run xs
-        let f i _ = do
-                j <- readSTRef x
-                writeSTRef x i
-                return (if i > j then maxBound else 0)
-        U.mapMInPlaceWithIndex f xs1
-        xs2 <- V.unsafeFreeze xs1
-        return (all unBit (B.toList xs2))
-
-prop_mapMInPlaceWithIndex_aligned :: N.New B.Vector Bit -> Bool
-prop_mapMInPlaceWithIndex_aligned xs = runST $ do
-    ok <- newSTRef True
-    xs1 <- N.run xs
-    let aligned i   = i `mod` U.wordSize == 0
-        f i x = do
-            when (not (aligned i)) (writeSTRef ok False)
-            return x
-    U.mapMInPlaceWithIndex f xs1
-    readSTRef ok
 
 prop_countBits_def :: N.New B.Vector Bit -> Bool
 prop_countBits_def xs
