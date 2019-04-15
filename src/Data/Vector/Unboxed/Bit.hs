@@ -41,6 +41,7 @@ module Data.Vector.Unboxed.Bit
 import           Control.Monad
 import           Control.Monad.ST
 import           Data.Bit.Internal
+import           Data.Bit.Utils
 import           Data.Bits
 import qualified Data.List                          as L
 import qualified Data.List.NonEmpty                 as NE
@@ -50,7 +51,6 @@ import           Data.Vector.Unboxed                as U
     hiding (and, or, any, all, reverse, findIndex)
 import qualified Data.Vector.Unboxed                as Unsafe
 import qualified Data.Vector.Unboxed.Mutable.Bit    as B
-import           Data.Vector.Unboxed.Bit.Internal
 import           Data.Word
 import           Prelude                            as P
     hiding (and, or, any, all, reverse)

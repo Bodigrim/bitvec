@@ -1,12 +1,28 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE ViewPatterns               #-}
 
-module Data.Bit.Internal where
+module Data.Bit.Internal
+    ( Bit(..)
+    , U.Vector(BitVec)
+    , U.MVector(BitMVec)
+    , indexWord
+    , readWord
+    , writeWord
+    , cloneWords
+    ) where
 
+import Control.Monad
+import Control.Monad.Primitive
+import Data.Bit.Utils
 import Data.Bits
-import Data.List
 import Data.Typeable
+import qualified Data.Vector.Generic         as V
+import qualified Data.Vector.Generic.Mutable as MV
+import qualified Data.Vector.Unboxed         as U
 
 -- | A newtype wrapper with a custom instance
 -- of "Data.Vector.Unboxed", which packs booleans
@@ -33,141 +49,251 @@ instance Read Bit where
     readsPrec _ ('1':rest) = [(Bit True, rest)]
     readsPrec _ _ = []
 
--- various internal utility functions and constants
+instance U.Unbox Bit
 
-lg2 :: Int -> Int
-lg2 n = i
-    where Just i = findIndex (>= toInteger n) (iterate (`shiftL` 1) 1)
+-- Ints are offset and length in bits
+data instance U.MVector s Bit = BitMVec !Int !Int !(U.MVector s Word)
+data instance U.Vector    Bit = BitVec  !Int !Int !(U.Vector    Word)
 
+readBit :: Int -> Word -> Bit
+readBit i w = Bit (w .&. (1 `unsafeShiftL` i) /= 0)
 
--- |The number of 'Bit's in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
-wordSize :: Int
-wordSize = finiteBitSize (0 :: Word)
+extendToWord :: Bit -> Word
+extendToWord (Bit False) = 0
+extendToWord (Bit True)  = complement 0
 
-lgWordSize, wordSizeMask, wordSizeMaskC :: Int
-lgWordSize = case wordSize of
-    32 -> 5
-    64 -> 6
-    _  -> lg2 wordSize
+-- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
+indexWord :: U.Vector Bit -> Int -> Word
+indexWord (BitVec 0 n v) i
+    | aligned i         = masked b lo
+    | j + 1 == nWords n = masked b (extractWord k lo 0 )
+    | otherwise         = masked b (extractWord k lo hi)
+        where
+            b = n - i
+            j  = divWordSize i
+            k  = modWordSize i
+            lo = v V.!  j
+            hi = v V.! (j+1)
+indexWord (BitVec s n v) i = indexWord (BitVec 0 (n + s) v) (i + s)
 
-wordSizeMask = wordSize - 1
-wordSizeMaskC = complement wordSizeMask
+-- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
+readWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m Word
+readWord (BitMVec 0 n v) i
+    | aligned i         = liftM (masked b) lo
+    | j + 1 == nWords n = liftM (masked b) (liftM2 (extractWord k) lo (return 0))
+    | otherwise         = liftM (masked b) (liftM2 (extractWord k) lo hi)
+        where
+            b = n - i
+            j = divWordSize i
+            k = modWordSize i
+            lo = MV.read v  j
+            hi = MV.read v (j+1)
+readWord (BitMVec s n v) i = readWord (BitMVec 0 (n + s) v) (i + s)
 
-divWordSize :: Bits a => a -> a
-divWordSize x = shiftR x lgWordSize
-
-modWordSize :: Int -> Int
-modWordSize x = x .&. (wordSize - 1)
-
-mulWordSize :: Bits a => a -> a
-mulWordSize x = shiftL x lgWordSize
-
--- number of words needed to store n bits
-nWords :: Int -> Int
-nWords ns = divWordSize (ns + wordSize - 1)
-
--- number of bits storable in n words
-nBits :: Bits a => a -> a
-nBits ns = mulWordSize ns
-
-aligned :: Int -> Bool
-aligned    x = (x .&. wordSizeMask == 0)
-
-notAligned :: Int -> Bool
-notAligned x = x /= alignDown x
-
--- round a number of bits up to the nearest multiple of word size
-alignUp :: Int -> Int
-alignUp x
-    | x == x'   = x'
-    | otherwise = x' + wordSize
-    where x' = alignDown x
-
--- round a number of bits down to the nearest multiple of word size
-alignDown :: Int -> Int
-alignDown x = x .&. wordSizeMaskC
-
--- create a mask consisting of the lower n bits
-mask :: Int -> Word
-mask b = m
+-- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
+writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()
+writeWord (BitMVec 0 n v) i x
+    | aligned i    =
+        if b < wordSize
+            then do
+                y <- MV.read v j
+                MV.write v j (meld b x y)
+            else MV.write v j x
+    | j + 1 == nWords n = do
+        lo <- MV.read v  j
+        let x' = if b < wordSize
+                    then meld b x (extractWord k lo 0)
+                    else x
+            (lo', _hi) = spliceWord k lo 0 x'
+        MV.write v  j    lo'
+    | otherwise    = do
+        lo <- MV.read v  j
+        hi <- if j + 1 == nWords n
+            then return 0
+            else MV.read v (j+1)
+        let x' = if b < wordSize
+                    then meld b x (extractWord k lo hi)
+                    else x
+            (lo', hi') = spliceWord k lo hi x'
+        MV.write v  j    lo'
+        MV.write v (j+1) hi'
     where
-        m   | b >= finiteBitSize m = complement 0
-            | b < 0                = 0
-            | otherwise            = bit b - 1
+        b = n - i
+        j  = divWordSize i
+        k  = modWordSize i
+writeWord (BitMVec s n v) i x = writeWord (BitMVec 0 (n + s) v) (i + s) x
 
-masked :: Int -> Word -> Word
-masked b x = x .&. mask b
+instance MV.MVector U.MVector Bit where
+    {-# INLINE basicInitialize #-}
+    basicInitialize (BitMVec _ 0 _) = pure ()
+    basicInitialize (BitMVec 0 n v) = case modWordSize n of
+        0 -> MV.basicInitialize v
+        nMod -> do
+            let vLen = MV.basicLength v
+            MV.basicInitialize (MV.slice 0 (vLen - 1) v)
+            MV.modify v (\val -> val .&. hiMask nMod) (vLen - 1)
+    basicInitialize (BitMVec s n v) = case modWordSize (s + n) of
+        0 -> do
+            let vLen = MV.basicLength v
+            MV.basicInitialize (MV.slice 1 (vLen - 1) v)
+            MV.modify v (\val -> val .&. loMask s) 0
+        nMod -> do
+            let vLen = MV.basicLength v
+                lohiMask = loMask s .|. hiMask nMod
+            if vLen == 1
+                then MV.modify v (\val -> val .&. lohiMask) 0
+                else do
+                    MV.basicInitialize (MV.slice 1 (vLen - 2) v)
+                    MV.modify v (\val -> val .&. loMask s) 0
+                    MV.modify v (\val -> val .&. hiMask nMod) (vLen - 1)
 
-isMasked :: Int -> Word -> Bool
-isMasked b x = (masked b x == x)
+    {-# INLINE basicUnsafeNew #-}
+    basicUnsafeNew       n   = liftM (BitMVec 0 n) (MV.basicUnsafeNew       (nWords n))
 
--- meld 2 words by taking the low 'b' bits from 'lo' and the rest from 'hi'
-meld :: Int -> Word -> Word -> Word
-meld b lo hi = (lo .&. m) .|. (hi .&. complement m)
-    where m = mask b
+    {-# INLINE basicUnsafeReplicate #-}
+    basicUnsafeReplicate n x = liftM (BitMVec 0 n) (MV.basicUnsafeReplicate (nWords n) (extendToWord x))
 
--- given a bit offset 'k' and 2 words, extract a word by taking the 'k' highest bits of the first word and the 'wordSize - k' lowest bits of the second word.
-{-# INLINE extractWord #-}
-extractWord :: Int -> Word -> Word -> Word
-extractWord k lo hi = (lo `shiftR` k) .|. (hi `shiftL` (wordSize - k))
+    {-# INLINE basicOverlaps #-}
+    basicOverlaps (BitMVec _ _ v1) (BitMVec _ _ v2) = MV.basicOverlaps v1 v2
 
--- given a bit offset 'k', 2 words 'lo' and 'hi' and a word 'x', overlay 'x' onto 'lo' and 'hi' at the position such that (k `elem` [0..wordSize] ==> uncurry (extractWord k) (spliceWord k lo hi x) == x) and (k `elem` [0..wordSize] ==> spliceWord k lo hi (extractWord k lo hi) == (lo,hi))
-{-# INLINE spliceWord #-}
-spliceWord :: Int -> Word -> Word -> Word -> (Word, Word)
-spliceWord k lo hi x =
-    ( meld k lo (x `shiftL` k)
-    , meld k (x `shiftR` (wordSize - k)) hi
-    )
+    {-# INLINE basicLength #-}
+    basicLength      (BitMVec _ n _)     = n
 
--- this could be given a more general type, but it would be wrong; it works for any fixed word size, but only for unsigned types
-reverseWord :: Word -> Word
-reverseWord xx = foldr swap xx masks
-    where
-        nextMask (d, x) = (d', x `xor` shift x d')
-            where !d' = d `shiftR` 1
+    {-# INLINE basicUnsafeRead #-}
+    basicUnsafeRead  (BitMVec s _ v) !i'   = let i = s + i' in liftM (readBit (modWordSize i)) (MV.basicUnsafeRead v (divWordSize i))
 
-        !(_:masks) =
-            takeWhile ((0 /=) . snd)
-            (iterate nextMask (finiteBitSize xx, maxBound))
+    {-# INLINE basicUnsafeWrite #-}
+    basicUnsafeWrite (BitMVec s _ v) !i' !x = do
+        let i = s + i'
+        let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
+        w <- MV.basicUnsafeRead v j
+        when (Bit (w .&. kk /= 0) /= x) $
+            MV.basicUnsafeWrite v j (w `xor` kk)
 
-        swap (n, m) x = ((x .&. m) `shiftL`  n) .|. ((x .&. complement m) `shiftR`  n)
+    {-# INLINE basicClear #-}
+    basicClear _ = pure ()
 
-        -- TODO: is an unrolled version like "loop lgWordSize" faster than the generic implementation above?  If so, can that be fixed?
-        -- loop 0 x = x
-        -- loop 1 x = loop 0 (((x .&. 0x5555555555555555) `shiftL`  1) .|. ((x .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1))
-        -- loop 2 x = loop 1 (((x .&. 0x3333333333333333) `shiftL`  2) .|. ((x .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2))
-        -- loop 3 x = loop 2 (((x .&. 0x0F0F0F0F0F0F0F0F) `shiftL`  4) .|. ((x .&. 0xF0F0F0F0F0F0F0F0) `shiftR`  4))
-        -- loop 4 x = loop 3 (((x .&. 0x00FF00FF00FF00FF) `shiftL`  8) .|. ((x .&. 0xFF00FF00FF00FF00) `shiftR`  8))
-        -- loop 5 x = loop 4 (((x .&. 0x0000FFFF0000FFFF) `shiftL` 16) .|. ((x .&. 0xFFFF0000FFFF0000) `shiftR` 16))
-        -- loop 6 x = loop 5 (((x .&. 0x00000000FFFFFFFF) `shiftL` 32) .|. ((x .&. 0xFFFFFFFF00000000) `shiftR` 32))
-        -- loop _ _ = error "reverseWord only implemented for up to 64 bit words!"
+    {-# INLINE basicSet #-}
+    basicSet (BitMVec _ 0 _) _ = pure ()
+    basicSet (BitMVec 0 n v) (extendToWord -> x) = case modWordSize n of
+        0 ->  MV.basicSet v x
+        nMod -> do
+            let vLen = MV.basicLength v
+            MV.basicSet (MV.slice 0 (vLen - 1) v) x
+            MV.modify v (\val -> val .&. hiMask nMod .|. x .&. loMask nMod) (vLen - 1)
+    basicSet (BitMVec s n v) (extendToWord -> x) = case modWordSize (s + n) of
+        0 -> do
+            let vLen = MV.basicLength v
+            MV.basicSet (MV.slice 1 (vLen - 1) v) x
+            MV.modify v (\val -> val .&. loMask s .|. x .&. hiMask s) 0
+        nMod -> do
+            let vLen = MV.basicLength v
+                lohiMask = loMask s .|. hiMask nMod
+            if vLen == 1
+                then MV.modify v (\val -> val .&. lohiMask .|. x .&. complement lohiMask) 0
+                else do
+                    MV.basicSet (MV.slice 1 (vLen - 2) v) x
+                    MV.modify v (\val -> val .&. loMask s .|. x .&. hiMask s) 0
+                    MV.modify v (\val -> val .&. hiMask nMod .|. x .&. loMask nMod) (vLen - 1)
 
-reversePartialWord :: Int -> Word -> Word
-reversePartialWord n w
-    | n >= wordSize = reverseWord w
-    | otherwise     = reverseWord w `shiftR` (wordSize - n)
+    {-# INLINE basicUnsafeCopy #-}
+    basicUnsafeCopy _ (BitMVec _ 0 _) = pure ()
+    basicUnsafeCopy (BitMVec 0 _ dst) (BitMVec 0 n src) = case modWordSize n of
+        0 -> MV.basicUnsafeCopy dst src
+        nMod -> do
+            let vLen = MV.basicLength src
+            MV.basicUnsafeCopy (MV.slice 0 (vLen - 1) dst) (MV.slice 0 (vLen - 1) src)
+            valSrc <- MV.basicUnsafeRead src (vLen - 1)
+            MV.modify dst (\val -> val .&. hiMask nMod .|. valSrc .&. loMask nMod) (vLen - 1)
+    basicUnsafeCopy (BitMVec dstShift _ dst) (BitMVec s n src)
+        | dstShift == s = case modWordSize (s + n) of
+            0 -> do
+                let vLen = MV.basicLength src
+                MV.basicUnsafeCopy (MV.slice 1 (vLen - 1) dst) (MV.slice 1 (vLen - 1) src)
+                valSrc <- MV.basicUnsafeRead src 0
+                MV.modify dst (\val -> val .&. loMask s .|. valSrc .&. hiMask s) 0
+            nMod -> do
+                let vLen = MV.basicLength src
+                    lohiMask = loMask s .|. hiMask nMod
+                if vLen == 1
+                    then do
+                        valSrc <- MV.basicUnsafeRead src 0
+                        MV.modify dst (\val -> val .&. lohiMask .|. valSrc .&. complement lohiMask) 0
+                    else do
+                        MV.basicUnsafeCopy (MV.slice 1 (vLen - 2) dst) (MV.slice 1 (vLen - 2) src)
+                        valSrcFirst <- MV.basicUnsafeRead src 0
+                        MV.modify dst (\val -> val .&. loMask s .|. valSrcFirst .&. hiMask s) 0
+                        valSrcLast <- MV.basicUnsafeRead src (vLen - 1)
+                        MV.modify dst (\val -> val .&. hiMask nMod .|. valSrcLast .&. loMask nMod) (vLen - 1)
 
-diff :: Bits a => a -> a -> a
-diff w1 w2 = w1 .&. complement w2
+    basicUnsafeCopy dst@(BitMVec _ len _) src = do_copy 0
+      where
+        n = alignUp len
 
-ffs :: Word -> Maybe Int
-ffs 0 = Nothing
-ffs x = Just $! (popCount (x `xor` complement (-x)) - 1)
+        do_copy i
+            | i < n = do
+                x <- readWord src i
+                writeWord dst i x
+                do_copy (i+wordSize)
+            | otherwise = return ()
 
--- TODO: this can probably be faster
--- the interface is very specialized here; 'j' is an offset to add to every bit index and the result is a difference list
-bitsInWord :: Int -> Word -> [Int] -> [Int]
-bitsInWord j = loop id
-    where
-        loop is !w = case ffs w of
-            Nothing -> is
-            Just i  -> loop (is . (j + i :)) (clearBit w i)
+    {-# INLINE basicUnsafeMove #-}
+    basicUnsafeMove !dst !src@(BitMVec srcShift srcLen _)
+        | MV.basicOverlaps dst src = do
+            -- Align shifts of src and srcCopy to speed up basicUnsafeCopy srcCopy src
+            -- TODO write tests on copy and move inside array
+            srcCopy <- BitMVec srcShift srcLen <$> MV.basicUnsafeNew (nWords (srcShift + srcLen))
+            MV.basicUnsafeCopy srcCopy src
+            MV.basicUnsafeCopy dst srcCopy
+        | otherwise = MV.basicUnsafeCopy dst src
 
--- TODO: faster!
-selectWord :: Word -> Word -> (Int, Word)
-selectWord m x = loop 0 0 0
-    where
-        loop !i !ct !y
-            | i >= wordSize = (ct, y)
-            | testBit m i   = loop (i+1) (ct+1) (if testBit x i then setBit y ct else y)
-            | otherwise     = loop (i+1) ct y
+    {-# INLINE basicUnsafeSlice #-}
+    basicUnsafeSlice offset n (BitMVec s _ v) =
+        BitMVec relStartBit n (MV.basicUnsafeSlice startWord (endWord - startWord) v)
+            where
+                absStartBit = s + offset
+                relStartBit = modWordSize absStartBit
+                absEndBit   = absStartBit + n
+                endWord     = nWords absEndBit
+                startWord   = divWordSize absStartBit
+
+    {-# INLINE basicUnsafeGrow #-}
+    basicUnsafeGrow (BitMVec s n v) by =
+        BitMVec s (n + by) <$> if delta == 0 then pure v else MV.basicUnsafeGrow v delta
+        where
+            delta = nWords (s + n + by) - nWords (s + n)
+
+
+instance V.Vector U.Vector Bit where
+    basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (V.basicUnsafeFreeze v)
+    basicUnsafeThaw   (BitVec  s n v) = liftM (BitMVec s n) (V.basicUnsafeThaw   v)
+    basicLength       (BitVec  _ n _) = n
+
+    basicUnsafeIndexM (BitVec s _ v) !i' = let i = s + i' in liftM (readBit (modWordSize i)) (V.basicUnsafeIndexM v (divWordSize i))
+
+    basicUnsafeCopy dst src = do
+        src1 <- V.basicUnsafeThaw src
+        MV.basicUnsafeCopy dst src1
+
+    {-# INLINE basicUnsafeSlice #-}
+    basicUnsafeSlice offset n (BitVec s _ v) =
+        BitVec relStartBit n (V.basicUnsafeSlice startWord (endWord - startWord) v)
+            where
+                absStartBit = s + offset
+                relStartBit = modWordSize absStartBit
+                absEndBit   = absStartBit + n
+                endWord     = nWords absEndBit
+                startWord   = divWordSize absStartBit
+
+-- clone words from a bit-array into a new word array, without attempting any shortcuts (such as recognizing that they are already aligned, etc.)
+{-# INLINE cloneWords #-}
+cloneWords :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
+cloneWords v@(BitMVec _ n _) = do
+    ws <- MV.new (nWords n)
+    let loop !i !j
+            | i >= n    = return ()
+            | otherwise = do
+                readWord v i >>= MV.write ws j
+                loop (i + wordSize) (j + 1)
+    loop 0 0
+    return ws

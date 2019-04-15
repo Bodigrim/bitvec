@@ -32,12 +32,12 @@ module Data.Vector.Unboxed.Mutable.Bit
 import           Control.Monad
 import           Control.Monad.Primitive
 import           Data.Bit.Internal
+import           Data.Bit.Utils
 import           Data.Bits
 import qualified Data.Vector.Generic.Mutable       as MV
 import qualified Data.Vector.Generic               as V
 import qualified Data.Vector.Unboxed               as U (Vector)
 import           Data.Vector.Unboxed.Mutable       as U
-import           Data.Vector.Unboxed.Bit.Internal
 import           Data.Word
 import           Prelude                           as P
     hiding (and, or, any, all, reverse)

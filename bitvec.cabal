@@ -57,7 +57,7 @@ library
   hs-source-dirs: src
   other-modules:
     Data.Bit.Internal
-    Data.Vector.Unboxed.Bit.Internal
+    Data.Bit.Utils
   ghc-options: -fwarn-unused-imports -fwarn-unused-binds -fwarn-type-defaults
 
 test-suite bitvec-tests
