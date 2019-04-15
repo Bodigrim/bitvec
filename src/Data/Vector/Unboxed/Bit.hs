@@ -3,9 +3,7 @@
 {-# LANGUAGE RankNTypes       #-}
 
 module Data.Vector.Unboxed.Bit
-     ( wordSize
-     , wordLength
-     , fromWords
+     ( fromWords
      , toWords
      , indexWord
 
@@ -54,9 +52,6 @@ import qualified Data.Vector.Unboxed.Mutable.Bit    as B
 import           Data.Word
 import           Prelude                            as P
     hiding (and, or, any, all, reverse)
-
-wordLength :: U.Vector Bit -> Int
-wordLength = nWords . U.length
 
 -- |Given a vector of words, concatenate them to a vector of bits (interpreting the words in little-endian order, as described at 'indexWord').
 fromWords :: U.Vector Word -> U.Vector Bit

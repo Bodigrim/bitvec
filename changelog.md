@@ -5,6 +5,7 @@
 * Remove 'pad' and 'padWith'.
 * Remove 'any', 'anyBits', 'all', 'allBits', 'findIndex'.
 * Remove 'mapMInPlaceWithIndex', 'mapInPlaceWithIndex', 'mapMInPlace', 'mapInPlace'.
+* Remove 'wordSize' and 'wordLength'.
 
 # 0.2.0.1
 

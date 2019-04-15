@@ -3,25 +3,20 @@ module Tests.Vector where
 import Support
 
 import Data.Bit
-import Data.Bits
 import Data.List
 import qualified Data.Vector.Unboxed as U hiding (reverse, and, or, any, all, findIndex)
 import qualified Data.Vector.Unboxed.Bit as U
 import Test.Framework (Test, testGroup)
-import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.HUnit ((@?=))
 import Test.QuickCheck
 
 vectorTests :: Test
 vectorTests = testGroup "Data.Vector.Unboxed.Bit"
-    [ testCase     "wordSize correct"           (U.wordSize @?= finiteBitSize (0 :: Word))
-    , testGroup "Data.Vector.Unboxed functions"
+    [ testGroup "Data.Vector.Unboxed functions"
         [ testProperty "toList . fromList == id"    prop_toList_fromList
         , testProperty "fromList . toList == id"    prop_fromList_toList
         , testProperty "slice"                      prop_slice_def
         ]
-    , testProperty "wordLength"                 prop_wordLength_def
     , testProperty "fromWords"                  prop_fromWords_def
     , testProperty "toWords"                    prop_toWords_def
     , testProperty "indexWord"                  prop_indexWord_def
@@ -51,11 +46,6 @@ prop_slice_def s n xs
     == U.toList (U.slice s' n' xs)
     where
         (s', n') = trimSlice s n (U.length xs)
-
-prop_wordLength_def :: U.Vector Bit -> Bool
-prop_wordLength_def xs
-    =  U.wordLength xs
-    == U.length (U.toWords xs)
 
 prop_fromWords_def :: U.Vector Word -> Property
 prop_fromWords_def ws

@@ -13,7 +13,6 @@ import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.New     as N
 import qualified Data.Vector.Unboxed         as U
-import Data.Vector.Unboxed.Bit (wordSize)
 import Test.QuickCheck
 
 instance Arbitrary Bit where
@@ -57,6 +56,9 @@ trimSlice s n l = (s', n')
 
 sliceList :: Int -> Int -> [a] -> [a]
 sliceList s n = take n . drop s
+
+wordSize :: Int
+wordSize = finiteBitSize (0 :: Word)
 
 packBitsToWord :: [Bit] -> (Word, [Bit])
 packBitsToWord = loop 0 0

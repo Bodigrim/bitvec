@@ -25,7 +25,6 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
         [ testProperty "slice"          prop_slice_def
         , testProperty "grow"           prop_grow_def
         ]
-    , testProperty "wordLength"     prop_wordLength_def
     , testGroup "Read/write Words"
         [ testProperty "readWord"       prop_readWord_def
         , testProperty "writeWord"      prop_writeWord_def
@@ -201,11 +200,6 @@ prop_writeWord_def n w = withNonEmptyMVec
                $ writeWordL (B.toList xs) (n `mod` V.length xs) w)
     (\xs -> do U.writeWord            xs  (n `mod` M.length xs) w
                V.unsafeFreeze xs)
-
-prop_wordLength_def :: N.New B.Vector Bit -> Bool
-prop_wordLength_def xs
-    =  runST (fmap U.wordLength (N.run xs))
-    == runST (fmap M.length (N.run xs >>= U.cloneToWords))
 
 prop_cloneFromWords_def :: N.New B.Vector Word -> Bool
 prop_cloneFromWords_def ws

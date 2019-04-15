@@ -3,9 +3,7 @@
 {-# LANGUAGE RankNTypes       #-}
 
 module Data.Vector.Unboxed.Mutable.Bit
-     ( wordSize
-     , wordLength
-     , cloneFromWords
+     ( cloneFromWords
      , cloneToWords
      , readWord
      , writeWord
@@ -41,13 +39,6 @@ import           Data.Vector.Unboxed.Mutable       as U
 import           Data.Word
 import           Prelude                           as P
     hiding (and, or, any, all, reverse)
-
-
--- TODO: this interface needs more work.
-
--- |Get the length of the vector that would be created by 'cloneToWords'
-wordLength :: U.MVector s Bit -> Int
-wordLength = nWords . MV.length
 
 -- |Clone a vector of words into a new vector of bits (interpreting the words in little-endian order, as described at 'indexWord').
 cloneFromWords :: PrimMonad m => U.MVector (PrimState m) Word -> m (U.MVector (PrimState m) Bit)
