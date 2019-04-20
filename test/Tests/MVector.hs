@@ -203,7 +203,7 @@ prop_writeWord_def n w = withNonEmptyMVec
 
 prop_cloneFromWords_def :: N.New B.Vector Word -> Bool
 prop_cloneFromWords_def ws
-    =  runST (N.run ws >>= U.cloneFromWords >>= V.unsafeFreeze)
+    =  runST (N.run ws >>= pure . U.castFromWords >>= V.unsafeFreeze)
     == B.fromWords (V.new ws)
 
 prop_cloneToWords_def :: N.New B.Vector Bit -> Bool

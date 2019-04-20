@@ -6,6 +6,7 @@
 * Remove 'any', 'anyBits', 'all', 'allBits', 'findIndex'.
 * Remove 'mapMInPlaceWithIndex', 'mapInPlaceWithIndex', 'mapMInPlace', 'mapInPlace'.
 * Remove 'wordSize' and 'wordLength'.
+* Remove 'cloneFromWords', introduce 'castFromWords' and 'castToWords' instead.
 
 # 0.2.0.1
 

@@ -12,7 +12,6 @@ module Data.Bit.Internal
     , indexWord
     , readWord
     , writeWord
-    , cloneWords
     ) where
 
 import Control.Monad
@@ -284,16 +283,3 @@ instance V.Vector U.Vector Bit where
                 absEndBit   = absStartBit + n
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
-
--- clone words from a bit-array into a new word array, without attempting any shortcuts (such as recognizing that they are already aligned, etc.)
-{-# INLINE cloneWords #-}
-cloneWords :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
-cloneWords v@(BitMVec _ n _) = do
-    ws <- MV.new (nWords n)
-    let loop !i !j
-            | i >= n    = return ()
-            | otherwise = do
-                readWord v i >>= MV.write ws j
-                loop (i + wordSize) (j + 1)
-    loop 0 0
-    return ws

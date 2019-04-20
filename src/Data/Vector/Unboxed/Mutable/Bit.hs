@@ -3,8 +3,10 @@
 {-# LANGUAGE RankNTypes       #-}
 
 module Data.Vector.Unboxed.Mutable.Bit
-     ( cloneFromWords
+     ( castFromWords
+     , castToWords
      , cloneToWords
+
      , readWord
      , writeWord
 
@@ -40,19 +42,37 @@ import           Data.Word
 import           Prelude                           as P
     hiding (and, or, any, all, reverse)
 
--- |Clone a vector of words into a new vector of bits (interpreting the words in little-endian order, as described at 'indexWord').
-cloneFromWords :: PrimMonad m => U.MVector (PrimState m) Word -> m (U.MVector (PrimState m) Bit)
-cloneFromWords ws = BitMVec 0 (nBits (MV.length ws)) <$> MV.clone ws
+-- | Cast a vector of words to a vector of bits in-place.
+castFromWords
+    :: U.MVector s Word
+    -> U.MVector s Bit
+castFromWords ws = BitMVec 0 (nBits (MV.length ws)) ws
 
--- |clone a vector of bits to a new unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
+-- | Try to cast a vector of bits to a vector of words in-place.
+-- It succeeds if a vector of bits is aligned.
+-- Use 'cloneToWords' otherwise.
+castToWords
+    :: U.MVector s Bit
+    -> Maybe (U.MVector s Word)
+castToWords v@(BitMVec s n ws)
+    | aligned s
+    , aligned n
+    = Just $ MV.slice (divWordSize s) (nWords n) ws
+    | otherwise
+    = Nothing
+
+-- | Clone a vector of bits to a new unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
 cloneToWords :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
-cloneToWords v@(BitMVec s n ws)
-    | aligned s = do
-        ws1 <- MV.clone (MV.slice (divWordSize s) (nWords n) ws)
-        when (not (aligned n)) $ do
-            readWord v (alignDown n) >>= MV.write ws1 (divWordSize n)
-        return ws1
-    | otherwise = cloneWords v
+cloneToWords v@(BitMVec _ n _) = do
+    ws <- MV.new (nWords n)
+    let loop !i !j
+            | i >= n    = return ()
+            | otherwise = do
+                readWord v i >>= MV.write ws j
+                loop (i + wordSize) (j + 1)
+    loop 0 0
+    return ws
+{-# INLINE cloneToWords #-}
 
 -- |Map a function over a bit vector one 'Word' at a time ('wordSize' bits at a time).  The function will be passed the bit index (which will always be 'wordSize'-aligned) and the current value of the corresponding word.  The returned word will be written back to the vector.  If there is a partial word at the end of the vector, it will be zero-padded when passed to the function and truncated when the result is written back to the array.
 {-# INLINE mapMInPlaceWithIndex #-}

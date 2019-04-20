@@ -62,7 +62,7 @@ toWords :: U.Vector Bit -> U.Vector Word
 toWords v@(BitVec s n ws)
     | aligned s && (aligned n || isMasked (modWordSize n) (ws V.! divWordSize n))
          = V.slice (divWordSize s) (nWords n) ws
-    | otherwise = runST (Unsafe.unsafeThaw v >>= cloneWords >>= Unsafe.unsafeFreeze)
+    | otherwise = runST (Unsafe.unsafeThaw v >>= B.cloneToWords >>= Unsafe.unsafeFreeze)
 
 -- | @zipWords f xs ys@ = @fromWords (min (length xs) (length ys)) (zipWith f (toWords xs) (toWords ys))@
 {-# INLINE zipWords #-}
