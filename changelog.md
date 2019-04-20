@@ -7,6 +7,8 @@
 * Remove 'mapMInPlaceWithIndex', 'mapInPlaceWithIndex', 'mapMInPlace', 'mapInPlace'.
 * Remove 'wordSize' and 'wordLength'.
 * Remove 'cloneFromWords', introduce 'castFromWords' and 'castToWords' instead.
+* Remove 'unionInPlace', 'intersectionInPlace', 'differenceInPlace', 'symDiffInPlace'.
+* Remove 'countBits', 'listBits', 'and', 'or' for mutable vectors.
 
 # 0.2.0.1
 

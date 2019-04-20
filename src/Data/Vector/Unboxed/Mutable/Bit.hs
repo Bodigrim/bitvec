@@ -12,19 +12,9 @@ module Data.Vector.Unboxed.Mutable.Bit
 
      , zipInPlace
 
-     , unionInPlace
-     , intersectionInPlace
-     , differenceInPlace
-     , symDiffInPlace
      , invertInPlace
      , selectBitsInPlace
      , excludeBitsInPlace
-
-     , countBits
-     , listBits
-
-     , and
-     , or
 
      , reverseInPlace
      ) where
@@ -133,18 +123,6 @@ zipInPlace f xs ys =
             let !w = indexWord ys i
              in f x w
 
-unionInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
-unionInPlace = zipInPlace (.|.)
-
-intersectionInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
-intersectionInPlace = zipInPlace (.&.)
-
-differenceInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
-differenceInPlace = zipInPlace diff
-
-symDiffInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
-symDiffInPlace = zipInPlace xor
-
 -- |Flip every bit in the given vector
 invertInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 invertInPlace = mapInPlace complement
@@ -172,53 +150,6 @@ excludeBitsInPlace is xs = loop 0 0
                 let !(nSet, x') = selectWord (masked (n - i) (complement (indexWord is i))) x
                 writeWord xs ct x'
                 loop (i + wordSize) (ct + nSet)
-
--- |return the number of ones in a bit vector
-countBits :: PrimMonad m => U.MVector (PrimState m) Bit -> m Int
-countBits v = loop 0 0
-    where
-        !n = alignUp (MV.length v)
-        loop !s !i
-            | i >= n    = return s
-            | otherwise = do
-                x <- readWord v i
-                loop (s + popCount x) (i + wordSize)
-
-listBits :: PrimMonad m => U.MVector (PrimState m) Bit -> m [Int]
-listBits v = loop id 0
-    where
-        !n = MV.length v
-        loop bs !i
-            | i >= n    = return $! bs []
-            | otherwise = do
-                w <- readWord v i
-                loop (bs . bitsInWord i w) (i + wordSize)
-
--- | Returns 'True' if all bits in the vector are set
-and :: PrimMonad m => U.MVector (PrimState m) Bit -> m Bool
-and v = loop 0
-    where
-        !n = MV.length v
-        loop !i
-            | i >= n    = return True
-            | otherwise = do
-                y <- readWord v i
-                if y == mask (n - i)
-                    then loop (i + wordSize)
-                    else return False
-
--- | Returns 'True' if any bit in the vector is set
-or :: PrimMonad m => U.MVector (PrimState m) Bit -> m Bool
-or v = loop 0
-    where
-        !n = MV.length v
-        loop !i
-            | i >= n    = return False
-            | otherwise = do
-                y <- readWord v i
-                if y /= 0
-                    then return True
-                    else loop (i + wordSize)
 
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 reverseInPlace xs = loop 0 (MV.length xs)

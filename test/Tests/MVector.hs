@@ -31,8 +31,6 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
         , testProperty "cloneFromWords" prop_cloneFromWords_def
         , testProperty "cloneToWords"   prop_cloneToWords_def
         ]
-    , testProperty "countBits"      prop_countBits_def
-    , testProperty "listBits"       prop_listBits_def
     , testProperty "reverseInPlace" prop_reverseInPlace_def
     , testGroup "MVector laws" $ map (uncurry testProperty) $ lawsProperties $ muvectorLaws (Proxy :: Proxy Bit)
     , testCase "basicInitialize 1" case_write_init_read1
@@ -210,16 +208,6 @@ prop_cloneToWords_def :: N.New B.Vector Bit -> Bool
 prop_cloneToWords_def xs
     =  runST (N.run xs >>= U.cloneToWords >>= V.unsafeFreeze)
     == B.toWords (V.new xs)
-
-prop_countBits_def :: N.New B.Vector Bit -> Bool
-prop_countBits_def xs
-    =  runST (N.run xs >>= U.countBits)
-    == B.countBits (V.new xs)
-
-prop_listBits_def :: N.New B.Vector Bit -> Bool
-prop_listBits_def xs
-    =  runST (N.run xs >>= U.listBits)
-    == B.listBits (V.new xs)
 
 prop_reverseInPlace_def :: N.New B.Vector Bit -> Bool
 prop_reverseInPlace_def xs
