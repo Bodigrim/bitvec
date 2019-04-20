@@ -10,7 +10,6 @@ import qualified Data.Vector.Generic.Mutable     as M (basicInitialize, basicSet
 import qualified Data.Vector.Generic.New         as N
 import qualified Data.Vector.Unboxed.Bit         as B hiding (reverse)
 import qualified Data.Vector.Unboxed             as B
-import qualified Data.Vector.Unboxed.Mutable.Bit as U
 import qualified Data.Vector.Unboxed.Mutable     as M
 import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.HUnit (testCase)
@@ -187,16 +186,16 @@ prop_grow_def xs (NonNegative m) = runST $ do
 
 prop_cloneFromWords_def :: N.New B.Vector Word -> Bool
 prop_cloneFromWords_def ws
-    =  runST (N.run ws >>= pure . U.castFromWords >>= V.unsafeFreeze)
+    =  runST (N.run ws >>= pure . castFromWords >>= V.unsafeFreeze)
     == B.fromWords (V.new ws)
 
 prop_cloneToWords_def :: N.New B.Vector Bit -> Bool
 prop_cloneToWords_def xs
-    =  runST (N.run xs >>= U.cloneToWords >>= V.unsafeFreeze)
+    =  runST (N.run xs >>= cloneToWords >>= V.unsafeFreeze)
     == B.toWords (V.new xs)
 
 prop_reverseInPlace_def :: N.New B.Vector Bit -> Bool
 prop_reverseInPlace_def xs
-    =  runST (N.run xs >>= \v -> U.reverseInPlace v >> V.unsafeFreeze v)
+    =  runST (N.run xs >>= \v -> reverseInPlace v >> V.unsafeFreeze v)
     == B.reverse (V.new xs)
 

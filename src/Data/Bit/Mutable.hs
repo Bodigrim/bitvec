@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes       #-}
 
-module Data.Vector.Unboxed.Mutable.Bit
+module Data.Bit.Mutable
      ( castFromWords
      , castToWords
      , cloneToWords

@@ -48,7 +48,7 @@ import qualified Data.Vector.Generic.Mutable        as MV
 import           Data.Vector.Unboxed                as U
     hiding (and, or, any, all, reverse, findIndex)
 import qualified Data.Vector.Unboxed                as Unsafe
-import qualified Data.Vector.Unboxed.Mutable.Bit    as B
+import qualified Data.Bit.Mutable                   as B
 import           Data.Word
 import           Prelude                            as P
     hiding (and, or, any, all, reverse)

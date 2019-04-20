@@ -45,7 +45,6 @@ library
   exposed-modules:
     Data.Bit
     Data.Vector.Unboxed.Bit
-    Data.Vector.Unboxed.Mutable.Bit
   build-depends:
     base >=4.8 && <5,
     primitive >=0.5,
@@ -58,6 +57,7 @@ library
   other-modules:
     Data.Bit.Internal
     Data.Bit.Utils
+    Data.Bit.Mutable
   ghc-options: -fwarn-unused-imports -fwarn-unused-binds -fwarn-type-defaults
 
 test-suite bitvec-tests
