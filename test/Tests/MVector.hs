@@ -26,9 +26,7 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
         , testProperty "grow"           prop_grow_def
         ]
     , testGroup "Read/write Words"
-        [ testProperty "readWord"       prop_readWord_def
-        , testProperty "writeWord"      prop_writeWord_def
-        , testProperty "cloneFromWords" prop_cloneFromWords_def
+        [ testProperty "cloneFromWords" prop_cloneFromWords_def
         , testProperty "cloneToWords"   prop_cloneToWords_def
         ]
     , testProperty "reverseInPlace" prop_reverseInPlace_def
@@ -186,18 +184,6 @@ prop_grow_def xs (NonNegative m) = runST $ do
     fv0 <- B.freeze v0
     fv1 <- B.freeze v1
     return (fv0 == B.take n fv1)
-
-prop_readWord_def :: Int -> Property
-prop_readWord_def n = withNonEmptyMVec
-    (\xs ->   readWordL (B.toList xs) (n `mod` V.length xs))
-    (\xs -> U.readWord            xs  (n `mod` M.length xs))
-
-prop_writeWord_def :: Int -> Word -> Property
-prop_writeWord_def n w = withNonEmptyMVec
-    (\xs -> B.fromList
-               $ writeWordL (B.toList xs) (n `mod` V.length xs) w)
-    (\xs -> do U.writeWord            xs  (n `mod` M.length xs) w
-               V.unsafeFreeze xs)
 
 prop_cloneFromWords_def :: N.New B.Vector Word -> Bool
 prop_cloneFromWords_def ws

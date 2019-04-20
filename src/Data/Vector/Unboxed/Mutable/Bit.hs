@@ -7,9 +7,6 @@ module Data.Vector.Unboxed.Mutable.Bit
      , castToWords
      , cloneToWords
 
-     , readWord
-     , writeWord
-
      , zipInPlace
 
      , invertInPlace

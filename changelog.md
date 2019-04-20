@@ -9,6 +9,7 @@
 * Remove 'cloneFromWords', introduce 'castFromWords' and 'castToWords' instead.
 * Remove 'unionInPlace', 'intersectionInPlace', 'differenceInPlace', 'symDiffInPlace'.
 * Remove 'countBits', 'listBits', 'and', 'or' for mutable vectors.
+* Remove 'readWord' and 'writeWord'.
 
 # 0.2.0.1
 
