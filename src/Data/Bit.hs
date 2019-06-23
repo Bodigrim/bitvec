@@ -1,6 +1,8 @@
 module Data.Bit
     ( Bit(..)
 
+    , unsafeInvert
+
      -- * Mutable conversions
      , castFromWords
      , castToWords

@@ -10,6 +10,7 @@
 * Remove 'unionInPlace', 'intersectionInPlace', 'differenceInPlace', 'symDiffInPlace'.
 * Remove 'countBits', 'listBits', 'and', 'or' for mutable vectors.
 * Remove 'readWord' and 'writeWord'.
+* Add 'unsafeInvert'.
 
 # 0.2.0.1
 

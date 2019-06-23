@@ -12,6 +12,8 @@ module Data.Bit.Internal
     , indexWord
     , readWord
     , writeWord
+
+    , unsafeInvert
     ) where
 
 import Control.Monad
@@ -262,6 +264,13 @@ instance MV.MVector U.MVector Bit where
         where
             delta = nWords (s + n + by) - nWords (s + n)
 
+{-# INLINE unsafeInvert #-}
+unsafeInvert :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
+unsafeInvert (BitMVec s _ v) !i' = do
+    let i = s + i'
+    let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
+    w <- MV.basicUnsafeRead v j
+    MV.basicUnsafeWrite v j (w `xor` kk)
 
 instance V.Vector U.Vector Bit where
     basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (V.basicUnsafeFreeze v)
