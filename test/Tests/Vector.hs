@@ -79,10 +79,10 @@ prop_countBits_def xs
     =  U.countBits xs
     == length (filter unBit (U.toList xs))
 
-prop_listBits_def :: U.Vector Bit -> Bool
+prop_listBits_def :: U.Vector Bit -> Property
 prop_listBits_def xs
     =  U.listBits xs
-    == [ i | (i,x) <- zip [0..] (U.toList xs), unBit x]
+    === [ i | (i,x) <- zip [0..] (U.toList xs), unBit x]
 
 prop_and_def :: U.Vector Bit -> Bool
 prop_and_def xs

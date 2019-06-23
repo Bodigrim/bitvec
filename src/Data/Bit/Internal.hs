@@ -306,11 +306,35 @@ countBits v = loop 0 0
             | i >= n    = s
             | otherwise = loop (s + popCount (indexWord v i)) (i + wordSize)
 
+-- | Return indices of ones in a bit vector.
 listBits :: U.Vector Bit -> [Int]
-listBits v = loop id 0
+listBits (BitVec _ 0 _) = []
+listBits (BitVec 0 n v) = case modWordSize n of
+    0    -> listBitsInWords 0 v []
+    nMod -> listBitsInWords 0 (V.slice 0 (l - 1) v) $
+            map (+ mulWordSize (l - 1)) $
+            filter (testBit $ V.last v) [0 .. nMod - 1]
     where
-        !n = V.length v
-        loop bs !i
-            | i >= n    = bs []
-            | otherwise =
-                loop (bs . bitsInWord i (indexWord v i)) (i + wordSize)
+        l = V.basicLength v
+listBits (BitVec s n v) = case modWordSize (s + n) of
+    0    -> filter (testBit $ V.head v `unsafeShiftR` s) [0 .. wordSize - s - 1] ++
+            listBitsInWords (wordSize - s) (V.slice 1 (l - 1) v) []
+    nMod -> case l of
+        1 -> filter (testBit $ V.head v `unsafeShiftR` s) [0 .. n - 1]
+        _ ->
+            filter (testBit $ V.head v `unsafeShiftR` s) [0 .. wordSize - s - 1] ++
+            (listBitsInWords (wordSize - s) (V.slice 1 (l - 2) v) $
+            map (+ (mulWordSize (l - 1) - s)) $
+            filter (testBit $ V.last v) [0 .. nMod - 1])
+    where
+        l = V.basicLength v
+
+listBitsInWord :: Int -> Word -> [Int]
+listBitsInWord offset word
+    = map (+ offset)
+    $ filter (testBit word)
+    $ [0 .. wordSize - 1]
+
+listBitsInWords :: Int -> U.Vector Word -> [Int] -> [Int]
+listBitsInWords offset = flip $ U.ifoldr
+    (\i word acc -> listBitsInWord (offset + mulWordSize i) word ++ acc)

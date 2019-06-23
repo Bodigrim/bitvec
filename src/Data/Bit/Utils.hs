@@ -34,7 +34,7 @@ modWordSize x = x .&. (wordSize - 1)
 {-# INLINE modWordSize #-}
 
 mulWordSize :: Bits a => a -> a
-mulWordSize x = shiftL x lgWordSize
+mulWordSize x = unsafeShiftL x lgWordSize
 
 -- number of words needed to store n bits
 nWords :: Int -> Int
