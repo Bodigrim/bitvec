@@ -26,10 +26,12 @@ wordSizeMask = wordSize - 1
 wordSizeMaskC = complement wordSizeMask
 
 divWordSize :: Bits a => a -> a
-divWordSize x = shiftR x lgWordSize
+divWordSize x = unsafeShiftR x lgWordSize
+{-# INLINE divWordSize #-}
 
 modWordSize :: Int -> Int
 modWordSize x = x .&. (wordSize - 1)
+{-# INLINE modWordSize #-}
 
 mulWordSize :: Bits a => a -> a
 mulWordSize x = shiftL x lgWordSize

@@ -58,6 +58,7 @@ data instance U.Vector    Bit = BitVec  !Int !Int !(U.Vector    Word)
 
 readBit :: Int -> Word -> Bit
 readBit i w = Bit (w .&. (1 `unsafeShiftL` i) /= 0)
+{-# INLINE readBit #-}
 
 extendToWord :: Bit -> Word
 extendToWord (Bit False) = 0
