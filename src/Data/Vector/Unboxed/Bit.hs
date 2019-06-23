@@ -149,24 +149,6 @@ excludeBits is xs = runST $ do
     n <- B.excludeBitsInPlace is xs1
     Unsafe.unsafeFreeze (MV.take n xs1)
 
--- |return the number of ones in a bit vector
-countBits :: U.Vector Bit -> Int
-countBits v = loop 0 0
-    where
-        !n = alignUp (V.length v)
-        loop !s !i
-            | i >= n    = s
-            | otherwise = loop (s + popCount (indexWord v i)) (i + wordSize)
-
-listBits :: U.Vector Bit -> [Int]
-listBits v = loop id 0
-    where
-        !n = V.length v
-        loop bs !i
-            | i >= n    = bs []
-            | otherwise =
-                loop (bs . bitsInWord i (indexWord v i)) (i + wordSize)
-
 -- | 'True' if all bits in the vector are set
 and :: U.Vector Bit -> Bool
 and v = loop 0

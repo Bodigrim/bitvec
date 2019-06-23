@@ -14,6 +14,9 @@ module Data.Bit.Internal
     , writeWord
 
     , unsafeInvert
+
+    , countBits
+    , listBits
     ) where
 
 import Control.Monad
@@ -293,3 +296,21 @@ instance V.Vector U.Vector Bit where
                 absEndBit   = absStartBit + n
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
+
+-- |return the number of ones in a bit vector
+countBits :: U.Vector Bit -> Int
+countBits v = loop 0 0
+    where
+        !n = alignUp (V.length v)
+        loop !s !i
+            | i >= n    = s
+            | otherwise = loop (s + popCount (indexWord v i)) (i + wordSize)
+
+listBits :: U.Vector Bit -> [Int]
+listBits v = loop id 0
+    where
+        !n = V.length v
+        loop bs !i
+            | i >= n    = bs []
+            | otherwise =
+                loop (bs . bitsInWord i (indexWord v i)) (i + wordSize)
