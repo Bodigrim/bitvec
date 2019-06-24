@@ -297,14 +297,29 @@ instance V.Vector U.Vector Bit where
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
 
--- |return the number of ones in a bit vector
+-- | Return the number of ones in a bit vector.
 countBits :: U.Vector Bit -> Int
-countBits v = loop 0 0
+countBits (BitVec _ 0 _) = 0
+countBits (BitVec 0 n v) = case modWordSize n of
+    0    -> countBitsInWords v
+    nMod -> countBitsInWords (V.slice 0 (l - 1) v) +
+            popCount (V.last v .&. loMask nMod)
     where
-        !n = alignUp (V.length v)
-        loop !s !i
-            | i >= n    = s
-            | otherwise = loop (s + popCount (indexWord v i)) (i + wordSize)
+        l = V.basicLength v
+countBits (BitVec s n v) = case modWordSize (s + n) of
+    0    -> popCount (V.head v `unsafeShiftR` s) +
+            countBitsInWords (V.slice 1 (l - 1) v)
+    nMod -> case l of
+        1 -> popCount ((V.head v `unsafeShiftR` s) .&. loMask n)
+        _ ->
+            popCount (V.head v `unsafeShiftR` s) +
+            countBitsInWords (V.slice 1 (l - 2) v) +
+            popCount (V.last v .&. loMask nMod)
+    where
+        l = V.basicLength v
+
+countBitsInWords :: U.Vector Word -> Int
+countBitsInWords = U.foldl' (\acc word -> popCount word + acc) 0
 
 -- | Return indices of ones in a bit vector.
 listBits :: U.Vector Bit -> [Int]
