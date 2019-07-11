@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -14,10 +15,13 @@ module Data.Bit.Internal
     , writeWord
 
     , unsafeInvert
+    , invert
 
     , countBits
     , listBits
     ) where
+
+#include "vector.h"
 
 import Control.Monad
 import Control.Monad.Primitive
@@ -275,6 +279,11 @@ unsafeInvert (BitMVec s _ v) !i' = do
     let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
     w <- MV.basicUnsafeRead v j
     MV.basicUnsafeWrite v j (w `xor` kk)
+
+{-# INLINE invert #-}
+invert :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
+invert v i = BOUNDS_CHECK(checkIndex) "invert" i (MV.length v)
+             $ unsafeInvert v i
 
 instance V.Vector U.Vector Bit where
     basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (V.basicUnsafeFreeze v)

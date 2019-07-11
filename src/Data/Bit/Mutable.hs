@@ -3,9 +3,9 @@
 {-# LANGUAGE RankNTypes       #-}
 
 module Data.Bit.Mutable
-     ( castFromWords
-     , castToWords
-     , cloneToWords
+     ( castFromWordsM
+     , castToWordsM
+     , cloneToWordsM
 
      , zipInPlace
 
@@ -30,27 +30,28 @@ import           Prelude                           as P
     hiding (and, or, any, all, reverse)
 
 -- | Cast a vector of words to a vector of bits in-place.
-castFromWords
+castFromWordsM
     :: U.MVector s Word
     -> U.MVector s Bit
-castFromWords ws = BitMVec 0 (nBits (MV.length ws)) ws
+castFromWordsM ws = BitMVec 0 (nBits (MV.length ws)) ws
 
 -- | Try to cast a vector of bits to a vector of words in-place.
 -- It succeeds if a vector of bits is aligned.
--- Use 'cloneToWords' otherwise.
-castToWords
+-- Use 'cloneToWordsM' otherwise.
+castToWordsM
     :: U.MVector s Bit
     -> Maybe (U.MVector s Word)
-castToWords v@(BitMVec s n ws)
+castToWordsM v@(BitMVec s n ws)
     | aligned s
     , aligned n
     = Just $ MV.slice (divWordSize s) (nWords n) ws
     | otherwise
     = Nothing
 
--- | Clone a vector of bits to a new unboxed vector of words.  If the bits don't completely fill the words, the last word will be zero-padded.
-cloneToWords :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
-cloneToWords v@(BitMVec _ n _) = do
+-- | Clone a vector of bits to a new unboxed vector of words.
+-- If the bits don't completely fill the words, the last word will be zero-padded.
+cloneToWordsM :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
+cloneToWordsM v@(BitMVec _ n _) = do
     ws <- MV.new (nWords n)
     let loop !i !j
             | i >= n    = return ()
@@ -59,7 +60,7 @@ cloneToWords v@(BitMVec _ n _) = do
                 loop (i + wordSize) (j + 1)
     loop 0 0
     return ws
-{-# INLINE cloneToWords #-}
+{-# INLINE cloneToWordsM #-}
 
 -- |Map a function over a bit vector one 'Word' at a time ('wordSize' bits at a time).  The function will be passed the bit index (which will always be 'wordSize'-aligned) and the current value of the corresponding word.  The returned word will be written back to the vector.  If there is a partial word at the end of the vector, it will be zero-padded when passed to the function and truncated when the result is written back to the array.
 {-# INLINE mapMInPlaceWithIndex #-}
@@ -100,9 +101,20 @@ mapInPlaceWithIndex f = mapMInPlaceWithIndex g
 mapInPlace :: PrimMonad m => (Word -> Word) -> U.MVector (PrimState m) Bit -> m ()
 mapInPlace f = mapMInPlaceWithIndex (\_ x -> return (f x))
 
-{-# INLINE zipInPlace #-}
-zipInPlace :: PrimMonad m => (forall a. Bits a => a -> a -> a) -> U.MVector (PrimState m) Bit -> U.Vector Bit -> m ()
-zipInPlace f xs ys@(BitVec 0 n2 v) =
+-- | Zip vectors with a given bit operation,
+-- rewriting contents of the second argument.
+--
+-- Combine with 'Data.Vector.Unboxed.modify'
+-- to operate on immutable vectors.
+--
+-- Caveat: immutable argument must be at least as long as a mutable one.
+zipInPlace
+    :: PrimMonad m
+    => (forall a. Bits a => a -> a -> a)
+    -> U.Vector Bit
+    -> U.MVector (PrimState m) Bit
+    -> m ()
+zipInPlace f ys@(BitVec 0 n2 v) xs =
     mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
     where
         -- WARNING: relies on guarantee by mapMInPlaceWithIndex that index will always be aligned!
@@ -110,21 +122,31 @@ zipInPlace f xs ys@(BitVec 0 n2 v) =
         {-# INLINE g #-}
         g !i !x =
             let !w = masked (n2 - i) (v V.! divWordSize i)
-             in f x w
-zipInPlace f xs ys =
+             in f w x
+zipInPlace f ys xs =
     mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
     where
         !n = min (MV.length xs) (V.length ys)
         {-# INLINE g #-}
         g !i !x =
             let !w = indexWord ys i
-             in f x w
+             in f w x
+{-# INLINE zipInPlace #-}
 
--- |Flip every bit in the given vector
+-- | Flip (invert) all bits in place.
+--
+-- Combine with 'Data.Vector.Unboxed.modify'
+-- to operate on immutable vectors.
 invertInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 invertInPlace = mapInPlace complement
 
-selectBitsInPlace :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
+-- | Given a vector of bits and a vector of things,
+-- extract those things for which the corresponding bit is set.
+selectBitsInPlace
+    :: PrimMonad m
+    => U.Vector Bit
+    -> U.MVector (PrimState m) Bit
+    -> m Int
 selectBitsInPlace is xs = loop 0 0
     where
         !n = min (V.length is) (MV.length xs)
@@ -136,6 +158,8 @@ selectBitsInPlace is xs = loop 0 0
                 writeWord xs ct x'
                 loop (i + wordSize) (ct + nSet)
 
+-- | Given a vector of bits and a vector of things,
+-- extract those things for which the corresponding bit is not set.
 excludeBitsInPlace :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 excludeBitsInPlace is xs = loop 0 0
     where
@@ -148,6 +172,10 @@ excludeBitsInPlace is xs = loop 0 0
                 writeWord xs ct x'
                 loop (i + wordSize) (ct + nSet)
 
+-- | Reverse order of bits in place.
+--
+-- Combine with 'Data.Vector.Unboxed.modify'
+-- to operate on immutable vectors.
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 reverseInPlace xs = loop 0 (MV.length xs)
     where

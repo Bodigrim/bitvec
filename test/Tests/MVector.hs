@@ -8,7 +8,6 @@ import Data.Proxy
 import qualified Data.Vector.Generic             as V
 import qualified Data.Vector.Generic.Mutable     as M (basicInitialize, basicSet)
 import qualified Data.Vector.Generic.New         as N
-import qualified Data.Vector.Unboxed.Bit         as B hiding (reverse)
 import qualified Data.Vector.Unboxed             as B
 import qualified Data.Vector.Unboxed.Mutable     as M
 import Test.Framework (Test, testGroup)
@@ -186,13 +185,13 @@ prop_grow_def xs (NonNegative m) = runST $ do
 
 prop_cloneFromWords_def :: N.New B.Vector Word -> Bool
 prop_cloneFromWords_def ws
-    =  runST (N.run ws >>= pure . castFromWords >>= V.unsafeFreeze)
-    == B.fromWords (V.new ws)
+    =  runST (N.run ws >>= pure . castFromWordsM >>= V.unsafeFreeze)
+    == castFromWords (V.new ws)
 
 prop_cloneToWords_def :: N.New B.Vector Bit -> Bool
 prop_cloneToWords_def xs
-    =  runST (N.run xs >>= cloneToWords >>= V.unsafeFreeze)
-    == B.toWords (V.new xs)
+    =  runST (N.run xs >>= cloneToWordsM >>= V.unsafeFreeze)
+    == cloneToWords (V.new xs)
 
 prop_reverseInPlace_def :: N.New B.Vector Bit -> Bool
 prop_reverseInPlace_def xs

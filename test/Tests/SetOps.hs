@@ -6,7 +6,6 @@ import Data.Bit
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Bit as U
 import Test.Framework (Test, testGroup)
 import Test.QuickCheck (Property, (===))
 import Test.Framework.Providers.QuickCheck2 (testProperty)
@@ -32,64 +31,100 @@ setOpTests = testGroup "Set operations"
     , testProperty "countBits"      prop_countBits_def
     ]
 
-prop_union_def :: U.Vector Bit -> U.Vector Bit -> Bool
+union :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+union = zipBits (.|.)
+
+prop_union_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_union_def xs ys
-    =  U.toList (U.union xs ys)
-    == zipWith (.|.) (U.toList xs) (U.toList ys)
+    =  U.toList (union xs ys)
+    === zipWith (.|.) (U.toList xs) (U.toList ys)
 
-prop_intersection_def :: U.Vector Bit -> U.Vector Bit -> Bool
+intersection :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+intersection = zipBits (.&.)
+
+prop_intersection_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_intersection_def xs ys
-    =  U.toList (U.intersection xs ys)
-    == zipWith (.&.) (U.toList xs) (U.toList ys)
+    =  U.toList (intersection xs ys)
+    === zipWith (.&.) (U.toList xs) (U.toList ys)
 
-prop_difference_def :: U.Vector Bit -> U.Vector Bit -> Bool
+difference :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+difference = zipBits (\a b -> a .&. complement b)
+
+prop_difference_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_difference_def xs ys
-    =  U.toList (U.difference xs ys)
-    == zipWith diff (U.toList xs) (U.toList ys)
+    =  U.toList (difference xs ys)
+    === zipWith diff (U.toList xs) (U.toList ys)
     where
         diff x y = x .&. complement y
 
-prop_symDiff_def :: U.Vector Bit -> U.Vector Bit -> Bool
+symDiff :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+symDiff = zipBits xor
+
+prop_symDiff_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_symDiff_def xs ys
-    =  U.toList (U.symDiff xs ys)
-    == zipWith xor (U.toList xs) (U.toList ys)
+    =  U.toList (symDiff xs ys)
+    === zipWith xor (U.toList xs) (U.toList ys)
+
+unions :: NonEmpty (U.Vector Bit) -> U.Vector Bit
+unions (x :| xs) = U.slice 0 l $ U.modify (go xs) x
+    where
+        l = minimum $ fmap U.length (x :| xs)
+        go [] _ = pure ()
+        go (y : ys) acc = do
+            zipInPlace (.|.) y acc
+            go ys acc
 
 prop_unions_def :: U.Vector Bit -> [U.Vector Bit] -> Property
 prop_unions_def xs xss
-    =   U.unions (xs :| xss)
-    === foldr U.union xs xss
+    =   unions (xs :| xss)
+    === foldr union xs xss
+
+intersections :: NonEmpty (U.Vector Bit) -> U.Vector Bit
+intersections (x :| xs) = U.slice 0 l $ U.modify (go xs) x
+    where
+        l = minimum $ fmap U.length (x :| xs)
+        go [] _ = pure ()
+        go (y : ys) acc = do
+            zipInPlace (.&.) y acc
+            go ys acc
 
 prop_intersections_def :: U.Vector Bit -> [U.Vector Bit] -> Property
 prop_intersections_def xs xss
-    =   U.intersections (xs :| xss)
-    === foldr U.intersection xs xss
+    =   intersections (xs :| xss)
+    === foldr intersection xs xss
 
 prop_invert_def :: U.Vector Bit -> Bool
 prop_invert_def xs
-    =  U.toList (U.invert xs)
+    =  U.toList (U.modify invertInPlace xs)
     == map complement (U.toList xs)
+
+select :: U.Unbox a => U.Vector Bit -> U.Vector a -> [a]
+select mask ws = U.toList (U.map snd (U.filter (unBit . fst) (U.zip mask ws)))
 
 prop_select_def :: U.Vector Bit -> U.Vector Word -> Bool
 prop_select_def xs ys
-    =  U.select xs ys
+    =  select xs ys
     == [ x | (Bit True, x) <- zip (U.toList xs) (U.toList ys)]
+
+exclude :: U.Unbox a => U.Vector Bit -> U.Vector a -> [a]
+exclude mask ws = U.toList (U.map snd (U.filter (not . unBit . fst) (U.zip mask ws)))
 
 prop_exclude_def :: U.Vector Bit -> U.Vector Word -> Bool
 prop_exclude_def xs ys
-    =  U.exclude xs ys
+    =  exclude xs ys
     == [ x | (Bit False, x) <- zip (U.toList xs) (U.toList ys)]
 
 prop_selectBits_def :: U.Vector Bit -> U.Vector Bit -> Bool
 prop_selectBits_def xs ys
-    =  U.selectBits xs ys
-    == U.fromList (U.select xs ys)
+    =  selectBits xs ys
+    == U.fromList (select xs ys)
 
 prop_excludeBits_def :: U.Vector Bit -> U.Vector Bit -> Bool
 prop_excludeBits_def xs ys
-    =  U.excludeBits xs ys
-    == U.fromList (U.exclude xs ys)
+    =  excludeBits xs ys
+    == U.fromList (exclude xs ys)
 
 prop_countBits_def :: U.Vector Bit -> Bool
 prop_countBits_def xs
-    =  U.countBits xs
-    == U.length (U.selectBits xs xs)
+    =  countBits xs
+    == U.length (selectBits xs xs)
