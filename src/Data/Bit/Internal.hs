@@ -14,8 +14,8 @@ module Data.Bit.Internal
     , readWord
     , writeWord
 
-    , unsafeInvert
-    , invert
+    , unsafeFlipBit
+    , flipBit
 
     , countBits
     , listBits
@@ -272,18 +272,18 @@ instance MV.MVector U.MVector Bit where
         where
             delta = nWords (s + n + by) - nWords (s + n)
 
-{-# INLINE unsafeInvert #-}
-unsafeInvert :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-unsafeInvert (BitMVec s _ v) !i' = do
+{-# INLINE unsafeFlipBit #-}
+unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
+unsafeFlipBit (BitMVec s _ v) !i' = do
     let i = s + i'
     let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
     w <- MV.basicUnsafeRead v j
     MV.basicUnsafeWrite v j (w `xor` kk)
 
-{-# INLINE invert #-}
-invert :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-invert v i = BOUNDS_CHECK(checkIndex) "invert" i (MV.length v)
-             $ unsafeInvert v i
+{-# INLINE flipBit #-}
+flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
+flipBit v i = BOUNDS_CHECK(checkIndex) "flip" i (MV.length v)
+             $ unsafeFlipBit v i
 
 instance V.Vector U.Vector Bit where
     basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (V.basicUnsafeFreeze v)

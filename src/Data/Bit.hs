@@ -1,8 +1,8 @@
 module Data.Bit
      ( Bit(..)
 
-     , unsafeInvert
-     , invert
+     , unsafeFlipBit
+     , flipBit
 
      -- * Immutable conversions
      , castFromWords
