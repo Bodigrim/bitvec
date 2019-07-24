@@ -189,9 +189,9 @@ instance MV.MVector U.MVector Bit where
             MV.basicUnsafeWrite v j (w `xor` kk)
 #else
     basicUnsafeWrite (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !i' (Bit b) = do
-        let i     = s + i'
-            I# j  = o + divWordSize i
-            I# k  = 1 `unsafeShiftL` modWordSize i
+        let i       = s + i'
+            !(I# j) = o + divWordSize i
+            !(I# k) = 1 `unsafeShiftL` modWordSize i
         primitive $ \s ->
             let (# s', _ #) = (if b then fetchOrIntArray# mba j k s else fetchAndIntArray# mba j (notI# k) s) in
                 (# s', () #)
@@ -307,9 +307,9 @@ unsafeFlipBit (BitMVec s _ v) !i' = do
 #else
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !i' = do
-    let i     = s + i'
-        I# j  = o + divWordSize i
-        I# k  = 1 `unsafeShiftL` modWordSize i
+    let i       = s + i'
+        !(I# j) = o + divWordSize i
+        !(I# k) = 1 `unsafeShiftL` modWordSize i
     primitive $ \s ->
         let (# s', _ #) = fetchXorIntArray# mba j k s in
             (# s', () #)
