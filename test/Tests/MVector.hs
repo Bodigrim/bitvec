@@ -14,6 +14,7 @@ import Data.Bit
 #else
 import Data.Bit.ThreadSafe
 #endif
+import Data.Bits
 import Data.Proxy
 import qualified Data.Vector.Generic             as V
 import qualified Data.Vector.Generic.Mutable     as M (basicInitialize, basicSet)
@@ -55,7 +56,15 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     , testCase "basicUnsafeCopy3" case_write_copy_read3
     , testCase "basicUnsafeCopy4" case_write_copy_read4
     , testCase "basicUnsafeCopy5" case_write_copy_read5
+
+    , testProperty "flipBit" prop_flipBit
     ]
+
+prop_flipBit :: B.Vector Bit -> NonNegative Int -> Property
+prop_flipBit xs (NonNegative k) = k < B.length xs ==> ys === ys'
+    where
+        ys  = B.modify (\v -> M.modify v complement k) xs
+        ys' = B.modify (\v -> flipBit v k) xs
 
 case_write_init_read1 :: IO ()
 case_write_init_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
