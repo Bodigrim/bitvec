@@ -29,15 +29,17 @@ import           Data.Word
 import           Prelude                           as P
     hiding (and, or, any, all, reverse)
 
--- | Cast a vector of words to a vector of bits in-place.
+-- | Cast a vector of words to a vector of bits.
+-- Cf. 'Data.Bit.castFromWords'.
 castFromWordsM
     :: U.MVector s Word
     -> U.MVector s Bit
 castFromWordsM ws = BitMVec 0 (nBits (MV.length ws)) ws
 
--- | Try to cast a vector of bits to a vector of words in-place.
+-- | Try to cast a vector of bits to a vector of words.
 -- It succeeds if a vector of bits is aligned.
 -- Use 'cloneToWordsM' otherwise.
+-- Cf. 'Data.Bit.castToWords'.
 castToWordsM
     :: U.MVector s Bit
     -> Maybe (U.MVector s Word)
@@ -50,7 +52,11 @@ castToWordsM v@(BitMVec s n ws)
 
 -- | Clone a vector of bits to a new unboxed vector of words.
 -- If the bits don't completely fill the words, the last word will be zero-padded.
-cloneToWordsM :: PrimMonad m => U.MVector (PrimState m) Bit -> m (U.MVector (PrimState m) Word)
+-- Cf. 'Data.Bit.cloneToWords'.
+cloneToWordsM
+    :: PrimMonad m
+    => U.MVector (PrimState m) Bit
+    -> m (U.MVector (PrimState m) Word)
 cloneToWordsM v@(BitMVec _ n _) = do
     ws <- MV.new (nWords n)
     let loop !i !j
@@ -101,13 +107,20 @@ mapInPlaceWithIndex f = mapMInPlaceWithIndex g
 mapInPlace :: PrimMonad m => (Word -> Word) -> U.MVector (PrimState m) Bit -> m ()
 mapInPlace f = mapMInPlaceWithIndex (\_ x -> return (f x))
 
--- | Zip vectors with a given bit operation,
+-- | Zip two vectors with the given function.
 -- rewriting contents of the second argument.
+-- Cf. 'Data.Bit.zipBits'.
 --
--- Combine with 'Data.Vector.Unboxed.modify'
--- to operate on immutable vectors.
+-- >>> import Data.Bits
+-- >>> modify (zipInPlace (.&.) (read "[1,1,0]")) (read "[0,1,1]")
+-- [0,1,0]
 --
--- Caveat: immutable argument must be at least as long as a mutable one.
+-- __Warning__: if the immutable vector is shorter than the mutable one,
+-- it is a caller's responsibility to trim the result:
+--
+-- >>> import Data.Bits
+-- >>> modify (zipInPlace (.&.) (read "[1,1,0]")) (read "[0,1,1,1,1,1]")
+-- [0,1,0,1,1,1] -- note trailing garbage
 zipInPlace
     :: PrimMonad m
     => (forall a. Bits a => a -> a -> a)
@@ -133,15 +146,19 @@ zipInPlace f ys xs =
              in f w x
 {-# INLINE zipInPlace #-}
 
--- | Flip (invert) all bits in place.
+-- | Invert (flip) all bits in-place.
 --
 -- Combine with 'Data.Vector.Unboxed.modify'
 -- to operate on immutable vectors.
+--
+-- >>> Data.Vector.Unboxed.modify invertInPlace (read "[0,1,0,1,0]")
+-- [1,0,1,0,1]
 invertInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 invertInPlace = mapInPlace complement
 
--- | Given a vector of bits and a vector of things,
--- extract those things for which the corresponding bit is set.
+-- | Same as 'Data.Bit.selectBits', but deposit
+-- selected bits in-place. Returns a number of selected bits.
+-- It is caller's resposibility to trim the result to this number.
 selectBitsInPlace
     :: PrimMonad m
     => U.Vector Bit
@@ -158,8 +175,9 @@ selectBitsInPlace is xs = loop 0 0
                 writeWord xs ct x'
                 loop (i + wordSize) (ct + nSet)
 
--- | Given a vector of bits and a vector of things,
--- extract those things for which the corresponding bit is not set.
+-- | Same as 'Data.Bit.excludeBits', but deposit
+-- excluded bits in-place. Returns a number of excluded bits.
+-- It is caller's resposibility to trim the result to this number.
 excludeBitsInPlace :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 excludeBitsInPlace is xs = loop 0 0
     where
@@ -172,10 +190,13 @@ excludeBitsInPlace is xs = loop 0 0
                 writeWord xs ct x'
                 loop (i + wordSize) (ct + nSet)
 
--- | Reverse order of bits in place.
+-- | Reverse the order of bits in-place.
 --
 -- Combine with 'Data.Vector.Unboxed.modify'
 -- to operate on immutable vectors.
+--
+-- >>> Data.Vector.Unboxed.modify reverseInPlace (read "[1,1,0,1,0]")
+-- [0,1,0,1,1]
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 reverseInPlace xs = loop 0 (MV.length xs)
     where

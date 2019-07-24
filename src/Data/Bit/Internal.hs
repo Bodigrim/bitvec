@@ -39,11 +39,6 @@ import qualified Data.Vector.Unboxed         as U
 -- than vectors of 'Bool' (which stores one value per byte),
 -- but random writes
 -- are slightly slower.
---
--- In addition to "Data.Vector.Unboxed" interface,
--- one can also find assorted utilities
--- from "Data.Vector.Unboxed.Bit"
--- and "Data.Vector.Unboxed.Mutable.Bit".
 newtype Bit = Bit { unBit :: Bool }
     deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
 
@@ -272,18 +267,31 @@ instance MV.MVector U.MVector Bit where
         where
             delta = nWords (s + n + by) - nWords (s + n)
 
-{-# INLINE unsafeFlipBit #-}
+-- | Flip the bit at the given position.
+-- No bounds checks are performed.
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
+-- but slightly faster.
+--
+-- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
+-- [1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit (BitMVec s _ v) !i' = do
     let i = s + i'
     let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
     w <- MV.basicUnsafeRead v j
     MV.basicUnsafeWrite v j (w `xor` kk)
+{-# INLINE unsafeFlipBit #-}
 
-{-# INLINE flipBit #-}
+-- | Flip the bit at the given position.
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
+-- but slightly faster.
+--
+-- >>> Data.Vector.Unboxed.modify (\v -> flipBit v 1) (read "[1,1,1]")
+-- [1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-flipBit v i = BOUNDS_CHECK(checkIndex) "flip" i (MV.length v)
+flipBit v i = BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v)
              $ unsafeFlipBit v i
+{-# INLINE flipBit #-}
 
 instance V.Vector U.Vector Bit where
     basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (V.basicUnsafeFreeze v)
@@ -306,7 +314,10 @@ instance V.Vector U.Vector Bit where
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
 
--- | Return the number of ones in a bit vector.
+-- | Return the number of set bits in a vector (population count, popcount).
+--
+-- >>> countBits (read "[1,1,0,1,0,1]")
+-- 4
 countBits :: U.Vector Bit -> Int
 countBits (BitVec _ 0 _) = 0
 countBits (BitVec 0 n v) = case modWordSize n of
@@ -330,7 +341,10 @@ countBits (BitVec s n v) = case modWordSize (s + n) of
 countBitsInWords :: U.Vector Word -> Int
 countBitsInWords = U.foldl' (\acc word -> popCount word + acc) 0
 
--- | Return indices of ones in a bit vector.
+-- | Return the indices of set bits in a vector.
+--
+-- >>> listBits (read "[1,1,0,1,0,1]")
+-- [0,1,3,5]
 listBits :: U.Vector Bit -> [Int]
 listBits (BitVec _ 0 _) = []
 listBits (BitVec 0 n v) = case modWordSize n of

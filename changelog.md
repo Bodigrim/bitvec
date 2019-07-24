@@ -1,16 +1,6 @@
-# 0.3.0.0
+# 1.0.0.0
 
-* Change arguments of 'unions' and 'intersections'.
-* 'fromWords' and 'cloneFromWords' no longer take a number of bits.
-* Remove 'pad' and 'padWith'.
-* Remove 'any', 'anyBits', 'all', 'allBits', 'findIndex'.
-* Remove 'mapMInPlaceWithIndex', 'mapInPlaceWithIndex', 'mapMInPlace', 'mapInPlace'.
-* Remove 'wordSize' and 'wordLength'.
-* Remove 'cloneFromWords', introduce 'castFromWords' and 'castToWords' instead.
-* Remove 'unionInPlace', 'intersectionInPlace', 'differenceInPlace', 'symDiffInPlace'.
-* Remove 'countBits', 'listBits', 'and', 'or' for mutable vectors.
-* Remove 'readWord' and 'writeWord'.
-* Add 'unsafeInvert'.
+* Redesign API from the scratch.
 
 # 0.2.0.1
 

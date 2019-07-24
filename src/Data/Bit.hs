@@ -1,3 +1,9 @@
+-- |
+-- Module:      Data.Bit
+-- Copyright:   (c) 2019 Andrew Lelechenko, 2012-2016 James Cook
+-- Licence:     PublicDomain
+-- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
+--
 module Data.Bit
      ( Bit(..)
 
