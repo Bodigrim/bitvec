@@ -4,7 +4,7 @@
 -- |
 -- Module:      Data.Bit
 -- Copyright:   (c) 2019 Andrew Lelechenko, 2012-2016 James Cook
--- Licence:     PublicDomain
+-- Licence:     BSD3
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 -- This module exposes a faster, but thread-unsafe implementation.
@@ -14,7 +14,7 @@ module Data.Bit
 -- |
 -- Module:      Data.Bit.ThreadSafe
 -- Copyright:   (c) 2019 Andrew Lelechenko, 2012-2016 James Cook
--- Licence:     PublicDomain
+-- Licence:     BSD3
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 -- This module exposes a slower (up to 2x), but thread-safe implementation.

@@ -2,8 +2,9 @@ name: bitvec
 version: 0.2.0.1
 cabal-version: >=1.10
 build-type: Simple
-license: PublicDomain
+license: BSD3
 license-file: LICENSE
+copyright: 2019 Andrew Lelechenko, 2012-2016 James Cook
 maintainer: Andrew Lelechenko <andrew.lelechenko@gmail.com>
 homepage: https://github.com/Bodigrim/bitvec
 synopsis: Unboxed bit vectors
@@ -39,8 +40,9 @@ description:
     a handy 'Vector' interface and is not thread-safe.
 
 category: Data, Bit Vectors
-author: James Cook <mokus@deepbondi.net>,
-        Andrew Lelechenko <andrew.lelechenko@gmail.com>
+author: Andrew Lelechenko <andrew.lelechenko@gmail.com>,
+        James Cook <mokus@deepbondi.net>
+
 tested-with: GHC ==7.10.3 GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.4
 extra-source-files:
   changelog.md
