@@ -51,6 +51,11 @@ source-repository head
   type: git
   location: git://github.com/Bodigrim/bitvec.git
 
+flag bmi2
+  description: Enable bmi2 instruction set
+  manual: False
+  default: False
+
 library
   exposed-modules:
     Data.Bit
@@ -60,6 +65,9 @@ library
     ghc-prim,
     primitive >=0.5,
     vector >=0.11
+  if (flag(bmi2)) && (impl(ghc >=8.4.1))
+    build-depends:
+      bits-extra >=0.0.0.4 && <0.1
   if impl(ghc <8.0)
     build-depends:
       semigroups >=0.8
@@ -72,9 +80,13 @@ library
     Data.Bit.InternalTS
     Data.Bit.Mutable
     Data.Bit.MutableTS
+    Data.Bit.Select1
     Data.Bit.Utils
   ghc-options: -O2 -fwarn-unused-imports -fwarn-unused-binds -fwarn-type-defaults
   include-dirs: src
+  if (flag(bmi2)) && (impl(ghc >=8.4.1))
+    ghc-options: -mbmi2 -msse4.2
+    cpp-options: -DBMI2_ENABLED
 
 test-suite bitvec-tests
   type: exitcode-stdio-1.0
