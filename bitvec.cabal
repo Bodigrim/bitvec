@@ -19,6 +19,14 @@ description:
   at the price of moderate performance penalty
   (mostly, for random writes).
   .
+  === Thread safety
+  * "Data.Bit" is faster, but thread-unsafe. This is because
+    naive updates are not atomic operations: read the whole word from memory,
+    modify a bit, write the whole word back.
+  * "Data.Bit.ThreadSafe" is slower (up to 2x), but thread-safe.
+    It implements updates via @fetch{And,Or,Xor}IntArray#@ primitives
+    from "GHC.Exts".
+  .
   === Similar packages
   .
   * [bv](https://hackage.haskell.org/package/bv)
@@ -28,7 +36,7 @@ description:
   .
   * [array](https://hackage.haskell.org/package/array)
     is memory-efficient for 'Bool', but lacks
-    a handy 'Vector' interface.
+    a handy 'Vector' interface and is not thread-safe.
 
 category: Data, Bit Vectors
 author: James Cook <mokus@deepbondi.net>,
@@ -44,8 +52,10 @@ source-repository head
 library
   exposed-modules:
     Data.Bit
+    Data.Bit.ThreadSafe
   build-depends:
     base >=4.8 && <5,
+    ghc-prim,
     primitive >=0.5,
     vector >=0.11
   if impl(ghc <8.0)
@@ -55,10 +65,14 @@ library
   hs-source-dirs: src
   other-modules:
     Data.Bit.Immutable
+    Data.Bit.ImmutableTS
     Data.Bit.Internal
+    Data.Bit.InternalTS
     Data.Bit.Mutable
+    Data.Bit.MutableTS
     Data.Bit.Utils
-  ghc-options: -fwarn-unused-imports -fwarn-unused-binds -fwarn-type-defaults
+  ghc-options: -O2 -fwarn-unused-imports -fwarn-unused-binds -fwarn-type-defaults
+  include-dirs: src
 
 test-suite bitvec-tests
   type: exitcode-stdio-1.0
@@ -82,9 +96,11 @@ test-suite bitvec-tests
   other-modules:
     Support
     Tests.MVector
+    Tests.MVectorTS
     Tests.SetOps
     Tests.Vector
   ghc-options: -threaded -fwarn-unused-imports -fwarn-unused-binds
+  include-dirs: test
 
 benchmark gauge
   build-depends:

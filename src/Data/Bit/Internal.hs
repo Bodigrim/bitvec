@@ -1,12 +1,19 @@
-{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
+
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE ViewPatterns               #-}
 
+#ifndef BITVEC_THREADSAFE
 module Data.Bit.Internal
+#else
+module Data.Bit.InternalTS
+#endif
     ( Bit(..)
     , U.Vector(BitVec)
     , U.MVector(BitMVec)
@@ -31,6 +38,12 @@ import Data.Typeable
 import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as MV
 import qualified Data.Vector.Unboxed         as U
+
+#ifdef BITVEC_THREADSAFE
+import Data.Primitive.ByteArray
+import qualified Data.Vector.Primitive       as P
+import GHC.Exts
+#endif
 
 -- | A newtype wrapper with a custom instance
 -- of "Data.Vector.Unboxed", which packs booleans
@@ -167,12 +180,22 @@ instance MV.MVector U.MVector Bit where
     basicUnsafeRead  (BitMVec s _ v) !i'   = let i = s + i' in liftM (readBit (modWordSize i)) (MV.basicUnsafeRead v (divWordSize i))
 
     {-# INLINE basicUnsafeWrite #-}
+#ifndef BITVEC_THREADSAFE
     basicUnsafeWrite (BitMVec s _ v) !i' !x = do
         let i = s + i'
         let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
         w <- MV.basicUnsafeRead v j
         when (Bit (w .&. kk /= 0) /= x) $
             MV.basicUnsafeWrite v j (w `xor` kk)
+#else
+    basicUnsafeWrite (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !i' (Bit b) = do
+        let i     = s + i'
+            I# j  = o + divWordSize i
+            I# k  = 1 `unsafeShiftL` modWordSize i
+        primitive $ \s ->
+            let (# s', _ #) = (if b then fetchOrIntArray# mba j k s else fetchAndIntArray# mba j (notI# k) s) in
+                (# s', () #)
+#endif
 
     {-# INLINE basicClear #-}
     basicClear _ = pure ()
@@ -274,12 +297,23 @@ instance MV.MVector U.MVector Bit where
 --
 -- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
+#ifndef BITVEC_THREADSAFE
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit (BitMVec s _ v) !i' = do
     let i = s + i'
     let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
     w <- MV.basicUnsafeRead v j
     MV.basicUnsafeWrite v j (w `xor` kk)
+#else
+unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
+unsafeFlipBit (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !i' = do
+    let i     = s + i'
+        I# j  = o + divWordSize i
+        I# k  = 1 `unsafeShiftL` modWordSize i
+    primitive $ \s ->
+        let (# s', _ #) = fetchXorIntArray# mba j k s in
+            (# s', () #)
+#endif
 {-# INLINE unsafeFlipBit #-}
 
 -- | Flip the bit at the given position.

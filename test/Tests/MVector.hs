@@ -1,9 +1,19 @@
+{-# LANGUAGE CPP #-}
+
+#ifndef BITVEC_THREADSAFE
 module Tests.MVector where
+#else
+module Tests.MVectorTS where
+#endif
 
 import Support
 
 import Control.Monad.ST
+#ifndef BITVEC_THREADSAFE
 import Data.Bit
+#else
+import Data.Bit.ThreadSafe
+#endif
 import Data.Proxy
 import qualified Data.Vector.Generic             as V
 import qualified Data.Vector.Generic.Mutable     as M (basicInitialize, basicSet)

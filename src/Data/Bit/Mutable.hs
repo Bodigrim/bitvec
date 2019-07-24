@@ -1,8 +1,14 @@
+{-# LANGUAGE CPP              #-}
+
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes       #-}
 
+#ifndef BITVEC_THREADSAFE
 module Data.Bit.Mutable
+#else
+module Data.Bit.MutableTS
+#endif
      ( castFromWordsM
      , castToWordsM
      , cloneToWordsM
@@ -18,7 +24,11 @@ module Data.Bit.Mutable
 
 import           Control.Monad
 import           Control.Monad.Primitive
+#ifndef BITVEC_THREADSAFE
 import           Data.Bit.Internal
+#else
+import           Data.Bit.InternalTS
+#endif
 import           Data.Bit.Utils
 import           Data.Bits
 import qualified Data.Vector.Generic.Mutable       as MV

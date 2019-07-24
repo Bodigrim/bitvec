@@ -8,6 +8,7 @@ module Support where
 
 import Control.Monad.ST
 import Data.Bit
+import qualified Data.Bit.ThreadSafe as TS
 import Data.Bits
 import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
@@ -24,6 +25,16 @@ instance CoArbitrary Bit where
 
 instance Function Bit where
     function f = functionMap unBit Bit f
+
+instance Arbitrary TS.Bit where
+    arbitrary = TS.Bit <$> arbitrary
+    shrink = fmap TS.Bit . shrink . TS.unBit
+
+instance CoArbitrary TS.Bit where
+    coarbitrary = coarbitrary . TS.unBit
+
+instance Function TS.Bit where
+    function f = functionMap TS.unBit TS.Bit f
 
 instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
     arbitrary = V.new <$> arbitrary
