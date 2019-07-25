@@ -8,7 +8,9 @@
 
 {-# LANGUAGE CPP #-}
 
+#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
+#endif
 
 module Data.Bit.Select1
     ( select1
