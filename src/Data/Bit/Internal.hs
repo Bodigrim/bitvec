@@ -386,7 +386,7 @@ nthBitIndex (Bit True) k = \case
                 Left{}  -> Nothing
             _ -> case nth1 k (V.head v `unsafeShiftR` s) of
                 Right x -> Just x
-                Left k' -> case nth1InWords k' (V.slice 1 (l - 1) v) of
+                Left k' -> case nth1InWords k' (V.slice 1 (l - 2) v) of
                     Right x  -> Just $ wordSize - s + x
                     Left k'' -> case nth1 k'' (V.last v .&. loMask nMod) of
                         Right x -> Just $ mulWordSize (l - 1) - s + x
@@ -414,7 +414,7 @@ nthBitIndex (Bit False) k = \case
                 Left{}  -> Nothing
             _ -> case nth0 k ((V.head v `unsafeShiftR` s) .|. hiMask (wordSize - s)) of
                 Right x -> Just x
-                Left k' -> case nth0InWords k' (V.slice 1 (l - 1) v) of
+                Left k' -> case nth0InWords k' (V.slice 1 (l - 2) v) of
                     Right x  -> Just $ wordSize - s + x
                     Left k'' -> case nth0 k'' (V.last v .|. hiMask nMod) of
                         Right x -> Just $ mulWordSize (l - 1) - s + x

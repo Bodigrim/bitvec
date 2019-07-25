@@ -7,7 +7,9 @@ import Data.Bit
 import Data.List hiding (and, or)
 import qualified Data.Vector.Unboxed as U hiding (reverse, and, or, any, all, findIndex)
 import Test.Framework (Test, testGroup)
+import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.HUnit (assertEqual)
 import Test.QuickCheck
 
 vectorTests :: Test
@@ -30,7 +32,9 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
         [ testProperty "first"                      prop_first_def
         ]
     , testGroup "nthBitIndex"
-        [ testProperty "matches bitIndex True"              prop_nthBit_1
+        [ testCase     "special case 1"                     case_nthBit_1
+
+        , testProperty "matches bitIndex True"              prop_nthBit_1
         , testProperty "matches bitIndex False"             prop_nthBit_2
         , testProperty "matches sequence of bitIndex True"  prop_nthBit_3
         , testProperty "matches sequence of bitIndex False" prop_nthBit_4
@@ -129,3 +133,7 @@ prop_nthBit_4 (Positive n) xs = case nthBitIndex (Bit False) (n + 1) xs of
         Just j  -> case nthBitIndex (Bit False) n (U.drop (j + 1) xs) of
             Nothing -> property False
             Just k  -> i === j + k + 1
+
+case_nthBit_1 :: IO ()
+case_nthBit_1 = assertEqual "should be equal" Nothing $
+    nthBitIndex (Bit True) 1 $ U.slice 61 4 $ U.replicate 100 (Bit False)
