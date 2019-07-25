@@ -59,7 +59,7 @@ castFromWords ws = BitVec 0 (nBits (V.length ws)) ws
 castToWords
     :: U.Vector Bit
     -> Maybe (U.Vector Word)
-castToWords v@(BitVec s n ws)
+castToWords (BitVec s n ws)
     | aligned s
     , aligned n
     = Just $ V.slice (divWordSize s) (nWords n) ws

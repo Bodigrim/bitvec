@@ -195,9 +195,9 @@ instance MV.MVector U.MVector Bit where
         let i       = s + i'
             !(I# j) = o + divWordSize i
             !(I# k) = 1 `unsafeShiftL` modWordSize i
-        primitive $ \s ->
-            let (# s', _ #) = (if b then fetchOrIntArray# mba j k s else fetchAndIntArray# mba j (notI# k) s) in
-                (# s', () #)
+        primitive $ \state ->
+            let !(# state', _ #) = (if b then fetchOrIntArray# mba j k state else fetchAndIntArray# mba j (notI# k) state) in
+                (# state', () #)
 #endif
 
     {-# INLINE basicClear #-}
@@ -313,9 +313,9 @@ unsafeFlipBit (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !
     let i       = s + i'
         !(I# j) = o + divWordSize i
         !(I# k) = 1 `unsafeShiftL` modWordSize i
-    primitive $ \s ->
-        let (# s', _ #) = fetchXorIntArray# mba j k s in
-            (# s', () #)
+    primitive $ \state ->
+        let !(# state', _ #) = fetchXorIntArray# mba j k state in
+            (# state', () #)
 #endif
 {-# INLINE unsafeFlipBit #-}
 
@@ -434,9 +434,9 @@ nth1 k w = if k > c then Left (k - c) else Right (select1 w k - 1)
 nth0InWords :: Int -> U.Vector Word -> Either Int Int
 nth0InWords k vec = go 0 k
     where
-        go n k
-            | n >= U.length vec = Left k
-            | otherwise = if k > c then go (n + 1) (k - c) else Right (mulWordSize n + select1 w k - 1)
+        go n l
+            | n >= U.length vec = Left l
+            | otherwise = if l > c then go (n + 1) (l - c) else Right (mulWordSize n + select1 w l - 1)
             where
                 w = complement (vec U.! n)
                 c = popCount w
@@ -444,9 +444,9 @@ nth0InWords k vec = go 0 k
 nth1InWords :: Int -> U.Vector Word -> Either Int Int
 nth1InWords k vec = go 0 k
     where
-        go n k
-            | n >= U.length vec = Left k
-            | otherwise = if k > c then go (n + 1) (k - c) else Right (mulWordSize n + select1 w k - 1)
+        go n l
+            | n >= U.length vec = Left l
+            | otherwise = if l > c then go (n + 1) (l - c) else Right (mulWordSize n + select1 w l - 1)
             where
                 w = vec U.! n
                 c = popCount w
