@@ -33,11 +33,12 @@ module Data.Bit.ThreadSafe
 
      -- * Immutable operations
      , zipBits
+     , bitIndex
+     , nthBitIndex
      , countBits
      , listBits
      , selectBits
      , excludeBits
-     , bitIndex
 
      -- * Mutable conversions
      , castFromWordsM

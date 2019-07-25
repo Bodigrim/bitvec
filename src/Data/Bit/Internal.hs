@@ -3,6 +3,7 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -24,6 +25,7 @@ module Data.Bit.InternalTS
     , unsafeFlipBit
     , flipBit
 
+    , nthBitIndex
     , countBits
     , listBits
     ) where
@@ -32,6 +34,7 @@ module Data.Bit.InternalTS
 
 import Control.Monad
 import Control.Monad.Primitive
+import Data.Bit.Select1
 import Data.Bit.Utils
 import Data.Bits
 import Data.Typeable
@@ -348,10 +351,114 @@ instance V.Vector U.Vector Bit where
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
 
+-- | Return the address of the n-th bit in the vector
+-- with the specified value, if any.
+--
+-- >>> nthBitIndex (Bit True) 2 (read "[0,1,0,1,1,1,0]")
+-- Just 3
+--
+-- One can use 'nthBitIndex' to implement
+-- to implement @select{0,1}@ queries
+-- for <https://en.wikipedia.org/wiki/Succinct_data_structure succinct dictionaries>.
+nthBitIndex :: Bit -> Int -> U.Vector Bit -> Maybe Int
+nthBitIndex _ k
+    | k <= 0 = error "nthBitIndex: n must be positive"
+nthBitIndex (Bit True) k = \case
+    BitVec _ 0 _ -> Nothing
+    BitVec 0 n v -> let l = V.basicLength v in case modWordSize n of
+        0 -> case nth1InWords k v of
+            Right x -> Just x
+            Left{}  -> Nothing
+        nMod -> case nth1InWords k (V.slice 0 (l - 1) v) of
+            Right x -> Just x
+            Left k' -> case nth1 k' (V.last v .&. loMask nMod) of
+                Right x -> Just $ mulWordSize (l - 1) + x
+                Left{}  -> Nothing
+    BitVec s n v -> let l = V.basicLength v in case modWordSize (s + n) of
+        0 -> case nth1 k (V.head v `unsafeShiftR` s) of
+            Right x -> Just x
+            Left k' -> case nth1InWords k' (V.slice 1 (l - 1) v) of
+                Right x -> Just $ wordSize - s + x
+                Left {} -> Nothing
+        nMod -> case l of
+            1 -> case nth1 k ((V.head v `unsafeShiftR` s) .&. loMask n) of
+                Right x -> Just x
+                Left{}  -> Nothing
+            _ -> case nth1 k (V.head v `unsafeShiftR` s) of
+                Right x -> Just x
+                Left k' -> case nth1InWords k' (V.slice 1 (l - 1) v) of
+                    Right x  -> Just $ wordSize - s + x
+                    Left k'' -> case nth1 k'' (V.last v .&. loMask nMod) of
+                        Right x -> Just $ mulWordSize (l - 1) - s + x
+                        Left{}  -> Nothing
+nthBitIndex (Bit False) k = \case
+    BitVec _ 0 _ -> Nothing
+    BitVec 0 n v -> let l = V.basicLength v in case modWordSize n of
+        0 -> case nth0InWords k v of
+            Right x -> Just x
+            Left{}  -> Nothing
+        nMod -> case nth0InWords k (V.slice 0 (l - 1) v) of
+            Right x -> Just x
+            Left k' -> case nth0 k' (V.last v .|. hiMask nMod) of
+                Right x -> Just $ mulWordSize (l - 1) + x
+                Left{}  -> Nothing
+    BitVec s n v -> let l = V.basicLength v in case modWordSize (s + n) of
+        0 -> case nth0 k (V.head v `unsafeShiftR` s .|. hiMask (wordSize - s)) of
+            Right x -> Just x
+            Left k' -> case nth0InWords k' (V.slice 1 (l - 1) v) of
+                Right x -> Just $ wordSize - s + x
+                Left {} -> Nothing
+        nMod -> case l of
+            1 -> case nth0 k ((V.head v `unsafeShiftR` s) .|. hiMask n) of
+                Right x -> Just x
+                Left{}  -> Nothing
+            _ -> case nth0 k ((V.head v `unsafeShiftR` s) .|. hiMask (wordSize - s)) of
+                Right x -> Just x
+                Left k' -> case nth0InWords k' (V.slice 1 (l - 1) v) of
+                    Right x  -> Just $ wordSize - s + x
+                    Left k'' -> case nth0 k'' (V.last v .|. hiMask nMod) of
+                        Right x -> Just $ mulWordSize (l - 1) - s + x
+                        Left{}  -> Nothing
+
+nth0 :: Int -> Word -> Either Int Int
+nth0 k v = if k > c then Left (k - c) else Right (select1 w k - 1)
+    where
+        w = complement v
+        c = popCount w
+
+nth1 :: Int -> Word -> Either Int Int
+nth1 k w = if k > c then Left (k - c) else Right (select1 w k - 1)
+    where
+        c = popCount w
+
+nth0InWords :: Int -> U.Vector Word -> Either Int Int
+nth0InWords k vec = go 0 k
+    where
+        go n k
+            | n >= U.length vec = Left k
+            | otherwise = if k > c then go (n + 1) (k - c) else Right (mulWordSize n + select1 w k - 1)
+            where
+                w = complement (vec U.! n)
+                c = popCount w
+
+nth1InWords :: Int -> U.Vector Word -> Either Int Int
+nth1InWords k vec = go 0 k
+    where
+        go n k
+            | n >= U.length vec = Left k
+            | otherwise = if k > c then go (n + 1) (k - c) else Right (mulWordSize n + select1 w k - 1)
+            where
+                w = vec U.! n
+                c = popCount w
+
 -- | Return the number of set bits in a vector (population count, popcount).
 --
 -- >>> countBits (read "[1,1,0,1,0,1]")
 -- 4
+--
+-- One can combine 'countBits' with 'Data.Vector.Unboxed.take'
+-- to implement @rank{0,1}@ queries
+-- for <https://en.wikipedia.org/wiki/Succinct_data_structure succinct dictionaries>.
 countBits :: U.Vector Bit -> Int
 countBits (BitVec _ 0 _) = 0
 countBits (BitVec 0 n v) = case modWordSize n of

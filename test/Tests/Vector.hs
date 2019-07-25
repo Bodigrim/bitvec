@@ -29,6 +29,12 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     , testGroup "Search operations"
         [ testProperty "first"                      prop_first_def
         ]
+    , testGroup "nthBitIndex"
+        [ testProperty "matches bitIndex True"              prop_nthBit_1
+        , testProperty "matches bitIndex False"             prop_nthBit_2
+        , testProperty "matches sequence of bitIndex True"  prop_nthBit_3
+        , testProperty "matches sequence of bitIndex False" prop_nthBit_4
+        ]
     ]
 
 prop_toList_fromList :: [Bit] -> Bool
@@ -99,3 +105,27 @@ prop_first_def :: Bit -> U.Vector Bit -> Bool
 prop_first_def b xs
     =  bitIndex b xs
     == findIndex (b ==) (U.toList xs)
+
+prop_nthBit_1 :: U.Vector Bit -> Property
+prop_nthBit_1 xs = bitIndex (Bit True) xs === nthBitIndex (Bit True) 1 xs
+
+prop_nthBit_2 :: U.Vector Bit -> Property
+prop_nthBit_2 xs = bitIndex (Bit False) xs === nthBitIndex (Bit False) 1 xs
+
+prop_nthBit_3 :: Positive Int -> U.Vector Bit -> Property
+prop_nthBit_3 (Positive n) xs = case nthBitIndex (Bit True) (n + 1) xs of
+    Nothing -> property True
+    Just i  -> case bitIndex (Bit True) xs of
+        Nothing -> property False
+        Just j  -> case nthBitIndex (Bit True) n (U.drop (j + 1) xs) of
+            Nothing -> property False
+            Just k  -> i === j + k + 1
+
+prop_nthBit_4 :: Positive Int -> U.Vector Bit -> Property
+prop_nthBit_4 (Positive n) xs = case nthBitIndex (Bit False) (n + 1) xs of
+    Nothing -> property True
+    Just i  -> case bitIndex (Bit False) xs of
+        Nothing -> property False
+        Just j  -> case nthBitIndex (Bit False) n (U.drop (j + 1) xs) of
+            Nothing -> property False
+            Just k  -> i === j + k + 1
