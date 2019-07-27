@@ -26,4 +26,4 @@ at the price of moderate performance penalty
   `bitvec` provides an interface to mutable vectors as well.
 
 * `array` is memory-efficient for `Bool`, but lacks
-  a handy 'Vector' interface and is not thread-safe.
+  a handy `Vector` interface and is not thread-safe.
