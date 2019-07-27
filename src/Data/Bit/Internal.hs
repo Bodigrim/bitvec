@@ -293,21 +293,54 @@ instance MV.MVector U.MVector Bit where
         where
             delta = nWords (s + n + by) - nWords (s + n)
 
+#ifndef BITVEC_THREADSAFE
+
 -- | Flip the bit at the given position.
 -- No bounds checks are performed.
 -- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
 -- but slightly faster.
 --
+-- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
+-- either you modify it with 'id' (which is 'id' altogether)
+-- or with 'Data.Bits.complement' (which is 'unsafeFlipBit').
+--
 -- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
-#ifndef BITVEC_THREADSAFE
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit (BitMVec s _ v) !i' = do
     let i = s + i'
     let j = divWordSize i; k = modWordSize i; kk = 1 `unsafeShiftL` k
     w <- MV.basicUnsafeRead v j
     MV.basicUnsafeWrite v j (w `xor` kk)
+{-# INLINE unsafeFlipBit #-}
+
+-- | Flip the bit at the given position.
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
+-- but slightly faster.
+--
+-- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
+-- either you modify it with 'id' (which is 'id' altogether)
+-- or with 'Data.Bits.complement' (which is 'flipBit').
+--
+-- >>> Data.Vector.Unboxed.modify (\v -> flipBit v 1) (read "[1,1,1]")
+-- [1,0,1]
+flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
+flipBit v i = BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit v i
+{-# INLINE flipBit #-}
+
 #else
+
+-- | Flip the bit at the given position.
+-- No bounds checks are performed.
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
+-- but slightly faster and atomic.
+--
+-- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
+-- either you modify it with 'id' (which is 'id' altogether)
+-- or with 'Data.Bits.complement' (which is 'unsafeFlipBit').
+--
+-- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
+-- [1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !i' = do
     let i       = s + i'
@@ -316,19 +349,23 @@ unsafeFlipBit (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !
     primitive $ \state ->
         let !(# state', _ #) = fetchXorIntArray# mba j k state in
             (# state', () #)
-#endif
 {-# INLINE unsafeFlipBit #-}
 
 -- | Flip the bit at the given position.
 -- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
--- but slightly faster.
+-- but slightly faster and atomic
+--
+-- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
+-- either you modify it with 'id' (which is 'id' altogether)
+-- or with 'Data.Bits.complement' (which is 'flipBit').
 --
 -- >>> Data.Vector.Unboxed.modify (\v -> flipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-flipBit v i = BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v)
-             $ unsafeFlipBit v i
+flipBit v i = BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit v i
 {-# INLINE flipBit #-}
+
+#endif
 
 instance V.Vector U.Vector Bit where
     basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (V.basicUnsafeFreeze v)
