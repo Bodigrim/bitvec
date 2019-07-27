@@ -143,12 +143,16 @@ excludeBits is xs = runST $ do
     n <- B.excludeBitsInPlace is xs1
     Unsafe.unsafeFreeze (MV.take n xs1)
 
--- | Return the address of the first bit in the vector
+-- | Return the index of the first bit in the vector
 -- with the specified value, if any.
 -- Similar to 'Data.Vector.Unboxed.elemIndex', but much faster.
 --
 -- >>> bitIndex (Bit True) (read "[0,0,1,0,1]")
 -- Just 2
+-- >>> bitIndex (Bit True) (read "[0,0,0,0,0]")
+-- Nothing
+--
+-- prop> bitIndex bit == nthBitIndex bit 1
 --
 -- One can also use it to reduce a vector with disjunction or conjunction:
 --

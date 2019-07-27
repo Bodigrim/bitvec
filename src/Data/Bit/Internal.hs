@@ -351,11 +351,15 @@ instance V.Vector U.Vector Bit where
                 endWord     = nWords absEndBit
                 startWord   = divWordSize absStartBit
 
--- | Return the address of the n-th bit in the vector
+-- | Return the index of the @n@-th bit in the vector
 -- with the specified value, if any.
+-- Here @n@ is 1-based and the index is 0-based.
+-- Non-positive @n@ results in an error.
 --
 -- >>> nthBitIndex (Bit True) 2 (read "[0,1,0,1,1,1,0]")
 -- Just 3
+-- >>> nthBitIndex (Bit True) 5 (read "[0,1,0,1,1,1,0]")
+-- Nothing
 --
 -- One can use 'nthBitIndex' to implement
 -- to implement @select{0,1}@ queries
