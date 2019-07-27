@@ -14,7 +14,7 @@ import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.New     as N
 import qualified Data.Vector.Unboxed         as U
-import Test.QuickCheck
+import Test.Tasty.QuickCheck
 
 instance Arbitrary Bit where
     arbitrary = Bit <$> arbitrary

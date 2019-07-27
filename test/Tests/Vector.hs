@@ -6,13 +6,11 @@ import Prelude hiding (and, or)
 import Data.Bit
 import Data.List hiding (and, or)
 import qualified Data.Vector.Unboxed as U hiding (reverse, and, or, any, all, findIndex)
-import Test.Framework (Test, testGroup)
-import Test.Framework.Providers.HUnit (testCase)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.HUnit (assertEqual)
-import Test.QuickCheck
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
-vectorTests :: Test
+vectorTests :: TestTree
 vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     [ testGroup "Data.Vector.Unboxed functions"
         [ testProperty "toList . fromList == id"    prop_toList_fromList

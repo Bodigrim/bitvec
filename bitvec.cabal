@@ -93,15 +93,13 @@ test-suite bitvec-tests
   main-is: Main.hs
   build-depends:
     base >=4.8 && <5,
-    bitvec -any,
-    HUnit -any,
+    bitvec,
     primitive >=0.5,
+    quickcheck-classes >=0.6.1,
     vector >=0.11,
-    test-framework -any,
-    test-framework-hunit -any,
-    test-framework-quickcheck2 -any,
-    QuickCheck >=2.10,
-    quickcheck-classes >=0.6.1
+    tasty,
+    tasty-hunit,
+    tasty-quickcheck
   if impl(ghc <8.0)
     build-depends:
       semigroups >=0.8

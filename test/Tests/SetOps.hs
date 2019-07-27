@@ -6,11 +6,10 @@ import Data.Bit
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.Vector.Unboxed as U
-import Test.Framework (Test, testGroup)
-import Test.QuickCheck (Property, (===))
-import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.Tasty
+import Test.Tasty.QuickCheck hiding ((.&.))
 
-setOpTests :: Test
+setOpTests :: TestTree
 setOpTests = testGroup "Set operations"
     [ testProperty "union"          prop_union_def
     , testProperty "intersection"   prop_intersection_def

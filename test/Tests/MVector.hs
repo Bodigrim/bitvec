@@ -21,14 +21,12 @@ import qualified Data.Vector.Generic.Mutable     as M (basicInitialize, basicSet
 import qualified Data.Vector.Generic.New         as N
 import qualified Data.Vector.Unboxed             as B
 import qualified Data.Vector.Unboxed.Mutable     as M
-import Test.Framework (Test, testGroup)
-import Test.Framework.Providers.HUnit (testCase)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.HUnit (assertEqual)
-import Test.QuickCheck
 import Test.QuickCheck.Classes
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
-mvectorTests :: Test
+mvectorTests :: TestTree
 mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     [ testGroup "Data.Vector.Unboxed.Mutable functions"
         [ testProperty "slice"          prop_slice_def
