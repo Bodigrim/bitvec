@@ -1,6 +1,8 @@
 # 1.0.0.0
 
 * Redesign API from the scratch.
+* Add a thread-safe implementation.
+* Add 'nthBitIndex' function.
 
 # 0.2.0.1
 
