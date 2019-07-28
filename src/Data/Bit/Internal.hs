@@ -78,8 +78,10 @@ data instance U.Vector    Bit = BitVec  !Int !Int !ByteArray
 
 newtype WithInternals = WithInternals (U.Vector Bit)
 
+#if MIN_VERSION_primitive(0,6,3)
 instance Show WithInternals where
     show (WithInternals v@(BitVec off len ba)) = show (off, len, ba, v)
+#endif
 
 readBit :: Int -> Word -> Bit
 readBit i w = Bit (w .&. (1 `unsafeShiftL` i) /= 0)
