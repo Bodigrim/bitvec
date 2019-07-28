@@ -1,41 +1,14 @@
 module Main where
 
-import Control.Monad
-import Control.Monad.ST
-import Data.Bit
-import qualified Data.Bit.ThreadSafe as TS
-import Data.Bits
-import qualified Data.Vector.Unboxed.Mutable as MU
 import Gauge.Main
+
+import Bench.RandomFlip
+import Bench.RandomRead
+import Bench.RandomWrite
 
 main :: IO ()
 main = defaultMain
-  [ bgroup "randomWrite"   $ map benchRandomWrite   [5..10]
-  , bgroup "randomWriteTS" $ map benchRandomWriteTS [5..10]
+  [ bgroup "randomWrite" $ map benchRandomWrite   [5..10]
+  , bgroup "randomFlip"  $ map benchRandomFlip    [5..10]
+  , bgroup "randomRead"  $ map benchRandomRead    [5..10]
   ]
-
-benchRandomWrite :: Int -> Benchmark
-benchRandomWrite k = bench (show (2 ^ k)) $ nf doRandomWrite k
-
-doRandomWrite :: Int -> Int
-doRandomWrite k = runST $ do
-  let n = 2 ^ k
-      ixs = scanl xor 0 [0..n-1]
-      vals = take 100 $ cycle [Bit True, Bit False]
-  vec <- MU.new n
-  forM_ vals $ \v -> forM_ ixs $ \i -> MU.unsafeWrite vec i v
-  Bit i <- MU.unsafeRead vec 0
-  pure $ if i then 1 else 0
-
-benchRandomWriteTS :: Int -> Benchmark
-benchRandomWriteTS k = bench (show (2 ^ k)) $ nf doRandomWriteTS k
-
-doRandomWriteTS :: Int -> Int
-doRandomWriteTS k = runST $ do
-  let n = 2 ^ k
-      ixs = scanl xor 0 [0..n-1]
-      vals = take 100 $ cycle [TS.Bit True, TS.Bit False]
-  vec <- MU.new n
-  forM_ vals $ \v -> forM_ ixs $ \i -> MU.unsafeWrite vec i v
-  TS.Bit i <- MU.unsafeRead vec 0
-  pure $ if i then 1 else 0
