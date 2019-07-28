@@ -211,10 +211,10 @@ prop_cloneFromWords_def ws
     =  runST (N.run ws >>= pure . castFromWordsM >>= V.unsafeFreeze)
     === castFromWords (V.new ws)
 
-prop_cloneToWords_def :: N.New B.Vector Bit -> Bool
+prop_cloneToWords_def :: N.New B.Vector Bit -> Property
 prop_cloneToWords_def xs
     =  runST (N.run xs >>= cloneToWordsM >>= V.unsafeFreeze)
-    == cloneToWords (V.new xs)
+    === cloneToWords (V.new xs)
 
 prop_reverseInPlace_def :: N.New B.Vector Bit -> Bool
 prop_reverseInPlace_def xs

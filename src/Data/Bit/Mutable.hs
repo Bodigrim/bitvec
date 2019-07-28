@@ -69,15 +69,13 @@ cloneToWordsM
     :: PrimMonad m
     => U.MVector (PrimState m) Bit
     -> m (U.MVector (PrimState m) Word)
-cloneToWordsM v@(BitMVec _ n _) = do
-    ws <- MV.new (nWords n)
-    let loop !i !j
-            | i >= n    = return ()
-            | otherwise = do
-                readWord v i >>= MV.write ws j
-                loop (i + wordSize) (j + 1)
-    loop 0 0
-    return ws
+cloneToWordsM v = do
+    let lenBits  = MV.basicLength v
+        lenWords = nWords lenBits
+    w@(BitMVec _ _ arr) <- MV.basicUnsafeNew (mulWordSize lenWords)
+    MV.basicUnsafeCopy (U.slice 0 lenBits w) v
+    MV.basicSet (U.slice lenBits (mulWordSize lenWords - lenBits) w) (Bit False)
+    pure $ MV_Word $ P.MVector 0 lenWords arr
 {-# INLINE cloneToWordsM #-}
 
 -- |Map a function over a bit vector one 'Word' at a time ('wordSize' bits at a time).  The function will be passed the bit index (which will always be 'wordSize'-aligned) and the current value of the corresponding word.  The returned word will be written back to the vector.  If there is a partial word at the end of the vector, it will be zero-padded when passed to the function and truncated when the result is written back to the array.

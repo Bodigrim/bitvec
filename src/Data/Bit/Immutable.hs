@@ -79,15 +79,10 @@ castToWords (BitVec s n ws)
 cloneToWords
     :: U.Vector Bit
     -> U.Vector Word
-cloneToWords v@(BitVec _ n _) = runST $ do
-    ws <- MV.new (nWords n)
-    let loop !i !j
-            | i >= n    = return ()
-            | otherwise = do
-                MV.write ws j (indexWord v i)
-                loop (i + wordSize) (j + 1)
-    loop 0 0
-    V.unsafeFreeze ws
+cloneToWords v = runST $ do
+    v' <- U.unsafeThaw v
+    w <- B.cloneToWordsM v'
+    U.unsafeFreeze w
 {-# INLINE cloneToWords #-}
 
 -- | Zip two vectors with the given function.
