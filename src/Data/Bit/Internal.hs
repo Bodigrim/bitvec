@@ -208,8 +208,7 @@ instance MV.MVector U.MVector Bit where
             k = modWordSize i
             kk = 1 `unsafeShiftL` k :: Word
         word <- readByteArray arr j
-        when (Bit (word .&. kk /= 0) /= x) $
-            writeByteArray arr j (word `xor` kk)
+        writeByteArray arr j (if unBit x then word .|. kk else word .&. complement kk)
 #else
     basicUnsafeWrite (BitMVec off _ (MutableByteArray mba)) !i' (Bit b) = do
         let i       = off + i'
