@@ -20,7 +20,7 @@ lgWordSize, wordSizeMask, wordSizeMaskC :: Int
 lgWordSize = case wordSize of
     32 -> 5
     64 -> 6
-    _  -> lg2 wordSize
+    _  -> error "wordsToBytes: unknown architecture"
 
 wordSizeMask = wordSize - 1
 wordSizeMaskC = complement wordSizeMask
@@ -39,6 +39,12 @@ mulWordSize x = unsafeShiftL x lgWordSize
 -- number of words needed to store n bits
 nWords :: Int -> Int
 nWords ns = divWordSize (ns + wordSize - 1)
+
+wordsToBytes :: Int -> Int
+wordsToBytes ns = case wordSize of
+    32 -> ns `unsafeShiftL` 2
+    64 -> ns `unsafeShiftL` 3
+    _  -> error "wordsToBytes: unknown architecture"
 
 -- number of bits storable in n words
 nBits :: Bits a => a -> a
