@@ -28,6 +28,8 @@ module Data.Bit.InternalTS
     , nthBitIndex
     , countBits
     , listBits
+
+    , WithInternals(..)
     ) where
 
 #include "vector.h"
@@ -71,8 +73,13 @@ instance Read Bit where
 instance U.Unbox Bit
 
 -- Ints are offset and length in bits
-data instance U.MVector s Bit = BitMVec !Int !Int !(P.MVector s Word)
-data instance U.Vector    Bit = BitVec  !Int !Int !(P.Vector    Word)
+data instance U.MVector s Bit = BitMVec !Int !Int !(MutableByteArray s)
+data instance U.Vector    Bit = BitVec  !Int !Int !ByteArray
+
+newtype WithInternals = WithInternals (U.Vector Bit)
+
+instance Show WithInternals where
+    show (WithInternals v@(BitVec off len ba)) = show (off, len, ba, v)
 
 readBit :: Int -> Word -> Bit
 readBit i w = Bit (w .&. (1 `unsafeShiftL` i) /= 0)
@@ -84,49 +91,59 @@ extendToWord (Bit True)  = complement 0
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
 indexWord :: U.Vector Bit -> Int -> Word
-indexWord (BitVec 0 n v) i
-    | aligned i         = masked b lo
-    | j + 1 == nWords n = masked b (extractWord k lo 0 )
-    | otherwise         = masked b (extractWord k lo hi)
-        where
-            b = n - i
-            j  = divWordSize i
-            k  = modWordSize i
-            lo = v V.!  j
-            hi = v V.! (j+1)
+indexWord (BitVec off n arr) i
+    | offBits == 0, aligned i
+    = masked b lo
+    | offBits == 0, j + 1 == nWords n
+    = masked b (extractWord k lo 0 )
+    | offBits == 0
+    = masked b (extractWord k lo hi)
+    where
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        b = n - i
+        j  = divWordSize i
+        k  = modWordSize i
+        lo = indexByteArray arr (offWords + j)
+        hi = indexByteArray arr (offWords + j + 1)
 indexWord (BitVec s n v) i = indexWord (BitVec 0 (n + s) v) (i + s)
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
 readWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m Word
-readWord (BitMVec 0 lBits (P.MVector offWords _ arr)) i
-    | aligned i         = liftM (masked b) lo
-    | j + 1 == nWords lBits = liftM (masked b) (liftM2 (extractWord k) lo (return 0))
-    | otherwise         = liftM (masked b) (liftM2 (extractWord k) lo hi)
-        where
-            b = lBits - i
-            j = divWordSize i
-            k = modWordSize i
-            lo = readByteArray arr (offWords + j)
-            hi = readByteArray arr (offWords + j + 1)
+readWord (BitMVec off lBits arr) i
+    | offBits == 0, aligned i
+    = liftM (masked b) lo
+    | offBits == 0, j + 1 == nWords lBits
+    = liftM (masked b) (liftM2 (extractWord k) lo (return 0))
+    | offBits == 0
+    = liftM (masked b) (liftM2 (extractWord k) lo hi)
+    where
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        b = lBits - i
+        j = divWordSize i
+        k = modWordSize i
+        lo = readByteArray arr (offWords + j)
+        hi = readByteArray arr (offWords + j + 1)
 readWord (BitMVec offBits lBits v) i = readWord (BitMVec 0 (lBits + offBits) v) (i + offBits)
 
 -- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
 writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()
-writeWord (BitMVec 0 lBits (P.MVector offWords _ arr)) i x
-    | aligned i    =
+writeWord (BitMVec off lBits arr) i x
+    | offBits == 0, aligned i    =
         if b < wordSize
             then do
                 y <- readByteArray arr (offWords + j)
                 writeByteArray arr (offWords + j) (meld b x y)
             else writeByteArray arr (offWords + j) x
-    | j + 1 == nWords lBits = do
+    | offBits == 0, j + 1 == nWords lBits = do
         lo <- readByteArray arr (offWords + j)
         let x' = if b < wordSize
                     then meld b x (extractWord k lo 0)
                     else x
             (lo', _hi) = spliceWord k lo 0 x'
         writeByteArray arr (offWords + j) lo'
-    | otherwise    = do
+    | offBits == 0 = do
         lo <- readByteArray arr (offWords + j)
         hi <- if j + 1 == nWords lBits
             then return 0
@@ -138,6 +155,8 @@ writeWord (BitMVec 0 lBits (P.MVector offWords _ arr)) i x
         writeByteArray arr (offWords + j) lo'
         writeByteArray arr (offWords + j + 1) hi'
     where
+        offBits  = modWordSize off
+        offWords = divWordSize off
         b = lBits - i
         j  = divWordSize i
         k  = modWordSize i
@@ -152,7 +171,7 @@ instance MV.MVector U.MVector Bit where
         | n < 0 = error $ "Data.Bit.basicUnsafeNew: negative length: " ++ show n
         | otherwise = do
             arr <- newByteArray (wordsToBytes $ nWords n)
-            pure $ BitMVec 0 n $ P.MVector 0 (nWords n) arr
+            pure $ BitMVec 0 n arr
 
     {-# INLINE basicUnsafeReplicate #-}
     basicUnsafeReplicate n x
@@ -160,37 +179,41 @@ instance MV.MVector U.MVector Bit where
         | otherwise = do
             arr <- newByteArray (wordsToBytes $ nWords n)
             setByteArray arr 0 (nWords n) (extendToWord x :: Word)
-            pure $ BitMVec 0 n $ P.MVector 0 (nWords n) arr
+            pure $ BitMVec 0 n arr
 
     {-# INLINE basicOverlaps #-}
-    basicOverlaps (BitMVec _ _ (P.MVector i m arr1)) (BitMVec _ _ (P.MVector j n arr2)) =
+    basicOverlaps (BitMVec i' m' arr1) (BitMVec j' n' arr2) =
         sameMutableByteArray arr1 arr2 && (between i j (j + n) || between j i (i + m))
         where
-          between x y z = x >= y && x < z
+            i = divWordSize i'
+            m = nWords (i' + m') - i
+            j = divWordSize j'
+            n = nWords (j' + n') - j
+            between x y z = x >= y && x < z
 
     {-# INLINE basicLength #-}
     basicLength (BitMVec _ n _) = n
 
     {-# INLINE basicUnsafeRead #-}
-    basicUnsafeRead  (BitMVec offBits _ (P.MVector offWords _ arr)) !i' = do
-        let i = offBits + i'
-        word <- readByteArray arr (offWords + divWordSize i)
+    basicUnsafeRead  (BitMVec off _ arr) !i' = do
+        let i = off + i'
+        word <- readByteArray arr (divWordSize i)
         pure $ readBit (modWordSize i) word
 
     {-# INLINE basicUnsafeWrite #-}
 #ifndef BITVEC_THREADSAFE
-    basicUnsafeWrite (BitMVec offBits _ (P.MVector offWords _ arr)) !i' !x = do
-        let i = offBits + i'
+    basicUnsafeWrite (BitMVec off _ arr) !i' !x = do
+        let i = off + i'
             j = divWordSize i
             k = modWordSize i
             kk = 1 `unsafeShiftL` k :: Word
-        word <- readByteArray arr (offWords + j)
+        word <- readByteArray arr j
         when (Bit (word .&. kk /= 0) /= x) $
-            writeByteArray arr (offWords + j) (word `xor` kk)
+            writeByteArray arr j (word `xor` kk)
 #else
-    basicUnsafeWrite (BitMVec s _ (P.MVector o _ (MutableByteArray mba))) !i' (Bit b) = do
-        let i       = s + i'
-            !(I# j) = o + divWordSize i
+    basicUnsafeWrite (BitMVec off _ (MutableByteArray mba)) !i' (Bit b) = do
+        let i       = off + i'
+            !(I# j) = divWordSize i
             !(I# k) = 1 `unsafeShiftL` modWordSize i
         primitive $ \state ->
             let !(# state', _ #) = (if b then fetchOrIntArray# mba j k state else fetchAndIntArray# mba j (notI# k) state) in
@@ -202,14 +225,18 @@ instance MV.MVector U.MVector Bit where
 
     {-# INLINE basicSet #-}
     basicSet (BitMVec _ 0 _) _ = pure ()
-    basicSet (BitMVec 0 lBits (P.MVector offWords lWords arr)) (extendToWord -> x) = case modWordSize lBits of
+    basicSet (BitMVec off len arr) (extendToWord -> x) | offBits == 0 = case modWordSize len of
         0 -> setByteArray arr offWords lWords (x :: Word)
         nMod -> do
             setByteArray arr offWords (lWords - 1) (x :: Word)
             lastWord <- readByteArray arr (offWords + lWords - 1)
             let lastWord' = lastWord .&. hiMask nMod .|. x .&. loMask nMod
             writeByteArray arr (offWords + lWords - 1) lastWord'
-    basicSet (BitMVec offBits lBits (P.MVector offWords lWords arr)) (extendToWord -> x) = case modWordSize (offBits + lBits) of
+        where
+            offBits  = modWordSize off
+            offWords = divWordSize off
+            lWords   = nWords len
+    basicSet (BitMVec off len arr) (extendToWord -> x) = case modWordSize (off + len) of
         0 -> do
             firstWord <- readByteArray arr offWords
             let firstWord' = firstWord .&. loMask offBits .|. x .&. hiMask offBits
@@ -230,10 +257,14 @@ instance MV.MVector U.MVector Bit where
                 lastWord <- readByteArray arr (offWords + lWords - 1)
                 let lastWord' = lastWord .&. hiMask nMod .|. x .&. loMask nMod
                 writeByteArray arr (offWords + lWords - 1) lastWord'
+        where
+            offBits  = modWordSize off
+            offWords = divWordSize off
+            lWords   = nWords len
 
     {-# INLINE basicUnsafeCopy #-}
     basicUnsafeCopy _ (BitMVec _ 0 _) = pure ()
-    basicUnsafeCopy (BitMVec 0 lDstBits (P.MVector offDstWords lDstWords dst)) (BitMVec 0 _ (P.MVector offSrcWords _ src)) = case modWordSize lDstBits of
+    basicUnsafeCopy (BitMVec offDst lenDst dst) (BitMVec offSrc _ src) | offDstBits == 0, offSrcBits == 0 = case modWordSize lenDst of
         0 -> copyMutableByteArray dst (wordsToBytes offDstWords) src (wordsToBytes offSrcWords) (wordsToBytes lDstWords)
         nMod -> do
             copyMutableByteArray dst (wordsToBytes offDstWords) src (wordsToBytes offSrcWords) (wordsToBytes $ lDstWords - 1)
@@ -242,8 +273,14 @@ instance MV.MVector U.MVector Bit where
             lastWordDst <- readByteArray dst (offDstWords + lDstWords - 1)
             let lastWordDst' = lastWordDst .&. hiMask nMod .|. lastWordSrc .&. loMask nMod
             writeByteArray dst (offDstWords + lDstWords - 1) lastWordDst'
-    basicUnsafeCopy (BitMVec offDstBits lDstBits (P.MVector offDstWords lDstWords dst)) (BitMVec offSrcBits _ (P.MVector offSrcWords _ src))
-        | offDstBits == offSrcBits = case modWordSize (offSrcBits + lDstBits) of
+        where
+            offDstBits  = modWordSize offDst
+            offDstWords = divWordSize offDst
+            lDstWords   = nWords (offDstBits + lenDst)
+            offSrcBits  = modWordSize offSrc
+            offSrcWords = divWordSize offSrc
+    basicUnsafeCopy (BitMVec offDst lenDst dst) (BitMVec offSrc _ src)
+        | offDstBits == offSrcBits = case modWordSize (offSrc + lenDst) of
             0 -> do
                 firstWordSrc <- readByteArray src offSrcWords
                 firstWordDst <- readByteArray dst offDstWords
@@ -269,6 +306,12 @@ instance MV.MVector U.MVector Bit where
                     lastWordDst <- readByteArray dst (offDstWords + lDstWords - 1)
                     let lastWordDst' = lastWordDst .&. hiMask nMod .|. lastWordSrc .&. loMask nMod
                     writeByteArray dst (offDstWords + lDstWords - 1) lastWordDst'
+        where
+            offDstBits  = modWordSize offDst
+            offDstWords = divWordSize offDst
+            lDstWords   = nWords (offDstBits + lenDst)
+            offSrcBits  = modWordSize offSrc
+            offSrcWords = divWordSize offSrc
 
     basicUnsafeCopy dst@(BitMVec _ len _) src = do_copy 0
       where
@@ -291,24 +334,19 @@ instance MV.MVector U.MVector Bit where
         | otherwise = MV.basicUnsafeCopy dst src
 
     {-# INLINE basicUnsafeSlice #-}
-    basicUnsafeSlice offset n (BitMVec s _ (P.MVector i _ arr)) =
-        BitMVec relStartBit n (P.MVector (i + startWord) (endWord - startWord) arr)
-            where
-                absStartBit = s + offset
-                relStartBit = modWordSize absStartBit
-                absEndBit   = absStartBit + n
-                endWord     = nWords absEndBit
-                startWord   = divWordSize absStartBit
+    basicUnsafeSlice offset n (BitMVec off _ arr) = BitMVec (off + offset) n arr
 
     {-# INLINE basicUnsafeGrow #-}
-    basicUnsafeGrow (BitMVec offBits lBits v@(P.MVector offWords lWords src)) byBits
-        | byWords == 0 = pure $ BitMVec offBits (lBits + byBits) v
+    basicUnsafeGrow (BitMVec off len src) byBits
+        | byWords == 0 = pure $ BitMVec off (len + byBits) src
         | otherwise = do
-            dst <- newByteArray (wordsToBytes $ lWords + byWords)
-            copyMutableByteArray dst 0 src (wordsToBytes offWords) (wordsToBytes lWords)
-            pure $ BitMVec offBits (lBits + byBits) $ P.MVector 0 (lWords + byWords) dst
+            dst <- newByteArray (wordsToBytes newWords)
+            copyMutableByteArray dst 0 src 0 (wordsToBytes oldWords)
+            pure $ BitMVec off (len + byBits) dst
         where
-            byWords = nWords (offBits + lBits + byBits) - nWords (offBits + lBits)
+            oldWords = nWords (off + len)
+            newWords = nWords (off + len + byBits)
+            byWords  = newWords - oldWords
 
 #ifndef BITVEC_THREADSAFE
 
@@ -324,13 +362,13 @@ instance MV.MVector U.MVector Bit where
 -- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-unsafeFlipBit (BitMVec offBits _ (P.MVector offWords _ arr)) !i' = do
-    let i = offBits + i'
+unsafeFlipBit (BitMVec off _ arr) !i' = do
+    let i = off + i'
         j = divWordSize i
         k = modWordSize i
         kk = 1 `unsafeShiftL` k :: Word
-    word <- readByteArray arr (offWords + j)
-    writeByteArray arr (offWords + j) (word `xor` kk)
+    word <- readByteArray arr j
+    writeByteArray arr j (word `xor` kk)
 {-# INLINE unsafeFlipBit #-}
 
 -- | Flip the bit at the given position.
@@ -361,9 +399,9 @@ flipBit v i = BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit
 -- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-unsafeFlipBit (BitMVec s _ (P.MVector o _ (MutableByteArray mba))) !i' = do
-    let i       = s + i'
-        !(I# j) = o + divWordSize i
+unsafeFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
+    let i       = off + i'
+        !(I# j) = divWordSize i
         !(I# k) = 1 `unsafeShiftL` modWordSize i
     primitive $ \state ->
         let !(# state', _ #) = fetchXorIntArray# mba j k state in
@@ -387,25 +425,20 @@ flipBit v i = BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit
 #endif
 
 instance V.Vector U.Vector Bit where
-    basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (V.basicUnsafeFreeze v)
-    basicUnsafeThaw   (BitVec  s n v) = liftM (BitMVec s n) (V.basicUnsafeThaw   v)
+    basicUnsafeFreeze (BitMVec s n v) = liftM (BitVec  s n) (unsafeFreezeByteArray v)
+    basicUnsafeThaw   (BitVec  s n v) = liftM (BitMVec s n) (unsafeThawByteArray   v)
     basicLength       (BitVec  _ n _) = n
 
-    basicUnsafeIndexM (BitVec s _ v) !i' = let i = s + i' in liftM (readBit (modWordSize i)) (V.basicUnsafeIndexM v (divWordSize i))
+    basicUnsafeIndexM (BitVec off _ arr) !i' = do
+        let i = off + i'
+        pure $! readBit (modWordSize i) (indexByteArray arr (divWordSize i))
 
     basicUnsafeCopy dst src = do
         src1 <- V.basicUnsafeThaw src
         MV.basicUnsafeCopy dst src1
 
     {-# INLINE basicUnsafeSlice #-}
-    basicUnsafeSlice offset n (BitVec s _ (P.Vector i _ arr)) =
-        BitVec relStartBit n (P.Vector (i + startWord) (endWord - startWord) arr)
-            where
-                absStartBit = s + offset
-                relStartBit = modWordSize absStartBit
-                absEndBit   = absStartBit + n
-                endWord     = nWords absEndBit
-                startWord   = divWordSize absStartBit
+    basicUnsafeSlice offset n (BitVec off _ arr) = BitVec (off + offset) n arr
 
 -- | Return the index of the @n@-th bit in the vector
 -- with the specified value, if any.
@@ -421,11 +454,11 @@ instance V.Vector U.Vector Bit where
 -- to implement @select{0,1}@ queries
 -- for <https://en.wikipedia.org/wiki/Succinct_data_structure succinct dictionaries>.
 nthBitIndex :: Bit -> Int -> U.Vector Bit -> Maybe Int
-nthBitIndex _ k
+nthBitIndex _ k _
     | k <= 0 = error "nthBitIndex: n must be positive"
-nthBitIndex (Bit True) k = \case
-    BitVec _ 0 _ -> Nothing
-    BitVec 0 lBits (P.Vector offWords lWords arr) -> case modWordSize lBits of
+nthBitIndex (Bit True) k (BitVec off len arr)
+    | len == 0 = Nothing
+    | offBits == 0 = case modWordSize len of
         0 -> case nth1InWords k (P.Vector offWords lWords arr) of
             Right x -> Just x
             Left{}  -> Nothing
@@ -434,14 +467,14 @@ nthBitIndex (Bit True) k = \case
             Left k' -> case nth1 k' (indexByteArray arr (offWords + lWords - 1) .&. loMask nMod) of
                 Right x -> Just $ mulWordSize (lWords - 1) + x
                 Left{}  -> Nothing
-    BitVec offBits lBits (P.Vector offWords lWords arr) -> case modWordSize (offBits + lBits) of
+    | otherwise = case modWordSize (off + len) of
         0 -> case nth1 k (indexByteArray arr offWords `unsafeShiftR` offBits) of
             Right x -> Just x
             Left k' -> case nth1InWords k' (P.Vector (offWords + 1) (lWords - 1) arr) of
                 Right x -> Just $ wordSize - offBits + x
                 Left {} -> Nothing
         nMod -> case lWords of
-            1 -> case nth1 k ((indexByteArray arr offWords `unsafeShiftR` offBits) .&. loMask lBits) of
+            1 -> case nth1 k ((indexByteArray arr offWords `unsafeShiftR` offBits) .&. loMask len) of
                 Right x -> Just x
                 Left{}  -> Nothing
             _ -> case nth1 k (indexByteArray arr offWords `unsafeShiftR` offBits) of
@@ -451,9 +484,13 @@ nthBitIndex (Bit True) k = \case
                     Left k'' -> case nth1 k'' (indexByteArray arr (offWords + lWords - 1) .&. loMask nMod) of
                         Right x -> Just $ mulWordSize (lWords - 1) - offBits + x
                         Left{}  -> Nothing
-nthBitIndex (Bit False) k = \case
-    BitVec _ 0 _ -> Nothing
-    BitVec 0 lBits (P.Vector offWords lWords arr) -> case modWordSize lBits of
+    where
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        lWords   = nWords (offBits + len)
+nthBitIndex (Bit False) k (BitVec off len arr)
+    | len == 0 = Nothing
+    | offBits == 0 = case modWordSize len of
         0 -> case nth0InWords k (P.Vector offWords lWords arr) of
             Right x -> Just x
             Left{}  -> Nothing
@@ -462,14 +499,14 @@ nthBitIndex (Bit False) k = \case
             Left k' -> case nth0 k' (indexByteArray arr (offWords + lWords - 1) .|. hiMask nMod) of
                 Right x -> Just $ mulWordSize (lWords - 1) + x
                 Left{}  -> Nothing
-    BitVec offBits lBits (P.Vector offWords lWords arr) -> case modWordSize (offBits + lBits) of
+    | otherwise = case modWordSize (off + len) of
         0 -> case nth0 k (indexByteArray arr offWords `unsafeShiftR` offBits .|. hiMask (wordSize - offBits)) of
             Right x -> Just x
             Left k' -> case nth0InWords k' (P.Vector (offWords + 1) (lWords - 1) arr) of
                 Right x -> Just $ wordSize - offBits + x
                 Left {} -> Nothing
         nMod -> case lWords of
-            1 -> case nth0 k ((indexByteArray arr offWords `unsafeShiftR` offBits) .|. hiMask lBits) of
+            1 -> case nth0 k ((indexByteArray arr offWords `unsafeShiftR` offBits) .|. hiMask len) of
                 Right x -> Just x
                 Left{}  -> Nothing
             _ -> case nth0 k ((indexByteArray arr offWords `unsafeShiftR` offBits) .|. hiMask (wordSize - offBits)) of
@@ -479,6 +516,10 @@ nthBitIndex (Bit False) k = \case
                     Left k'' -> case nth0 k'' (indexByteArray arr (offWords + lWords - 1) .|. hiMask nMod) of
                         Right x -> Just $ mulWordSize (lWords - 1) - offBits + x
                         Left{}  -> Nothing
+    where
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        lWords   = nWords (offBits + len)
 
 nth0 :: Int -> Word -> Either Int Int
 nth0 k v = if k > c then Left (k - c) else Right (select1 w k - 1)
@@ -521,19 +562,27 @@ nth1InWords k vec = go 0 k
 -- for <https://en.wikipedia.org/wiki/Succinct_data_structure succinct dictionaries>.
 countBits :: U.Vector Bit -> Int
 countBits (BitVec _ 0 _) = 0
-countBits (BitVec 0 lBits (P.Vector offWords lWords arr)) = case modWordSize lBits of
+countBits (BitVec off len arr) | offBits == 0 = case modWordSize len of
     0    -> countBitsInWords (P.Vector offWords lWords arr)
     nMod -> countBitsInWords (P.Vector offWords (lWords - 1) arr) +
             popCount (indexByteArray arr (offWords + lWords - 1) .&. loMask nMod)
-countBits (BitVec offBits lBits (P.Vector offWords lWords arr)) = case modWordSize (offBits + lBits) of
+    where
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        lWords   = nWords (offBits + len)
+countBits (BitVec off len arr) = case modWordSize (off + len) of
     0    -> popCount (indexByteArray arr offWords `unsafeShiftR` offBits :: Word) +
             countBitsInWords (P.Vector (offWords + 1) (lWords - 1) arr)
     nMod -> case lWords of
-        1 -> popCount ((indexByteArray arr offWords `unsafeShiftR` offBits) .&. loMask lBits)
+        1 -> popCount ((indexByteArray arr offWords `unsafeShiftR` offBits) .&. loMask len)
         _ ->
             popCount (indexByteArray arr offWords `unsafeShiftR` offBits :: Word) +
             countBitsInWords (P.Vector (offWords + 1) (lWords - 2) arr) +
             popCount (indexByteArray arr (offWords + lWords - 1) .&. loMask nMod)
+    where
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        lWords   = nWords (offBits + len)
 
 countBitsInWords :: P.Vector Word -> Int
 countBitsInWords = P.foldl' (\acc word -> popCount word + acc) 0
@@ -544,21 +593,29 @@ countBitsInWords = P.foldl' (\acc word -> popCount word + acc) 0
 -- [0,1,3,5]
 listBits :: U.Vector Bit -> [Int]
 listBits (BitVec _ 0 _) = []
-listBits (BitVec 0 lBits (P.Vector offWords lWords arr)) = case modWordSize lBits of
+listBits (BitVec off len arr) | offBits == 0 = case modWordSize len of
     0    -> listBitsInWords 0 (P.Vector offWords lWords arr) []
     nMod -> listBitsInWords 0 (P.Vector offWords (lWords - 1) arr) $
             map (+ mulWordSize (lWords - 1)) $
             filter (testBit (indexByteArray arr (offWords + lWords - 1) :: Word)) [0 .. nMod - 1]
-listBits (BitVec offBits lBits (P.Vector offWords lWords arr)) = case modWordSize (offBits + lBits) of
+    where
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        lWords   = nWords (offBits + len)
+listBits (BitVec off len arr) = case modWordSize (off + len) of
     0    -> filter (testBit (indexByteArray arr offWords `unsafeShiftR` offBits :: Word)) [0 .. wordSize - offBits - 1] ++
             listBitsInWords (wordSize - offBits) (P.Vector (offWords + 1) (lWords - 1) arr) []
     nMod -> case lWords of
-        1 -> filter (testBit (indexByteArray arr offWords `unsafeShiftR` offBits :: Word)) [0 .. lBits - 1]
+        1 -> filter (testBit (indexByteArray arr offWords `unsafeShiftR` offBits :: Word)) [0 .. len - 1]
         _ ->
             filter (testBit (indexByteArray arr offWords `unsafeShiftR` offBits :: Word)) [0 .. wordSize - offBits - 1] ++
             (listBitsInWords (wordSize - offBits) (P.Vector (offWords + 1) (lWords - 2) arr) $
             map (+ (mulWordSize (lWords - 1) - offBits)) $
             filter (testBit (indexByteArray arr (offWords + lWords - 1) :: Word)) [0 .. nMod - 1])
+    where
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        lWords   = nWords (offBits + len)
 
 listBitsInWord :: Int -> Word -> [Int]
 listBitsInWord offset word

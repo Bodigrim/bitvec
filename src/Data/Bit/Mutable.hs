@@ -33,6 +33,7 @@ import           Data.Bit.Utils
 import           Data.Bits
 import qualified Data.Vector.Generic.Mutable       as MV
 import qualified Data.Vector.Generic               as V
+import qualified Data.Vector.Primitive             as P
 import qualified Data.Vector.Unboxed               as U (Vector)
 import           Data.Vector.Unboxed.Mutable       as U
 import           Data.Word
@@ -44,7 +45,8 @@ import           Prelude                           as P
 castFromWordsM
     :: U.MVector s Word
     -> U.MVector s Bit
-castFromWordsM (MV_Word ws) = BitMVec 0 (nBits (MV.length ws)) ws
+castFromWordsM (MV_Word (P.MVector off len ws)) =
+    BitMVec (mulWordSize off) (mulWordSize len) ws
 
 -- | Try to cast a vector of bits to a vector of words.
 -- It succeeds if a vector of bits is aligned.
@@ -56,7 +58,7 @@ castToWordsM
 castToWordsM (BitMVec s n ws)
     | aligned s
     , aligned n
-    = Just $ MV_Word $ MV.slice (divWordSize s) (nWords n) ws
+    = Just $ MV_Word $ P.MVector (divWordSize s) (divWordSize n) ws
     | otherwise
     = Nothing
 
@@ -84,16 +86,6 @@ mapMInPlaceWithIndex ::
     PrimMonad m =>
         (Int -> Word -> m Word)
      -> U.MVector (PrimState m) Bit -> m ()
-mapMInPlaceWithIndex f xs@(BitMVec 0 _ v) = loop 0 0
-    where
-        !n_ = alignDown (MV.length xs)
-        loop !i !j
-            | i >= n_   = when (n_ /= MV.length xs) $ do
-                readWord xs i >>= f i >>= writeWord xs i
-
-            | otherwise = do
-                MV.read v j >>= f i >>= MV.write v j
-                loop (i + wordSize) (j + 1)
 mapMInPlaceWithIndex f xs = loop 0
     where
         !n = MV.length xs
@@ -137,15 +129,6 @@ zipInPlace
     -> U.Vector Bit
     -> U.MVector (PrimState m) Bit
     -> m ()
-zipInPlace f ys@(BitVec 0 n2 v) xs =
-    mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
-    where
-        -- WARNING: relies on guarantee by mapMInPlaceWithIndex that index will always be aligned!
-        !n = min (MV.length xs) (V.length ys)
-        {-# INLINE g #-}
-        g !i !x =
-            let !w = masked (n2 - i) (v V.! divWordSize i)
-             in f w x
 zipInPlace f ys xs =
     mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
     where

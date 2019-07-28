@@ -33,6 +33,7 @@ import qualified Data.Bit.MutableTS                   as B
 import           Data.Bit.Utils
 import qualified Data.Vector.Generic.Mutable       as MV
 import qualified Data.Vector.Generic               as V
+import qualified Data.Vector.Primitive             as P
 import           Data.Vector.Unboxed                as U
     hiding (and, or, any, all, reverse, findIndex)
 import qualified Data.Vector.Unboxed                as Unsafe
@@ -49,7 +50,9 @@ import Unsafe.Coerce
 castFromWords
     :: U.Vector Word
     -> U.Vector Bit
-castFromWords ws = BitVec 0 (nBits (V.length ws)) (unsafeCoerce ws)
+castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
+    where
+        P.Vector off len arr = unsafeCoerce ws
 
 -- | Try to cast a vector of bits to a vector of words.
 -- It succeeds if a vector of bits is aligned.
@@ -63,7 +66,7 @@ castToWords
 castToWords (BitVec s n ws)
     | aligned s
     , aligned n
-    = Just $ unsafeCoerce $ V.slice (divWordSize s) (nWords n) ws
+    = Just $ unsafeCoerce $ P.Vector (divWordSize s) (divWordSize n) ws
     | otherwise
     = Nothing
 

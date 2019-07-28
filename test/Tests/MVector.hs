@@ -182,14 +182,13 @@ case_write_copy_read5 = assertEqual "should be equal" (Bit True) $ runST $ do
     M.copy dst src
     M.read dst 46
 
-prop_slice_def :: Int -> Int -> N.New B.Vector Bit -> Bool
-prop_slice_def s n xs = runST $ do
-    let xs' = V.new xs
-        (s', n') = trimSlice s n (V.length xs')
-    xs1 <- N.run xs
-    xs2 <- V.unsafeFreeze (M.slice s' n' xs1)
-
-    return (B.toList xs2 == sliceList s' n' (B.toList xs'))
+prop_slice_def :: NonNegative Int -> NonNegative Int -> N.New B.Vector Bit -> Property
+prop_slice_def (NonNegative s) (NonNegative n) xs =
+    s + n < V.length (V.new xs) ==> runST $ do
+        let xs' = V.new xs
+        xs1 <- N.run xs
+        xs2 <- V.unsafeFreeze (M.slice s n xs1)
+        return (B.toList xs2 === sliceList s n (B.toList xs'))
 
 prop_grow_def :: B.Vector Bit -> NonNegative Int -> Bool
 prop_grow_def xs (NonNegative m) = runST $ do
@@ -200,10 +199,10 @@ prop_grow_def xs (NonNegative m) = runST $ do
     fv1 <- B.freeze v1
     return (fv0 == B.take n fv1)
 
-prop_cloneFromWords_def :: N.New B.Vector Word -> Bool
+prop_cloneFromWords_def :: N.New B.Vector Word -> Property
 prop_cloneFromWords_def ws
     =  runST (N.run ws >>= pure . castFromWordsM >>= V.unsafeFreeze)
-    == castFromWords (V.new ws)
+    === castFromWords (V.new ws)
 
 prop_cloneToWords_def :: N.New B.Vector Bit -> Bool
 prop_cloneToWords_def xs
