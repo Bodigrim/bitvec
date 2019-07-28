@@ -234,7 +234,7 @@ instance MV.MVector U.MVector Bit where
         where
             offBits  = modWordSize off
             offWords = divWordSize off
-            lWords   = nWords len
+            lWords   = nWords (offBits + len)
     basicSet (BitMVec off len arr) (extendToWord -> x) = case modWordSize (off + len) of
         0 -> do
             firstWord <- readByteArray arr offWords
@@ -259,7 +259,7 @@ instance MV.MVector U.MVector Bit where
         where
             offBits  = modWordSize off
             offWords = divWordSize off
-            lWords   = nWords len
+            lWords   = nWords (offBits + len)
 
     {-# INLINE basicUnsafeCopy #-}
     basicUnsafeCopy _ (BitMVec _ 0 _) = pure ()

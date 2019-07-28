@@ -49,6 +49,7 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     , testCase "basicSet 5" case_set_read1
     , testCase "basicSet 6" case_set_read2
     , testCase "basicSet 7" case_set_read3
+    , testCase "basicSet 8" case_set_read4
     , testCase "basicUnsafeCopy1" case_write_copy_read1
     , testCase "basicUnsafeCopy2" case_write_copy_read2
     , testCase "basicUnsafeCopy3" case_write_copy_read3
@@ -141,6 +142,12 @@ case_set_read3 = assertEqual "should be equal" (Bit True) $ runST $ do
     arr <- M.new 192
     M.basicSet (M.slice 71 121 arr) (Bit True)
     M.read arr 145
+
+case_set_read4 :: IO ()
+case_set_read4 = assertEqual "should be equal" (Bit True) $ runST $ do
+    arr <- M.slice 27 38 <$> M.new 65
+    M.basicSet arr (Bit True)
+    M.read arr 21
 
 case_write_copy_read1 :: IO ()
 case_write_copy_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
