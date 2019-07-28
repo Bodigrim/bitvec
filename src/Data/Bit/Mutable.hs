@@ -44,7 +44,7 @@ import           Prelude                           as P
 castFromWordsM
     :: U.MVector s Word
     -> U.MVector s Bit
-castFromWordsM ws = BitMVec 0 (nBits (MV.length ws)) ws
+castFromWordsM (MV_Word ws) = BitMVec 0 (nBits (MV.length ws)) ws
 
 -- | Try to cast a vector of bits to a vector of words.
 -- It succeeds if a vector of bits is aligned.
@@ -56,7 +56,7 @@ castToWordsM
 castToWordsM (BitMVec s n ws)
     | aligned s
     , aligned n
-    = Just $ MV.slice (divWordSize s) (nWords n) ws
+    = Just $ MV_Word $ MV.slice (divWordSize s) (nWords n) ws
     | otherwise
     = Nothing
 

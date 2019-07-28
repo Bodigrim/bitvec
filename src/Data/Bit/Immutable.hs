@@ -39,6 +39,7 @@ import qualified Data.Vector.Unboxed                as Unsafe
 import           Data.Word
 import           Prelude                           as P
     hiding (and, or, any, all, reverse)
+import Unsafe.Coerce
 
 -- | Cast a vector of words to a vector of bits.
 -- Cf. 'Data.Bit.castFromWordsM'.
@@ -48,7 +49,7 @@ import           Prelude                           as P
 castFromWords
     :: U.Vector Word
     -> U.Vector Bit
-castFromWords ws = BitVec 0 (nBits (V.length ws)) ws
+castFromWords ws = BitVec 0 (nBits (V.length ws)) (unsafeCoerce ws)
 
 -- | Try to cast a vector of bits to a vector of words.
 -- It succeeds if a vector of bits is aligned.
@@ -62,7 +63,7 @@ castToWords
 castToWords (BitVec s n ws)
     | aligned s
     , aligned n
-    = Just $ V.slice (divWordSize s) (nWords n) ws
+    = Just $ unsafeCoerce $ V.slice (divWordSize s) (nWords n) ws
     | otherwise
     = Nothing
 

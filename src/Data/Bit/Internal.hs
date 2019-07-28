@@ -40,11 +40,11 @@ import Data.Bits
 import Data.Typeable
 import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as MV
+import qualified Data.Vector.Primitive       as P
 import qualified Data.Vector.Unboxed         as U
 
 #ifdef BITVEC_THREADSAFE
 import Data.Primitive.ByteArray
-import qualified Data.Vector.Primitive       as P
 import GHC.Exts
 #endif
 
@@ -71,8 +71,8 @@ instance Read Bit where
 instance U.Unbox Bit
 
 -- Ints are offset and length in bits
-data instance U.MVector s Bit = BitMVec !Int !Int !(U.MVector s Word)
-data instance U.Vector    Bit = BitVec  !Int !Int !(U.Vector    Word)
+data instance U.MVector s Bit = BitMVec !Int !Int !(P.MVector s Word)
+data instance U.Vector    Bit = BitVec  !Int !Int !(P.Vector    Word)
 
 readBit :: Int -> Word -> Bit
 readBit i w = Bit (w .&. (1 `unsafeShiftL` i) /= 0)
@@ -191,7 +191,7 @@ instance MV.MVector U.MVector Bit where
         when (Bit (w .&. kk /= 0) /= x) $
             MV.basicUnsafeWrite v j (w `xor` kk)
 #else
-    basicUnsafeWrite (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !i' (Bit b) = do
+    basicUnsafeWrite (BitMVec s _ (P.MVector o _ (MutableByteArray mba))) !i' (Bit b) = do
         let i       = s + i'
             !(I# j) = o + divWordSize i
             !(I# k) = 1 `unsafeShiftL` modWordSize i
@@ -342,7 +342,7 @@ flipBit v i = BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit
 -- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-unsafeFlipBit (BitMVec s _ (U.MV_Word (P.MVector o _ (MutableByteArray mba)))) !i' = do
+unsafeFlipBit (BitMVec s _ (P.MVector o _ (MutableByteArray mba))) !i' = do
     let i       = s + i'
         !(I# j) = o + divWordSize i
         !(I# k) = 1 `unsafeShiftL` modWordSize i
@@ -472,24 +472,24 @@ nth1 k w = if k > c then Left (k - c) else Right (select1 w k - 1)
     where
         c = popCount w
 
-nth0InWords :: Int -> U.Vector Word -> Either Int Int
+nth0InWords :: Int -> P.Vector Word -> Either Int Int
 nth0InWords k vec = go 0 k
     where
         go n l
-            | n >= U.length vec = Left l
+            | n >= P.length vec = Left l
             | otherwise = if l > c then go (n + 1) (l - c) else Right (mulWordSize n + select1 w l - 1)
             where
-                w = complement (vec U.! n)
+                w = complement (vec P.! n)
                 c = popCount w
 
-nth1InWords :: Int -> U.Vector Word -> Either Int Int
+nth1InWords :: Int -> P.Vector Word -> Either Int Int
 nth1InWords k vec = go 0 k
     where
         go n l
-            | n >= U.length vec = Left l
+            | n >= P.length vec = Left l
             | otherwise = if l > c then go (n + 1) (l - c) else Right (mulWordSize n + select1 w l - 1)
             where
-                w = vec U.! n
+                w = vec P.! n
                 c = popCount w
 
 -- | Return the number of set bits in a vector (population count, popcount).
@@ -520,8 +520,8 @@ countBits (BitVec s n v) = case modWordSize (s + n) of
     where
         l = V.basicLength v
 
-countBitsInWords :: U.Vector Word -> Int
-countBitsInWords = U.foldl' (\acc word -> popCount word + acc) 0
+countBitsInWords :: P.Vector Word -> Int
+countBitsInWords = P.foldl' (\acc word -> popCount word + acc) 0
 
 -- | Return the indices of set bits in a vector.
 --
@@ -555,6 +555,6 @@ listBitsInWord offset word
     $ filter (testBit word)
     $ [0 .. wordSize - 1]
 
-listBitsInWords :: Int -> U.Vector Word -> [Int] -> [Int]
-listBitsInWords offset = flip $ U.ifoldr
+listBitsInWords :: Int -> P.Vector Word -> [Int] -> [Int]
+listBitsInWords offset = flip $ P.ifoldr
     (\i word acc -> listBitsInWord (offset + mulWordSize i) word ++ acc)
