@@ -131,4 +131,5 @@ benchmark gauge
     Bench.RandomFlip
     Bench.RandomRead
     Bench.RandomWrite
+    Bench.Reverse
   ghc-options: -O2 -Wall
