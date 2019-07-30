@@ -93,22 +93,22 @@ extendToWord (Bit True)  = complement 0
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
 indexWord :: U.Vector Bit -> Int -> Word
-indexWord (BitVec off n arr) i
-    | offBits == 0, aligned i
-    = masked b lo
-    | offBits == 0, j + 1 == nWords n
-    = masked b (extractWord k lo 0 )
-    | offBits == 0
-    = masked b (extractWord k lo hi)
+indexWord (BitVec off len' arr) i' = word .&. msk
     where
-        offBits  = modWordSize off
-        offWords = divWordSize off
-        b = n - i
-        j  = divWordSize i
-        k  = modWordSize i
-        lo = indexByteArray arr (offWords + j)
-        hi = indexByteArray arr (offWords + j + 1)
-indexWord (BitVec s n v) i = indexWord (BitVec 0 (n + s) v) (i + s)
+        len  = off + len'
+        i    = off + i'
+        nMod = modWordSize i
+        loIx = divWordSize i
+        msk  = if len - i >= wordSize then complement 0 else loMask (len - i)
+        loWord = indexByteArray arr loIx
+        hiWord = indexByteArray arr (loIx + 1)
+
+        word = if nMod == 0 then
+                loWord
+            else if loIx == divWordSize (len - 1) then
+                (loWord `unsafeShiftR` nMod)
+            else
+                (loWord `unsafeShiftR` nMod) .|. (hiWord `unsafeShiftL` (wordSize - nMod))
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
 readWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m Word
