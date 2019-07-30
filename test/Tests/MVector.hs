@@ -216,8 +216,8 @@ prop_cloneToWords_def xs
     =  runST (N.run xs >>= cloneToWordsM >>= V.unsafeFreeze)
     === cloneToWords (V.new xs)
 
-prop_reverseInPlace_def :: N.New B.Vector Bit -> Bool
+prop_reverseInPlace_def :: N.New B.Vector Bit -> Property
 prop_reverseInPlace_def xs
     =  runST (N.run xs >>= \v -> reverseInPlace v >> V.unsafeFreeze v)
-    == B.reverse (V.new xs)
+    === B.reverse (V.new xs)
 

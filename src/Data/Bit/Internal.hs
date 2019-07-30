@@ -112,22 +112,23 @@ indexWord (BitVec s n v) i = indexWord (BitVec 0 (n + s) v) (i + s)
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is zero-padded.
 readWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m Word
-readWord (BitMVec off lBits arr) i
-    | offBits == 0, aligned i
-    = liftM (masked b) lo
-    | offBits == 0, j + 1 == nWords lBits
-    = liftM (masked b) (liftM2 (extractWord k) lo (return 0))
-    | offBits == 0
-    = liftM (masked b) (liftM2 (extractWord k) lo hi)
-    where
-        offBits  = modWordSize off
-        offWords = divWordSize off
-        b = lBits - i
-        j = divWordSize i
-        k = modWordSize i
-        lo = readByteArray arr (offWords + j)
-        hi = readByteArray arr (offWords + j + 1)
-readWord (BitMVec offBits lBits v) i = readWord (BitMVec 0 (lBits + offBits) v) (i + offBits)
+readWord (BitMVec off len' arr) i' = do
+    let len  = off + len'
+        i    = off + i'
+        nMod = modWordSize i
+        loIx = divWordSize i
+        msk  = if len - i >= wordSize then complement 0 else loMask (len - i)
+    loWord <- readByteArray arr loIx
+
+    word <- if nMod == 0 then
+        pure loWord
+    else if loIx == divWordSize (len - 1) then
+        pure (loWord `unsafeShiftR` nMod)
+    else do
+        hiWord <- readByteArray arr (loIx + 1)
+        pure $ (loWord `unsafeShiftR` nMod) .|. (hiWord `unsafeShiftL` (wordSize - nMod))
+
+    pure $ word .&. msk
 
 -- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
 writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()

@@ -57,6 +57,9 @@ instance (V.Vector v a, Arbitrary a) => Arbitrary (N.New v a) where
         where slice s n = N.apply $ \v ->
                  let (s', n') = trimSlice s n (M.length v)
                   in M.slice s' n' v
+    shrink v = [ N.slice s l v | s <- [0 .. len - 1], l <- [0 .. len - s], (s, l) /= (0, len) ]
+        where
+            len = runST (M.length <$> N.run v)
 
 trimSlice :: Integral a => a -> a -> a -> (a, a)
 trimSlice s n l = (s', n')
