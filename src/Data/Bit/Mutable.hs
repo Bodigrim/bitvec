@@ -70,11 +70,11 @@ cloneToWordsM
     => U.MVector (PrimState m) Bit
     -> m (U.MVector (PrimState m) Word)
 cloneToWordsM v = do
-    let lenBits  = MV.basicLength v
+    let lenBits  = MV.length v
         lenWords = nWords lenBits
-    w@(BitMVec _ _ arr) <- MV.basicUnsafeNew (mulWordSize lenWords)
-    MV.basicUnsafeCopy (U.slice 0 lenBits w) v
-    MV.basicSet (U.slice lenBits (mulWordSize lenWords - lenBits) w) (Bit False)
+    w@(BitMVec _ _ arr) <- MV.unsafeNew (mulWordSize lenWords)
+    MV.unsafeCopy (U.slice 0 lenBits w) v
+    MV.set (U.slice lenBits (mulWordSize lenWords - lenBits) w) (Bit False)
     pure $ MV_Word $ P.MVector 0 lenWords arr
 {-# INLINE cloneToWordsM #-}
 
