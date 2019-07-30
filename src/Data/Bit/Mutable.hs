@@ -78,35 +78,6 @@ cloneToWordsM v = do
     pure $ MV_Word $ P.MVector 0 lenWords arr
 {-# INLINE cloneToWordsM #-}
 
--- |Map a function over a bit vector one 'Word' at a time ('wordSize' bits at a time).  The function will be passed the bit index (which will always be 'wordSize'-aligned) and the current value of the corresponding word.  The returned word will be written back to the vector.  If there is a partial word at the end of the vector, it will be zero-padded when passed to the function and truncated when the result is written back to the array.
-{-# INLINE mapMInPlaceWithIndex #-}
-mapMInPlaceWithIndex ::
-    PrimMonad m =>
-        (Int -> Word -> m Word)
-     -> U.MVector (PrimState m) Bit -> m ()
-mapMInPlaceWithIndex f xs = loop 0
-    where
-        !n = MV.length xs
-        loop !i
-            | i >= n    = return ()
-            | otherwise = do
-                readWord xs i >>= f i >>= writeWord xs i
-                loop (i + wordSize)
-
-{-# INLINE mapInPlaceWithIndex #-}
-mapInPlaceWithIndex ::
-    PrimMonad m =>
-        (Int -> Word -> Word)
-     -> U.MVector (PrimState m) Bit -> m ()
-mapInPlaceWithIndex f = mapMInPlaceWithIndex g
-    where
-        {-# INLINE g #-}
-        g i x = return $! f i x
-
-{-# INLINE mapInPlace #-}
-mapInPlace :: PrimMonad m => (Word -> Word) -> U.MVector (PrimState m) Bit -> m ()
-mapInPlace f = mapMInPlaceWithIndex (\_ x -> return (f x))
-
 -- | Zip two vectors with the given function.
 -- rewriting contents of the second argument.
 -- Cf. 'Data.Bit.zipBits'.
@@ -127,14 +98,16 @@ zipInPlace
     -> U.Vector Bit
     -> U.MVector (PrimState m) Bit
     -> m ()
-zipInPlace f ys xs =
-    mapInPlaceWithIndex g (MV.basicUnsafeSlice 0 n xs)
+zipInPlace f xs ys = loop 0
     where
-        !n = min (MV.length xs) (V.length ys)
-        {-# INLINE g #-}
-        g !i !x =
-            let !w = indexWord ys i
-             in f w x
+        !n = min (V.length xs) (MV.length ys)
+        loop !i
+            | i >= n = pure ()
+            | otherwise = do
+                let x = indexWord xs i
+                y <- readWord ys i
+                writeWord ys i (f x y)
+                loop (i + wordSize)
 {-# INLINE zipInPlace #-}
 
 -- | Invert (flip) all bits in-place.
@@ -145,7 +118,16 @@ zipInPlace f ys xs =
 -- >>> Data.Vector.Unboxed.modify invertInPlace (read "[0,1,0,1,0]")
 -- [1,0,1,0,1]
 invertInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
-invertInPlace = mapInPlace complement
+invertInPlace xs = loop 0
+    where
+        !n = MV.length xs
+        loop !i
+            | i >= n = pure ()
+            | otherwise = do
+                x <- readWord xs i
+                writeWord xs i (complement x)
+                loop (i + wordSize)
+{-# INLINE invertInPlace #-}
 
 -- | Same as 'Data.Bit.selectBits', but deposit
 -- selected bits in-place. Returns a number of selected bits.

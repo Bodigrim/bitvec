@@ -39,4 +39,4 @@ reverseBitTS vec =
 
 reverseVector :: U.Vector Bool -> Int
 reverseVector vec =
-  if (U.reverse (U.reverse vec) U.! (U.length vec - 1)) then 1 else 0
+  if (U.force (U.reverse (U.reverse vec)) U.! (U.length vec - 1)) then 1 else 0
