@@ -12,10 +12,10 @@ at the price of moderate performance penalty
 
 ## Thread safety
 
-* `Data.Bit` is faster, but thread-unsafe. This is because
+* `Data.Bit` is faster, but writes are thread-unsafe. This is because
   naive updates are not atomic operations: read the whole word from memory,
   modify a bit, write the whole word back.
-* `Data.Bit.ThreadSafe` is slower (up to 2x), but thread-safe.
+* `Data.Bit.ThreadSafe` is slower (up to 2x), but writes are thread-safe.
   It implements updates via `fetch{And,Or,Xor}IntArray#` primitives
   from `GHC.Exts`.
 

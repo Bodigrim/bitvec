@@ -7,7 +7,7 @@
 -- Licence:     BSD3
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- This module exposes a faster, but thread-unsafe implementation.
+-- This module exposes an interface with thread-unsafe writes and flips.
 -- Consider using "Data.Bit.ThreadSafe", which is thread-safe, but slower (up to 2x).
 module Data.Bit
 #else
@@ -17,8 +17,8 @@ module Data.Bit
 -- Licence:     BSD3
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- This module exposes a slower (up to 2x), but thread-safe implementation.
--- Consider using "Data.Bit", which is faster, but thread-unsafe.
+-- This module exposes an interface with thread-safe writes and flips.
+-- Consider using "Data.Bit", which is faster (up to 2x), but thread-unsafe.
 module Data.Bit.ThreadSafe
 #endif
      ( Bit(..)
