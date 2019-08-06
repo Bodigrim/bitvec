@@ -128,6 +128,7 @@ benchmark gauge
   default-language: Haskell2010
   hs-source-dirs: bench
   other-modules:
+    Bench.Invert
     Bench.RandomFlip
     Bench.RandomRead
     Bench.RandomWrite
