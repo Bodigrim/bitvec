@@ -29,14 +29,11 @@ benchReverse k = bgroup (show (1 `shiftL` k :: Int))
   , bench "Vector" $ nf reverseVector (randomVec id k)
   ]
 
-reverseBit :: U.Vector Bit -> Int
-reverseBit vec =
-  if unBit (U.modify (\v -> reverseInPlace v >> reverseInPlace v) vec U.! (U.length vec - 1)) then 1 else 0
+reverseBit :: U.Vector Bit -> U.Vector Bit
+reverseBit = U.modify reverseInPlace
 
-reverseBitTS :: U.Vector TS.Bit -> Int
-reverseBitTS vec =
-  if TS.unBit (U.modify (\v -> TS.reverseInPlace v >> TS.reverseInPlace v) vec U.! (U.length vec - 1)) then 1 else 0
+reverseBitTS :: U.Vector TS.Bit -> U.Vector TS.Bit
+reverseBitTS = U.modify TS.reverseInPlace
 
-reverseVector :: U.Vector Bool -> Int
-reverseVector vec =
-  if (U.force (U.reverse (U.reverse vec)) U.! (U.length vec - 1)) then 1 else 0
+reverseVector :: U.Vector Bool -> U.Vector Bool
+reverseVector = U.reverse
