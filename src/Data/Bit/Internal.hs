@@ -126,38 +126,36 @@ readWord (BitMVec off len' arr) i' = do
 
 -- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
 writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()
-writeWord (BitMVec off lBits arr) i x
-    | offBits == 0, aligned i    =
-        if b < wordSize
-            then do
-                y <- readByteArray arr (offWords + j)
-                writeByteArray arr (offWords + j) (meld b x y)
-            else writeByteArray arr (offWords + j) x
-    | offBits == 0, j + 1 == nWords lBits = do
-        lo <- readByteArray arr (offWords + j)
-        let x' = if b < wordSize
-                    then meld b x (extractWord k lo 0)
-                    else x
-            (lo', _hi) = spliceWord k lo 0 x'
-        writeByteArray arr (offWords + j) lo'
-    | offBits == 0 = do
-        lo <- readByteArray arr (offWords + j)
-        hi <- if j + 1 == nWords lBits
-            then return 0
-            else readByteArray arr (offWords + j + 1)
-        let x' = if b < wordSize
-                    then meld b x (extractWord k lo hi)
-                    else x
-            (lo', hi') = spliceWord k lo hi x'
-        writeByteArray arr (offWords + j) lo'
-        writeByteArray arr (offWords + j + 1) hi'
-    where
-        offBits  = modWordSize off
-        offWords = divWordSize off
-        b = lBits - i
-        j  = divWordSize i
-        k  = modWordSize i
-writeWord (BitMVec offBits lBits v) i x = writeWord (BitMVec 0 (lBits + offBits) v) (i + offBits) x
+writeWord (BitMVec off len' arr) i' x = do
+    let len  = off + len' -- 64
+        lenMod = modWordSize len -- 0
+        i    = off + i'   -- 62
+        nMod = modWordSize i -- 62
+        loIx = divWordSize i -- 0
+
+    if nMod == 0 then
+        if len >= i + wordSize then
+            writeByteArray arr loIx x
+        else do
+            loWord <- readByteArray arr loIx
+            writeByteArray arr loIx $
+                (loWord .&. hiMask lenMod) .|. (x .&. loMask lenMod)
+    else if loIx == divWordSize (len - 1) then do
+        loWord <- readByteArray arr loIx
+        if lenMod == 0 then
+            writeByteArray arr loIx $
+                (loWord .&. loMask nMod) .|. (x `unsafeShiftL` nMod)
+        else
+            writeByteArray arr loIx $
+                (loWord .&. (loMask nMod .|. hiMask lenMod)) .|.
+                    ((x `unsafeShiftL` nMod) .&. loMask lenMod)
+    else do
+        loWord <- readByteArray arr loIx
+        writeByteArray arr loIx $
+            (loWord .&. loMask nMod) .|. (x `unsafeShiftL` nMod)
+        hiWord <- readByteArray arr (loIx + 1)
+        writeByteArray arr (loIx + 1) $
+            (hiWord .&. hiMask nMod) .|. (x `unsafeShiftR` (wordSize - nMod))
 
 instance MV.MVector U.MVector Bit where
     {-# INLINE basicInitialize #-}
