@@ -113,6 +113,7 @@ zipInPlace f xs ys = loop 0
 -- | Invert (flip) all bits in-place.
 --
 -- Combine with 'Data.Vector.Unboxed.modify'
+-- or simply resort to 'Data.Vector.Unboxed.map' 'Data.Bits.complement'
 -- to operate on immutable vectors.
 --
 -- >>> Data.Vector.Unboxed.modify invertInPlace (read "[0,1,0,1,0]")
