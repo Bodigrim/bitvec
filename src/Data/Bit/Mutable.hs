@@ -166,6 +166,7 @@ excludeBitsInPlace is xs = loop 0 0
 -- | Reverse the order of bits in-place.
 --
 -- Combine with 'Data.Vector.Unboxed.modify'
+-- or simply resort to 'Data.Vector.Unboxed.reverse'
 -- to operate on immutable vectors.
 --
 -- >>> Data.Vector.Unboxed.modify reverseInPlace (read "[1,1,0,1,0]")
