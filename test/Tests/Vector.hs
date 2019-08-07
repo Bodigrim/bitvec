@@ -89,20 +89,20 @@ and xs = case bitIndex (Bit False) xs of
     Nothing -> True
     Just{}  -> False
 
-prop_and_def :: U.Vector Bit -> Bool
+prop_and_def :: U.Vector Bit -> Property
 prop_and_def xs
     =  and xs
-    == all unBit (U.toList xs)
+    === all unBit (U.toList xs)
 
 or :: U.Vector Bit -> Bool
 or xs = case bitIndex (Bit True) xs of
     Nothing -> False
     Just{}  -> True
 
-prop_or_def :: U.Vector Bit -> Bool
+prop_or_def :: U.Vector Bit -> Property
 prop_or_def xs
     =  or xs
-    == any unBit (U.toList xs)
+    === any unBit (U.toList xs)
 
 prop_first_def :: Bit -> U.Vector Bit -> Bool
 prop_first_def b xs

@@ -51,10 +51,10 @@ wordsToBytes ns = case wordSize of
 
 -- number of bits storable in n words
 nBits :: Bits a => a -> a
-nBits ns = mulWordSize ns
+nBits = mulWordSize
 
 aligned :: Int -> Bool
-aligned    x = (x .&. wordSizeMask == 0)
+aligned    x = x .&. wordSizeMask == 0
 
 notAligned :: Int -> Bool
 notAligned x = x /= alignDown x
@@ -82,7 +82,7 @@ masked :: Int -> Word -> Word
 masked b x = x .&. mask b
 
 isMasked :: Int -> Word -> Bool
-isMasked b x = (masked b x == x)
+isMasked b x = masked b x == x
 
 -- meld 2 words by taking the low 'b' bits from 'lo' and the rest from 'hi'
 meld :: Int -> Word -> Word -> Word
@@ -104,9 +104,8 @@ spliceWord k lo hi x =
 
 #if WORD_SIZE_IN_BITS == 64
 reverseWord :: Word -> Word
-reverseWord x = x6
+reverseWord x0 = x6
     where
-        x0 = x
         x1 = ((x0 .&. 0x5555555555555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1)
         x2 = ((x1 .&. 0x3333333333333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2)
         x3 = ((x2 .&. 0x0F0F0F0F0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0F0F0F0F0) `shiftR`  4)
@@ -115,9 +114,8 @@ reverseWord x = x6
         x6 = ((x5 .&. 0x00000000FFFFFFFF) `shiftL` 32) .|. ((x5 .&. 0xFFFFFFFF00000000) `shiftR` 32)
 #else
 reverseWord :: Word -> Word
-reverseWord x = x5
+reverseWord x0 = x5
     where
-        x0 = x
         x1 = ((x0 .&. 0x5555555555555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1)
         x2 = ((x1 .&. 0x3333333333333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2)
         x3 = ((x2 .&. 0x0F0F0F0F0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0F0F0F0F0) `shiftR`  4)
@@ -136,6 +134,7 @@ diff w1 w2 = w1 .&. complement w2
 ffs :: Word -> Maybe Int
 ffs 0 = Nothing
 ffs x = Just $! (popCount (x `xor` complement (-x)) - 1)
+{-# INLINE ffs #-}
 
 -- TODO: this can probably be faster
 -- the interface is very specialized here; 'j' is an offset to add to every bit index and the result is a difference list

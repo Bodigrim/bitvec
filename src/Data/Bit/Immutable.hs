@@ -24,7 +24,6 @@ module Data.Bit.ImmutableTS
     , listBits
     ) where
 
-import Control.Monad
 import Control.Monad.ST
 import Data.Bits
 #ifndef BITVEC_THREADSAFE
@@ -159,15 +158,60 @@ excludeBits is xs = runST $ do
 -- >>> isAnyBitSet   = isJust    . bitIndex (Bit True)
 -- >>> areAllBitsSet = isNothing . bitIndex (Bit False)
 bitIndex :: Bit -> U.Vector Bit -> Maybe Int
-bitIndex b xs = mfilter (< n) (loop 0)
+bitIndex b (BitVec off len arr)
+    | len == 0 = Nothing
+    | offBits == 0 = case modWordSize len of
+        0 -> bitIndexInWords b offWords lWords arr
+        nMod -> case bitIndexInWords b offWords (lWords - 1) arr of
+            r@Just{} -> r
+            Nothing  -> (+ mulWordSize (lWords - 1)) <$>
+                bitIndexInWord b (clipHiBits b nMod (indexByteArray arr (offWords + lWords - 1)))
+    | otherwise = case modWordSize (off + len) of
+        0 -> case bitIndexInWord b (clipLoBits b offBits (indexByteArray arr offWords)) of
+            r@Just{} -> r
+            Nothing  -> (+ (wordSize - offBits)) <$>
+                bitIndexInWords b (offWords + 1) (lWords - 1) arr
+        nMod -> case lWords of
+            1 -> bitIndexInWord b (clipHiBits b len (clipLoBits b offBits (indexByteArray arr offWords)))
+            _ -> case bitIndexInWord b (clipLoBits b offBits (indexByteArray arr offWords)) of
+                r@Just{} -> r
+                Nothing  -> (+ (wordSize - offBits)) <$>
+                    case bitIndexInWords b (offWords + 1) (lWords - 2) arr of
+                        r@Just{} -> r
+                        Nothing  -> (+ mulWordSize (lWords - 2)) <$>
+                            bitIndexInWord b (clipHiBits b nMod (indexByteArray arr (offWords + lWords - 1)))
     where
-        !n = U.length xs
-        !ff | unBit b   = ffs
-            | otherwise = ffs . complement
+        offBits  = modWordSize off
+        offWords = divWordSize off
+        lWords   = nWords (offBits + len)
 
-        loop !i
-            | i >= n    = Nothing
-            | otherwise = fmap (i +) (ff (indexWord xs i)) `mplus` loop (i + wordSize)
+clipLoBits :: Bit -> Int -> Word -> Word
+clipLoBits (Bit True)  k w = w `unsafeShiftR` k
+clipLoBits (Bit False) k w = (w `unsafeShiftR` k) .|. hiMask (wordSize - k)
+
+clipHiBits :: Bit -> Int -> Word -> Word
+clipHiBits (Bit True)  k w = w .&. loMask k
+clipHiBits (Bit False) k w = w .|. hiMask k
+
+bitIndexInWord :: Bit -> Word -> Maybe Int
+bitIndexInWord (Bit True)  = ffs
+bitIndexInWord (Bit False) = ffs . complement
+
+bitIndexInWords :: Bit -> Int -> Int -> ByteArray -> Maybe Int
+bitIndexInWords (Bit True) !off !len !arr = go off
+    where
+        go !n
+            | n >= off + len = Nothing
+            | otherwise = case ffs (indexByteArray arr n) of
+                Nothing  -> go (n + 1)
+                r@Just{} -> r
+bitIndexInWords (Bit False) !off !len !arr = go off
+    where
+        go !n
+            | n >= off + len = Nothing
+            | otherwise = case ffs (complement (indexByteArray arr n)) of
+                Nothing  -> go (n + 1)
+                r@Just{} -> r
 
 -- | Return the index of the @n@-th bit in the vector
 -- with the specified value, if any.
