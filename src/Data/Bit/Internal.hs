@@ -322,7 +322,7 @@ instance MV.MVector U.MVector Bit where
     basicUnsafeMove !dst !src@(BitMVec srcShift srcLen _)
         | MV.basicOverlaps dst src = do
             -- Align shifts of src and srcCopy to speed up basicUnsafeCopy srcCopy src
-            srcCopy <- MV.drop srcShift <$> MV.basicUnsafeNew (srcShift + srcLen)
+            srcCopy <- MV.drop (modWordSize srcShift) <$> MV.basicUnsafeNew (modWordSize srcShift + srcLen)
             MV.basicUnsafeCopy srcCopy src
             MV.basicUnsafeCopy dst srcCopy
         | otherwise = MV.basicUnsafeCopy dst src
