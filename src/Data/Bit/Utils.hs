@@ -1,19 +1,28 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 
-module Data.Bit.Utils where
+module Data.Bit.Utils
+    ( modWordSize
+    , divWordSize
+    , mulWordSize
+    , wordSize
+    , wordsToBytes
+    , nWords
+    , aligned
+    , alignUp
+    , selectWord
+    , reverseWord
+    , reversePartialWord
+    , masked
+    , meld
+    , ffs
+    , loMask
+    , hiMask
+    ) where
 
 #include "MachDeps.h"
 
 import Data.Bits
-import Data.List
-
--- various internal utility functions and constants
-
-lg2 :: Int -> Int
-lg2 n = i
-    where Just i = findIndex (>= toInteger n) (iterate (`shiftL` 1) 1)
-
 
 -- |The number of bits in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
 wordSize :: Int
@@ -49,15 +58,8 @@ wordsToBytes ns = case wordSize of
     64 -> ns `unsafeShiftL` 3
     _  -> error "wordsToBytes: unknown architecture"
 
--- number of bits storable in n words
-nBits :: Bits a => a -> a
-nBits = mulWordSize
-
 aligned :: Int -> Bool
 aligned    x = x .&. wordSizeMask == 0
-
-notAligned :: Int -> Bool
-notAligned x = x /= alignDown x
 
 -- round a number of bits up to the nearest multiple of word size
 alignUp :: Int -> Int
@@ -81,26 +83,10 @@ mask b = m
 masked :: Int -> Word -> Word
 masked b x = x .&. mask b
 
-isMasked :: Int -> Word -> Bool
-isMasked b x = masked b x == x
-
 -- meld 2 words by taking the low 'b' bits from 'lo' and the rest from 'hi'
 meld :: Int -> Word -> Word -> Word
 meld b lo hi = (lo .&. m) .|. (hi .&. complement m)
     where m = mask b
-
--- given a bit offset 'k' and 2 words, extract a word by taking the 'k' highest bits of the first word and the 'wordSize - k' lowest bits of the second word.
-{-# INLINE extractWord #-}
-extractWord :: Int -> Word -> Word -> Word
-extractWord k lo hi = (lo `shiftR` k) .|. (hi `shiftL` (wordSize - k))
-
--- given a bit offset 'k', 2 words 'lo' and 'hi' and a word 'x', overlay 'x' onto 'lo' and 'hi' at the position such that (k `elem` [0..wordSize] ==> uncurry (extractWord k) (spliceWord k lo hi x) == x) and (k `elem` [0..wordSize] ==> spliceWord k lo hi (extractWord k lo hi) == (lo,hi))
-{-# INLINE spliceWord #-}
-spliceWord :: Int -> Word -> Word -> Word -> (Word, Word)
-spliceWord k lo hi x =
-    ( meld k lo (x `shiftL` k)
-    , meld k (x `shiftR` (wordSize - k)) hi
-    )
 
 #if WORD_SIZE_IN_BITS == 64
 reverseWord :: Word -> Word
@@ -128,22 +114,10 @@ reversePartialWord n w
     | n >= wordSize = reverseWord w
     | otherwise     = reverseWord w `shiftR` (wordSize - n)
 
-diff :: Bits a => a -> a -> a
-diff w1 w2 = w1 .&. complement w2
-
 ffs :: Word -> Maybe Int
 ffs 0 = Nothing
 ffs x = Just $! (popCount (x `xor` complement (-x)) - 1)
 {-# INLINE ffs #-}
-
--- TODO: this can probably be faster
--- the interface is very specialized here; 'j' is an offset to add to every bit index and the result is a difference list
-bitsInWord :: Int -> Word -> [Int] -> [Int]
-bitsInWord j = loop id
-    where
-        loop is !w = case ffs w of
-            Nothing -> is
-            Just i  -> loop (is . (j + i :)) (clearBit w i)
 
 -- TODO: faster!
 selectWord :: Word -> Word -> (Int, Word)
