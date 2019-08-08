@@ -130,8 +130,10 @@ benchmark gauge
   other-modules:
     Bench.BitIndex
     Bench.Invert
+    Bench.Intersection
     Bench.RandomFlip
     Bench.RandomRead
     Bench.RandomWrite
     Bench.Reverse
+    Bench.Union
   ghc-options: -O2 -Wall

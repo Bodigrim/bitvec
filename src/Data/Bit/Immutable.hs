@@ -106,6 +106,7 @@ zipBits f xs ys
     | otherwise = U.slice 0 (U.length xs) zs
     where
         zs = U.modify (zipInPlace f xs) ys
+{-# INLINE zipBits #-}
 
 -- | For each set bit of the first argument, deposit
 -- the corresponding bit of the second argument
