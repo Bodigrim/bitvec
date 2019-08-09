@@ -85,7 +85,7 @@ cloneToWords v = runST $ do
 {-# INLINE cloneToWords #-}
 
 -- | Zip two vectors with the given function.
--- Similar to 'Data.Vector.Unboxed.zipWith', but much faster.
+-- Similar to 'Data.Vector.Unboxed.zipWith', but up to 16x faster.
 --
 -- >>> import Data.Bits
 -- >>> zipBits (.&.) (read "[1,1,0]") (read "[0,1,1]") -- intersection
@@ -152,7 +152,7 @@ clipHiBits (Bit False) k w = w .|. hiMask k
 
 -- | Return the index of the first bit in the vector
 -- with the specified value, if any.
--- Similar to 'Data.Vector.Unboxed.elemIndex', but much faster.
+-- Similar to 'Data.Vector.Unboxed.elemIndex', but up to 64x faster.
 --
 -- >>> bitIndex (Bit True) (read "[0,0,1,0,1]")
 -- Just 2

@@ -44,15 +44,25 @@ import qualified Data.Vector.Unboxed as U
 import GHC.Exts
 #endif
 
+#ifndef BITVEC_THREADSAFE
 -- | A newtype wrapper with a custom instance
 -- of "Data.Vector.Unboxed", which packs booleans
 -- as efficient as possible (8 values per byte).
 -- Vectors of `Bit` use 8x less memory
--- than vectors of 'Bool' (which stores one value per byte),
--- but random writes
--- are slightly slower.
+-- than vectors of 'Bool' (which stores one value per byte).
+-- but random writes are up to 10% slower.
 newtype Bit = Bit { unBit :: Bool }
     deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
+#else
+-- | A newtype wrapper with a custom instance
+-- of "Data.Vector.Unboxed", which packs booleans
+-- as efficient as possible (8 values per byte).
+-- Vectors of `Bit` use 8x less memory
+-- than vectors of 'Bool' (which stores one value per byte).
+-- but random writes are up to 20% slower.
+newtype Bit = Bit { unBit :: Bool }
+    deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
+#endif
 
 instance Show Bit where
     showsPrec _ (Bit False) = showString "0"
@@ -347,7 +357,7 @@ instance MV.MVector U.MVector Bit where
 -- | Flip the bit at the given position.
 -- No bounds checks are performed.
 -- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
--- but slightly faster.
+-- but up to 2x faster.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
 -- either you modify it with 'id' (which is 'id' altogether)
@@ -367,7 +377,7 @@ unsafeFlipBit (BitMVec off _ arr) !i' = do
 
 -- | Flip the bit at the given position.
 -- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
--- but slightly faster.
+-- but up to 2x faster.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
 -- either you modify it with 'id' (which is 'id' altogether)
@@ -384,7 +394,7 @@ flipBit v i = BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit
 -- | Flip the bit at the given position.
 -- No bounds checks are performed.
 -- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
--- but slightly faster and atomic.
+-- but up to 33% faster and atomic.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
 -- either you modify it with 'id' (which is 'id' altogether)
@@ -404,7 +414,7 @@ unsafeFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
 
 -- | Flip the bit at the given position.
 -- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
--- but slightly faster and atomic
+-- but up to 33% faster and atomic.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
 -- either you modify it with 'id' (which is 'id' altogether)
