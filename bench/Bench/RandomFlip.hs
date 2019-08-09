@@ -22,10 +22,12 @@ randomFlips
 
 benchRandomFlip :: Int -> Benchmark
 benchRandomFlip k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit"    $ nf randomFlipBit    k
-  , bench "Bit.TS" $ nf randomFlipBitTS  k
-  , bench "Vector" $ nf randomFlipVector k
-  , bench "IntSet" $ nf randomFlipIntSet k
+  [ bench "Bit/flip"      $ nf randomFlipBit    k
+  , bench "Bit/modify"    $ nf randomFlipBit'   k
+  , bench "Bit.TS/flip"   $ nf randomFlipBitTS  k
+  , bench "Bit.TS/modify" $ nf randomFlipBitTS' k
+  , bench "Vector"        $ nf randomFlipVector k
+  , bench "IntSet"        $ nf randomFlipIntSet k
   ]
 
 randomFlipBit :: Int -> Int
@@ -37,12 +39,30 @@ randomFlipBit k = runST $ do
   Bit i <- MU.unsafeRead vec 0
   pure $ if i then 1 else 0
 
+randomFlipBit' :: Int -> Int
+randomFlipBit' k = runST $ do
+  let n = 1 `shiftL` k
+  vec <- MU.new n
+  forM_ (take (mult * n) randomFlips) $
+    \i -> MU.unsafeModify vec complement (i .&. (1 `shiftL` k - 1))
+  Bit i <- MU.unsafeRead vec 0
+  pure $ if i then 1 else 0
+
 randomFlipBitTS :: Int -> Int
 randomFlipBitTS k = runST $ do
   let n = 1 `shiftL` k
   vec <- MU.new n
   forM_ (take (mult * n) randomFlips) $
     \i -> TS.unsafeFlipBit vec (i .&. (1 `shiftL` k - 1))
+  TS.Bit i <- MU.unsafeRead vec 0
+  pure $ if i then 1 else 0
+
+randomFlipBitTS' :: Int -> Int
+randomFlipBitTS' k = runST $ do
+  let n = 1 `shiftL` k
+  vec <- MU.new n
+  forM_ (take (mult * n) randomFlips) $
+    \i -> MU.unsafeModify vec complement (i .&. (1 `shiftL` k - 1))
   TS.Bit i <- MU.unsafeRead vec 0
   pure $ if i then 1 else 0
 
