@@ -1,3 +1,7 @@
+# 1.0.0.1
+
+* Performance improvements.
+
 # 1.0.0.0
 
 * Redesign API from the scratch.
