@@ -11,7 +11,7 @@ synopsis: Space-efficient bit vectors
 description:
   A newtype over 'Bool' with a better 'Vector' instance.
   .
-  The [vector](https://hackage.haskell.org/package/vector)
+  The <https://hackage.haskell.org/package/vector vector>
   package represents unboxed arrays of 'Bool'
   This library provides a newtype wrapper 'Bit' and a custom instance
   of unboxed 'Vector', which packs bits densely,
@@ -20,7 +20,7 @@ description:
   the most significant degradation happens for random writes
   (up to 10% slower).
   On the other hand, for certain bulk bit operations
-  'Vector Bit' is up to 64x faster than 'Vector Bool'.
+  'Vector' 'Bit' is up to 64x faster than 'Vector' 'Bool'.
   .
   === Thread safety
   .
@@ -33,11 +33,11 @@ description:
   .
   === Similar packages
   .
-  * [bv](https://hackage.haskell.org/package/bv) and
-    [bv-little](https://hackage.haskell.org/package/bv-little)
+  * <https://hackage.haskell.org/package/bv bv> and
+    <https://hackage.haskell.org/package/bv-little bv-little>
     do not offer mutable vectors.
   .
-  * [array](https://hackage.haskell.org/package/array)
+  * <https://hackage.haskell.org/package/array array>
     is memory-efficient for 'Bool', but lacks
     a handy 'Vector' interface and is not thread-safe.
 

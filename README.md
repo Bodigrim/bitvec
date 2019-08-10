@@ -103,7 +103,7 @@ of a vector (giving us [the prime-counting function](https://en.wikipedia.org/wi
 25
 ```
 
-And vice-versa, query an address of the _n_-th set bit
+And vice versa, query an address of the _n_-th set bit
 (which corresponds to the _n_-th prime number here):
 ```haskell
 > nthBitIndex (Bit True) 10 eratosthenes
