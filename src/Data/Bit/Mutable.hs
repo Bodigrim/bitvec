@@ -31,7 +31,6 @@ import Data.Bit.InternalTS
 import Data.Bit.Utils
 import Data.Bits
 import qualified Data.Vector.Primitive as P
-import Data.Vector.Unboxed (Vector, MVector)
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
