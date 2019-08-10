@@ -1,29 +1,34 @@
 # bitvec [![Build Status](https://travis-ci.org/Bodigrim/bitvec.svg)](https://travis-ci.org/Bodigrim/bitvec) [![Hackage](http://img.shields.io/hackage/v/bitvec.svg)](https://hackage.haskell.org/package/bitvec) [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/bitvec/badge)](https://matrix.hackage.haskell.org/package/bitvec) [![Stackage LTS](http://stackage.org/package/bitvec/badge/lts)](http://stackage.org/lts/package/bitvec) [![Stackage Nightly](http://stackage.org/package/bitvec/badge/nightly)](http://stackage.org/nightly/package/bitvec)
 
-Bit vectors library for Haskell.
+A newtype over `Bool` with a better `Vector` instance.
 
-The current `vector` package represents unboxed arrays of `Bool`
-allocating one byte per boolean, which might be considered wasteful.
+The [`vector`](https://hackage.haskell.org/package/vector)
+package represents unboxed arrays of `Bool`
+spending 1 byte (8 bits) per boolean.
 This library provides a newtype wrapper `Bit` and a custom instance
-of unboxed `Vector`, which packs booleans densely.
-It is a time-memory tradeoff: 8x less memory footprint
-at the price of moderate performance penalty
-(mostly, for random writes).
+of unboxed `Vector`, which packs bits densely,
+achieving __8x less memory footprint.__
+The performance stays mostly the same;
+the most significant degradation happens for random writes
+(up to 10% slower).
+On the other hand, for certain bulk bit operations
+`Vector Bit` is up to 64x faster than `Vector Bool`.
 
 ## Thread safety
 
-* `Data.Bit` is faster, but writes are thread-unsafe. This is because
-  naive updates are not atomic operations: read the whole word from memory,
-  modify a bit, write the whole word back.
-* `Data.Bit.ThreadSafe` is slower (up to 2x), but writes are thread-safe.
-  It implements updates via `fetch{And,Or,Xor}IntArray#` primitives
-  from `GHC.Exts`.
+* `Data.Bit` is faster, but writes and flips are thread-unsafe.
+  This is because naive updates are not atomic:
+  read the whole word from memory,
+  then modify a bit, then write the whole word back.
+* `Data.Bit.ThreadSafe` is slower (up to 20%),
+  but writes and flips are thread-safe.
 
 ## Similar packages
 
-* `bv` and `bv-little`
-  offer only immutable size-polymorphic bit vectors.
-  `bitvec` provides an interface to mutable vectors as well.
+* [`bv`](https://hackage.haskell.org/package/bv) and
+  [`bv-little`](https://hackage.haskell.org/package/bv-little)
+  do not offer mutable vectors.
 
-* `array` is memory-efficient for `Bool`, but lacks
+* [`array`](https://hackage.haskell.org/package/array)
+  is memory-efficient for `Bool`, but lacks
   a handy `Vector` interface and is not thread-safe.
