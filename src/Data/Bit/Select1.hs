@@ -13,8 +13,8 @@
 #endif
 
 module Data.Bit.Select1
-    ( select1
-    ) where
+  ( select1
+  ) where
 
 #include "MachDeps.h"
 

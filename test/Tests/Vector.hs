@@ -11,103 +11,84 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 vectorTests :: TestTree
-vectorTests = testGroup "Data.Vector.Unboxed.Bit"
-    [ testGroup "Data.Vector.Unboxed functions"
-        [ testProperty "toList . fromList == id"    prop_toList_fromList
-        , testProperty "fromList . toList == id"    prop_fromList_toList
-        , testProperty "slice"                      prop_slice_def
-        ]
-    , testProperty "cloneFromWords"             prop_cloneFromWords_def
-    , testProperty "cloneToWords"               prop_cloneToWords_def
-    , testProperty "reverse"                    prop_reverse_def
-    , testProperty "countBits"                  prop_countBits_def
-    , testProperty "listBits"                   prop_listBits_def
-    , testGroup "Boolean operations"
-        [ testProperty "and"                        prop_and_def
-        , testProperty "or"                         prop_or_def
-        ]
-    , testGroup "Search operations"
-        [ testProperty "first"                      prop_first_def
-        ]
-    , testGroup "nthBitIndex"
-        [ testCase     "special case 1"                     case_nthBit_1
-
-        , testProperty "matches bitIndex True"              prop_nthBit_1
-        , testProperty "matches bitIndex False"             prop_nthBit_2
-        , testProperty "matches sequence of bitIndex True"  prop_nthBit_3
-        , testProperty "matches sequence of bitIndex False" prop_nthBit_4
-        , testProperty "matches countBits"                  prop_nthBit_5
-        ]
+vectorTests = testGroup
+  "Data.Vector.Unboxed.Bit"
+  [ testGroup
+    "Data.Vector.Unboxed functions"
+    [ testProperty "toList . fromList == id" prop_toList_fromList
+    , testProperty "fromList . toList == id" prop_fromList_toList
+    , testProperty "slice"                   prop_slice_def
     ]
+  , testProperty "cloneFromWords" prop_cloneFromWords_def
+  , testProperty "cloneToWords"   prop_cloneToWords_def
+  , testProperty "reverse"        prop_reverse_def
+  , testProperty "countBits"      prop_countBits_def
+  , testProperty "listBits"       prop_listBits_def
+  , testGroup "Boolean operations"
+              [testProperty "and" prop_and_def, testProperty "or" prop_or_def]
+  , testGroup "Search operations" [testProperty "first" prop_first_def]
+  , testGroup
+    "nthBitIndex"
+    [ testCase "special case 1" case_nthBit_1
+    , testProperty "matches bitIndex True"              prop_nthBit_1
+    , testProperty "matches bitIndex False"             prop_nthBit_2
+    , testProperty "matches sequence of bitIndex True"  prop_nthBit_3
+    , testProperty "matches sequence of bitIndex False" prop_nthBit_4
+    , testProperty "matches countBits"                  prop_nthBit_5
+    ]
+  ]
 
 prop_toList_fromList :: [Bit] -> Bool
-prop_toList_fromList xs =
-    U.toList (U.fromList xs) == xs
+prop_toList_fromList xs = U.toList (U.fromList xs) == xs
 
 prop_fromList_toList :: U.Vector Bit -> Bool
-prop_fromList_toList xs =
-    U.fromList (U.toList xs) == xs
+prop_fromList_toList xs = U.fromList (U.toList xs) == xs
 
 prop_slice_def :: Int -> Int -> U.Vector Bit -> Bool
-prop_slice_def s n xs
-    =  sliceList s' n' (U.toList xs)
-    == U.toList (U.slice s' n' xs)
-    where
-        (s', n') = trimSlice s n (U.length xs)
+prop_slice_def s n xs = sliceList s' n' (U.toList xs)
+  == U.toList (U.slice s' n' xs)
+  where (s', n') = trimSlice s n (U.length xs)
 
 prop_cloneFromWords_def :: U.Vector Word -> Property
-prop_cloneFromWords_def ws
-    =   U.toList (castFromWords ws)
-    === concatMap wordToBitList (U.toList ws)
+prop_cloneFromWords_def ws =
+  U.toList (castFromWords ws) === concatMap wordToBitList (U.toList ws)
 
 prop_cloneToWords_def :: U.Vector Bit -> Bool
-prop_cloneToWords_def xs
-    =  U.toList (cloneToWords xs)
-    == loop (U.toList xs)
-        where
-            loop [] = []
-            loop bs = case packBitsToWord bs of
-                (w, bs') -> w : loop bs'
+prop_cloneToWords_def xs = U.toList (cloneToWords xs) == loop (U.toList xs)
+ where
+  loop [] = []
+  loop bs = case packBitsToWord bs of
+    (w, bs') -> w : loop bs'
 
 prop_reverse_def :: U.Vector Bit -> Bool
-prop_reverse_def xs
-    =   reverse  (U.toList xs)
-    ==  U.toList (U.modify reverseInPlace xs)
+prop_reverse_def xs =
+  reverse (U.toList xs) == U.toList (U.modify reverseInPlace xs)
 
 prop_countBits_def :: U.Vector Bit -> Bool
-prop_countBits_def xs
-    =  countBits xs
-    == length (filter unBit (U.toList xs))
+prop_countBits_def xs = countBits xs == length (filter unBit (U.toList xs))
 
 prop_listBits_def :: U.Vector Bit -> Property
-prop_listBits_def xs
-    =  listBits xs
-    === [ i | (i,x) <- zip [0..] (U.toList xs), unBit x]
+prop_listBits_def xs =
+  listBits xs === [ i | (i, x) <- zip [0 ..] (U.toList xs), unBit x ]
 
 and :: U.Vector Bit -> Bool
 and xs = case bitIndex (Bit False) xs of
-    Nothing -> True
-    Just{}  -> False
+  Nothing -> True
+  Just{}  -> False
 
 prop_and_def :: U.Vector Bit -> Property
-prop_and_def xs
-    =  and xs
-    === all unBit (U.toList xs)
+prop_and_def xs = and xs === all unBit (U.toList xs)
 
 or :: U.Vector Bit -> Bool
 or xs = case bitIndex (Bit True) xs of
-    Nothing -> False
-    Just{}  -> True
+  Nothing -> False
+  Just{}  -> True
 
 prop_or_def :: U.Vector Bit -> Property
-prop_or_def xs
-    =  or xs
-    === any unBit (U.toList xs)
+prop_or_def xs = or xs === any unBit (U.toList xs)
 
 prop_first_def :: Bit -> U.Vector Bit -> Bool
-prop_first_def b xs
-    =  bitIndex b xs
-    == findIndex (b ==) (U.toList xs)
+prop_first_def b xs = bitIndex b xs == findIndex (b ==) (U.toList xs)
 
 prop_nthBit_1 :: U.Vector Bit -> Property
 prop_nthBit_1 xs = bitIndex (Bit True) xs === nthBitIndex (Bit True) 1 xs
@@ -117,28 +98,31 @@ prop_nthBit_2 xs = bitIndex (Bit False) xs === nthBitIndex (Bit False) 1 xs
 
 prop_nthBit_3 :: Positive Int -> U.Vector Bit -> Property
 prop_nthBit_3 (Positive n) xs = case nthBitIndex (Bit True) (n + 1) xs of
-    Nothing -> property True
-    Just i  -> case bitIndex (Bit True) xs of
-        Nothing -> property False
-        Just j  -> case nthBitIndex (Bit True) n (U.drop (j + 1) xs) of
-            Nothing -> property False
-            Just k  -> i === j + k + 1
+  Nothing -> property True
+  Just i  -> case bitIndex (Bit True) xs of
+    Nothing -> property False
+    Just j  -> case nthBitIndex (Bit True) n (U.drop (j + 1) xs) of
+      Nothing -> property False
+      Just k  -> i === j + k + 1
 
 prop_nthBit_4 :: Positive Int -> U.Vector Bit -> Property
 prop_nthBit_4 (Positive n) xs = case nthBitIndex (Bit False) (n + 1) xs of
-    Nothing -> property True
-    Just i  -> case bitIndex (Bit False) xs of
-        Nothing -> property False
-        Just j  -> case nthBitIndex (Bit False) n (U.drop (j + 1) xs) of
-            Nothing -> property False
-            Just k  -> i === j + k + 1
+  Nothing -> property True
+  Just i  -> case bitIndex (Bit False) xs of
+    Nothing -> property False
+    Just j  -> case nthBitIndex (Bit False) n (U.drop (j + 1) xs) of
+      Nothing -> property False
+      Just k  -> i === j + k + 1
 
 prop_nthBit_5 :: Positive Int -> U.Vector Bit -> Property
-prop_nthBit_5 (Positive n) xs = n <= countBits xs ==>
-    case nthBitIndex (Bit True) n xs of
-        Nothing -> property False
-        Just i  -> countBits (U.take (i + 1) xs) === n
+prop_nthBit_5 (Positive n) xs =
+  n <= countBits xs ==> case nthBitIndex (Bit True) n xs of
+    Nothing -> property False
+    Just i  -> countBits (U.take (i + 1) xs) === n
 
 case_nthBit_1 :: IO ()
-case_nthBit_1 = assertEqual "should be equal" Nothing $
-    nthBitIndex (Bit True) 1 $ U.slice 61 4 $ U.replicate 100 (Bit False)
+case_nthBit_1 =
+  assertEqual "should be equal" Nothing
+    $ nthBitIndex (Bit True) 1
+    $ U.slice 61 4
+    $ U.replicate 100 (Bit False)

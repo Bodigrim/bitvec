@@ -21,37 +21,37 @@ module Data.Bit
 -- Consider using "Data.Bit", which is faster (up to 20%), but thread-unsafe.
 module Data.Bit.ThreadSafe
 #endif
-     ( Bit(..)
+  ( Bit(..)
 
-     , unsafeFlipBit
-     , flipBit
+  , unsafeFlipBit
+  , flipBit
 
-     -- * Immutable conversions
-     , castFromWords
-     , castToWords
-     , cloneToWords
+  -- * Immutable conversions
+  , castFromWords
+  , castToWords
+  , cloneToWords
 
-     -- * Immutable operations
-     , zipBits
-     , bitIndex
-     , nthBitIndex
-     , countBits
-     , listBits
-     , selectBits
-     , excludeBits
+  -- * Immutable operations
+  , zipBits
+  , bitIndex
+  , nthBitIndex
+  , countBits
+  , listBits
+  , selectBits
+  , excludeBits
 
-     -- * Mutable conversions
-     , castFromWordsM
-     , castToWordsM
-     , cloneToWordsM
+  -- * Mutable conversions
+  , castFromWordsM
+  , castToWordsM
+  , cloneToWordsM
 
-     -- * Mutable operations
-     , invertInPlace
-     , zipInPlace
-     , selectBitsInPlace
-     , excludeBitsInPlace
-     , reverseInPlace
-    ) where
+  -- * Mutable operations
+  , invertInPlace
+  , zipInPlace
+  , selectBitsInPlace
+  , excludeBitsInPlace
+  , reverseInPlace
+  ) where
 
 import Prelude hiding (and, or)
 

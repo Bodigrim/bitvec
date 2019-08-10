@@ -2,23 +2,23 @@
 {-# LANGUAGE CPP                        #-}
 
 module Data.Bit.Utils
-    ( modWordSize
-    , divWordSize
-    , mulWordSize
-    , wordSize
-    , wordsToBytes
-    , nWords
-    , aligned
-    , alignUp
-    , selectWord
-    , reverseWord
-    , reversePartialWord
-    , masked
-    , meld
-    , ffs
-    , loMask
-    , hiMask
-    ) where
+  ( modWordSize
+  , divWordSize
+  , mulWordSize
+  , wordSize
+  , wordsToBytes
+  , nWords
+  , aligned
+  , alignUp
+  , selectWord
+  , reverseWord
+  , reversePartialWord
+  , masked
+  , meld
+  , ffs
+  , loMask
+  , hiMask
+  ) where
 
 #include "MachDeps.h"
 
@@ -30,9 +30,9 @@ wordSize = finiteBitSize (0 :: Word)
 
 lgWordSize, wordSizeMask, wordSizeMaskC :: Int
 lgWordSize = case wordSize of
-    32 -> 5
-    64 -> 6
-    _  -> error "wordsToBytes: unknown architecture"
+  32 -> 5
+  64 -> 6
+  _  -> error "wordsToBytes: unknown architecture"
 
 wordSizeMask = wordSize - 1
 wordSizeMaskC = complement wordSizeMask
@@ -54,19 +54,18 @@ nWords ns = divWordSize (ns + wordSize - 1)
 
 wordsToBytes :: Int -> Int
 wordsToBytes ns = case wordSize of
-    32 -> ns `unsafeShiftL` 2
-    64 -> ns `unsafeShiftL` 3
-    _  -> error "wordsToBytes: unknown architecture"
+  32 -> ns `unsafeShiftL` 2
+  64 -> ns `unsafeShiftL` 3
+  _  -> error "wordsToBytes: unknown architecture"
 
 aligned :: Int -> Bool
-aligned    x = x .&. wordSizeMask == 0
+aligned x = x .&. wordSizeMask == 0
 
 -- round a number of bits up to the nearest multiple of word size
 alignUp :: Int -> Int
-alignUp x
-    | x == x'   = x'
-    | otherwise = x' + wordSize
-    where x' = alignDown x
+alignUp x | x == x'   = x'
+          | otherwise = x' + wordSize
+  where x' = alignDown x
 
 -- round a number of bits down to the nearest multiple of word size
 alignDown :: Int -> Int
@@ -75,59 +74,58 @@ alignDown x = x .&. wordSizeMaskC
 -- create a mask consisting of the lower n bits
 mask :: Int -> Word
 mask b = m
-    where
-        m   | b >= finiteBitSize m = complement 0
-            | b < 0                = 0
-            | otherwise            = bit b - 1
+ where
+  m | b >= finiteBitSize m = complement 0
+    | b < 0                = 0
+    | otherwise            = bit b - 1
 
 masked :: Int -> Word -> Word
 masked b x = x .&. mask b
 
 -- meld 2 words by taking the low 'b' bits from 'lo' and the rest from 'hi'
 meld :: Int -> Word -> Word -> Word
-meld b lo hi = (lo .&. m) .|. (hi .&. complement m)
-    where m = mask b
+meld b lo hi = (lo .&. m) .|. (hi .&. complement m) where m = mask b
 {-# INLINE meld #-}
 
 #if WORD_SIZE_IN_BITS == 64
 reverseWord :: Word -> Word
 reverseWord x0 = x6
-    where
-        x1 = ((x0 .&. 0x5555555555555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1)
-        x2 = ((x1 .&. 0x3333333333333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2)
-        x3 = ((x2 .&. 0x0F0F0F0F0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0F0F0F0F0) `shiftR`  4)
-        x4 = ((x3 .&. 0x00FF00FF00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00FF00FF00) `shiftR`  8)
-        x5 = ((x4 .&. 0x0000FFFF0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000FFFF0000) `shiftR` 16)
-        x6 = ((x5 .&. 0x00000000FFFFFFFF) `shiftL` 32) .|. ((x5 .&. 0xFFFFFFFF00000000) `shiftR` 32)
+ where
+  x1 = ((x0 .&. 0x5555555555555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1)
+  x2 = ((x1 .&. 0x3333333333333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2)
+  x3 = ((x2 .&. 0x0F0F0F0F0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0F0F0F0F0) `shiftR`  4)
+  x4 = ((x3 .&. 0x00FF00FF00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00FF00FF00) `shiftR`  8)
+  x5 = ((x4 .&. 0x0000FFFF0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000FFFF0000) `shiftR` 16)
+  x6 = ((x5 .&. 0x00000000FFFFFFFF) `shiftL` 32) .|. ((x5 .&. 0xFFFFFFFF00000000) `shiftR` 32)
 #else
 reverseWord :: Word -> Word
 reverseWord x0 = x5
-    where
-        x1 = ((x0 .&. 0x5555555555555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1)
-        x2 = ((x1 .&. 0x3333333333333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2)
-        x3 = ((x2 .&. 0x0F0F0F0F0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0F0F0F0F0) `shiftR`  4)
-        x4 = ((x3 .&. 0x00FF00FF00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00FF00FF00) `shiftR`  8)
-        x5 = ((x4 .&. 0x0000FFFF0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000FFFF0000) `shiftR` 16)
+ where
+  x1 = ((x0 .&. 0x5555555555555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1)
+  x2 = ((x1 .&. 0x3333333333333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2)
+  x3 = ((x2 .&. 0x0F0F0F0F0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0F0F0F0F0) `shiftR`  4)
+  x4 = ((x3 .&. 0x00FF00FF00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00FF00FF00) `shiftR`  8)
+  x5 = ((x4 .&. 0x0000FFFF0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000FFFF0000) `shiftR` 16)
 #endif
 
 reversePartialWord :: Int -> Word -> Word
-reversePartialWord n w
-    | n >= wordSize = reverseWord w
-    | otherwise     = reverseWord w `shiftR` (wordSize - n)
+reversePartialWord n w | n >= wordSize = reverseWord w
+                       | otherwise     = reverseWord w `shiftR` (wordSize - n)
 
 ffs :: Word -> Maybe Int
 ffs 0 = Nothing
 ffs x = Just $! (popCount (x `xor` complement (-x)) - 1)
 {-# INLINE ffs #-}
 
--- TODO: faster!
 selectWord :: Word -> Word -> (Int, Word)
 selectWord m x = loop 0 0 0
-    where
-        loop !i !ct !y
-            | i >= wordSize = (ct, y)
-            | testBit m i   = loop (i+1) (ct+1) (if testBit x i then setBit y ct else y)
-            | otherwise     = loop (i+1) ct y
+ where
+  loop !i !ct !y
+    | i >= wordSize = (ct, y)
+    | testBit m i = loop (i + 1)
+                         (ct + 1)
+                         (if testBit x i then setBit y ct else y)
+    | otherwise = loop (i + 1) ct y
 
 loMask :: Int -> Word
 loMask n = 1 `shiftL` n - 1

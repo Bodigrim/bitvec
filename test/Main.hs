@@ -12,17 +12,13 @@ import Tests.SetOps (setOpTests)
 import Tests.Vector (vectorTests)
 
 main :: IO ()
-main = defaultMain $ testGroup "All"
-    [ showReadTests
-    , mvectorTests
-    , TS.mvectorTests
-    , setOpTests
-    , vectorTests
-    ]
+main = defaultMain $ testGroup
+  "All"
+  [showReadTests, mvectorTests, TS.mvectorTests, setOpTests, vectorTests]
 
 showReadTests :: TestTree
-showReadTests
-  = testGroup "Show/Read"
-  $ map (uncurry testProperty)
-  $ lawsProperties
-  $ showReadLaws (Proxy :: Proxy Bit)
+showReadTests =
+  testGroup "Show/Read"
+    $ map (uncurry testProperty)
+    $ lawsProperties
+    $ showReadLaws (Proxy :: Proxy Bit)
