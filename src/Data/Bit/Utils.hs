@@ -87,6 +87,7 @@ masked b x = x .&. mask b
 meld :: Int -> Word -> Word -> Word
 meld b lo hi = (lo .&. m) .|. (hi .&. complement m)
     where m = mask b
+{-# INLINE meld #-}
 
 #if WORD_SIZE_IN_BITS == 64
 reverseWord :: Word -> Word

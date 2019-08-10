@@ -173,9 +173,13 @@ excludeBitsInPlace is xs = loop 0 0
 -- >>> Data.Vector.Unboxed.modify reverseInPlace (read "[1,1,0,1,0]")
 -- [0,1,0,1,1]
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
-reverseInPlace xs = loop 0 (MV.length xs)
+reverseInPlace xs
+    | len == 0  = pure ()
+    | otherwise = loop 0
     where
-        loop !i !j
+        len = MV.length xs
+
+        loop !i
             | i' <= j'  = do
                 x <- readWord xs i
                 y <- readWord xs j'
@@ -183,22 +187,22 @@ reverseInPlace xs = loop 0 (MV.length xs)
                 writeWord xs i  (reverseWord y)
                 writeWord xs j' (reverseWord x)
 
-                loop i' j'
+                loop i'
             | i' < j    = do
                 let w = (j - i) `shiftR` 1
-                    k  = j - w
+                    k =  j - w
                 x <- readWord xs i
                 y <- readWord xs k
 
                 writeWord xs i (meld w (reversePartialWord w y) x)
                 writeWord xs k (meld w (reversePartialWord w x) y)
 
-                loop i' j'
-            | i  < j    = do
+                loop i'
+            | otherwise = do
                 let w = j - i
                 x <- readWord xs i
                 writeWord xs i (meld w (reversePartialWord w x) x)
-            | otherwise = return ()
             where
+                !j  = len - i
                 !i' = i + wordSize
                 !j' = j - wordSize
