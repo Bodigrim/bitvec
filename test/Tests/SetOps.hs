@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Tests.SetOps where
 
 import Support ()
@@ -11,10 +13,9 @@ import Test.Tasty.QuickCheck hiding ((.&.))
 setOpTests :: TestTree
 setOpTests = testGroup
   "Set operations"
-  [ testProperty "union"         prop_union_def
-  , testProperty "intersection"  prop_intersection_def
-  , testProperty "difference"    prop_difference_def
-  , testProperty "symDiff"       prop_symDiff_def
+  [ testProperty "generalize"    prop_generalize
+  , testProperty "zipBits"       prop_zipBits
+  , testProperty "zipInPlace"    prop_zipInPlace
   , testProperty "invert"        prop_invert_def
   , testProperty "select"        prop_select_def
   , testProperty "exclude"       prop_exclude_def
@@ -23,34 +24,38 @@ setOpTests = testGroup
   , testProperty "countBits"     prop_countBits_def
   ]
 
-union :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-union = zipBits (.|.)
+prop_generalize :: Fun (Bit, Bit) Bit -> Bit -> Bit -> Property
+prop_generalize fun x y = curry (applyFun fun) x y === generalize (curry (applyFun fun)) x y
 
 prop_union_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_union_def xs ys =
-  U.toList (union xs ys) === zipWith (.|.) (U.toList xs) (U.toList ys)
-
-intersection :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-intersection = zipBits (.&.)
+  zipBits (.|.) xs ys === U.zipWith (.|.) xs ys
 
 prop_intersection_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_intersection_def xs ys =
-  U.toList (intersection xs ys) === zipWith (.&.) (U.toList xs) (U.toList ys)
-
-difference :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-difference = zipBits (\a b -> a .&. complement b)
+  zipBits (.&.) xs ys === U.zipWith (.&.) xs ys
 
 prop_difference_def :: U.Vector Bit -> U.Vector Bit -> Property
-prop_difference_def xs ys = U.toList (difference xs ys)
-  === zipWith diff (U.toList xs) (U.toList ys)
-  where diff x y = x .&. complement y
-
-symDiff :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-symDiff = zipBits xor
+prop_difference_def xs ys =
+  zipBits diff xs ys === U.zipWith diff xs ys
+  where
+    diff x y = x .&. complement y
 
 prop_symDiff_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_symDiff_def xs ys =
-  U.toList (symDiff xs ys) === zipWith xor (U.toList xs) (U.toList ys)
+  zipBits xor xs ys === U.zipWith xor xs ys
+
+prop_zipBits :: Fun (Bit, Bit) Bit -> U.Vector Bit -> U.Vector Bit -> Property
+prop_zipBits fun xs ys =
+  U.zipWith f xs ys === zipBits (generalize f) xs ys
+  where
+    f = curry $ applyFun fun
+
+prop_zipInPlace :: Fun (Bit, Bit) Bit -> U.Vector Bit -> U.Vector Bit -> Property
+prop_zipInPlace fun xs ys =
+  U.zipWith f xs ys === U.take (min (U.length xs) (U.length ys)) (U.modify (zipInPlace (generalize f) xs) ys)
+  where
+    f = curry $ applyFun fun
 
 prop_invert_def :: U.Vector Bit -> Bool
 prop_invert_def xs =
@@ -79,3 +84,27 @@ prop_excludeBits_def xs ys = excludeBits xs ys == U.fromList (exclude xs ys)
 
 prop_countBits_def :: U.Vector Bit -> Bool
 prop_countBits_def xs = countBits xs == U.length (selectBits xs xs)
+
+-------------------------------------------------------------------------------
+
+generalize :: (Bit -> Bit -> Bit) -> (forall a. Bits a => a -> a -> a)
+generalize f = case (f (Bit False) (Bit False), f (Bit False) (Bit True), f (Bit True) (Bit False), f (Bit True) (Bit True)) of
+  (Bit False, Bit False, Bit False, Bit False) -> \_ _ -> zeroBits
+  (Bit False, Bit False, Bit False, Bit True)  -> \x y -> x .&. y
+  (Bit False, Bit False, Bit True,  Bit False) -> \x y -> x .&. complement y
+  (Bit False, Bit False, Bit True,  Bit True)  -> \x _ -> x
+
+  (Bit False, Bit True,  Bit False, Bit False) -> \x y -> complement x .&. y
+  (Bit False, Bit True,  Bit False, Bit True)  -> \_ y -> y
+  (Bit False, Bit True,  Bit True,  Bit False) -> \x y -> x `xor` y
+  (Bit False, Bit True,  Bit True,  Bit True)  -> \x y -> x .|. y
+
+  (Bit True,  Bit False, Bit False, Bit False) -> \x y -> complement x .&. complement y
+  (Bit True,  Bit False, Bit False, Bit True)  -> \x y -> complement (x `xor` y)
+  (Bit True,  Bit False, Bit True,  Bit False) -> \_ y -> complement y
+  (Bit True,  Bit False, Bit True,  Bit True)  -> \x y -> x .|. complement y
+
+  (Bit True,  Bit True,  Bit False, Bit False) -> \x _ -> complement x
+  (Bit True,  Bit True,  Bit False, Bit True)  -> \x y -> complement x .|. y
+  (Bit True,  Bit True,  Bit True,  Bit False) -> \x y -> complement x .|. complement y
+  (Bit True,  Bit True,  Bit True,  Bit True)  -> \_ _ -> complement zeroBits
