@@ -40,12 +40,12 @@ randomSet2 k = IS.fromAscList (map fst (filter snd (zip [0..] (take n $ drop n r
 
 benchIntersection :: Int -> Benchmark
 benchIntersection k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit/zipBits"    $ nf (intersectionBit    (randomVec Bit k))    (randomVec2 Bit k)
-  , bench "Bit/zipWith"    $ nf (intersectionBit'   (randomVec Bit k))    (randomVec2 Bit k)
-  , bench "Bit.TS/zipBits" $ nf (intersectionBitTS  (randomVec TS.Bit k)) (randomVec2 TS.Bit k)
-  , bench "Bit.TS/zipWith" $ nf (intersectionBitTS' (randomVec TS.Bit k)) (randomVec2 TS.Bit k)
-  , bench "Vector"         $ nf (intersectionVector (randomVec id k))     (randomVec2 id k)
-  , bench "IntSet"         $ nf (intersectionIntSet (randomSet k))        (randomSet2 k)
+  [ bench "Bit/zipBits"    $ nf (\x -> intersectionBit    (randomVec Bit k) x)    (randomVec2 Bit k)
+  , bench "Bit/zipWith"    $ nf (\x -> intersectionBit'   (randomVec Bit k) x)    (randomVec2 Bit k)
+  , bench "Bit.TS/zipBits" $ nf (\x -> intersectionBitTS  (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
+  , bench "Bit.TS/zipWith" $ nf (\x -> intersectionBitTS' (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
+  , bench "Vector"         $ nf (\x -> intersectionVector (randomVec id k) x)     (randomVec2 id k)
+  , bench "IntSet"         $ nf (intersectionIntSet (randomSet k))                (randomSet2 k)
   ]
 
 intersectionBit :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
