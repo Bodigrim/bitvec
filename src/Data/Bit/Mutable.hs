@@ -22,6 +22,7 @@ module Data.Bit.MutableTS
   , reverseInPlace
   ) where
 
+import Control.Monad
 import Control.Monad.Primitive
 #ifndef BITVEC_THREADSAFE
 import Data.Bit.Internal
@@ -85,16 +86,12 @@ zipInPlace
   -> Vector Bit
   -> MVector (PrimState m) Bit
   -> m ()
-zipInPlace f xs ys = loop 0
- where
-  !n = min (U.length xs) (MU.length ys)
-  loop !i
-    | i >= n = pure ()
-    | otherwise = do
-      let x = indexWord xs i
-      y <- readWord ys i
-      writeWord ys i (f x y)
-      loop (i + wordSize)
+zipInPlace f xs ys = do
+  let n = min (U.length xs) (MU.length ys)
+  forM_ [0, wordSize .. n - 1] $ \i -> do
+    let x = indexWord xs i
+    y <- readWord ys i
+    writeWord ys i (f x y)
 {-# INLINE zipInPlace #-}
 
 -- | Invert (flip) all bits in-place.

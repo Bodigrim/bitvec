@@ -24,6 +24,7 @@ module Data.Bit.ImmutableTS
   , listBits
   ) where
 
+import Control.Monad
 import Control.Monad.ST
 import Data.Bits
 #ifndef BITVEC_THREADSAFE
@@ -77,7 +78,7 @@ cloneToWords v = runST $ do
 {-# INLINE cloneToWords #-}
 
 -- | Zip two vectors with the given function.
--- Similar to 'Data.Vector.Unboxed.zipWith', but up to 16x faster.
+-- Similar to 'Data.Vector.Unboxed.zipWith', but up to 64x faster.
 --
 -- >>> import Data.Bits
 -- >>> zipBits (.&.) (read "[1,1,0]") (read "[0,1,1]") -- intersection
@@ -93,9 +94,12 @@ zipBits
   -> U.Vector Bit
   -> U.Vector Bit
   -> U.Vector Bit
-zipBits f xs ys | U.length xs >= U.length ys = zs
-                | otherwise                  = U.slice 0 (U.length xs) zs
-  where zs = U.modify (zipInPlace f xs) ys
+zipBits f xs ys = runST $ do
+  let n = min (U.length xs) (U.length ys)
+  zs <- MU.new n
+  forM_ [0, wordSize .. n - 1] $ \i ->
+    writeWord zs i (f (indexWord xs i) (indexWord ys i))
+  U.unsafeFreeze zs
 {-# INLINE zipBits #-}
 
 -- | For each set bit of the first argument, deposit
