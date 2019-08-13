@@ -17,6 +17,7 @@ module Data.Bit.ImmutableTS
   , invertBits
   , selectBits
   , excludeBits
+  , reverseBits
 
   , bitIndex
   , nthBitIndex
@@ -149,6 +150,26 @@ excludeBits is xs = runST $ do
   xs1 <- U.thaw xs
   n   <- excludeBitsInPlace is xs1
   U.unsafeFreeze (MU.take n xs1)
+
+-- | Reverse the order of bits.
+--
+-- >>> reverseBits (read "[1,1,0,1,0]")
+-- [0,1,0,1,1]
+reverseBits :: U.Vector Bit -> U.Vector Bit
+reverseBits xs = runST $ do
+  let n    = U.length xs
+  ys <- MU.new n
+
+  forM_ [0, wordSize .. n - wordSize] $ \i ->
+    writeWord ys (n - i - wordSize) (reverseWord (indexWord xs i))
+
+  let nMod = modWordSize n
+  when (nMod /= 0) $ do
+    let x = indexWord xs (mulWordSize (divWordSize n))
+    y <- readWord ys 0
+    writeWord ys 0 (meld nMod (reversePartialWord nMod x) y)
+
+  U.unsafeFreeze ys
 
 clipLoBits :: Bit -> Int -> Word -> Word
 clipLoBits (Bit True ) k w = w `unsafeShiftR` k

@@ -24,21 +24,21 @@ randomVec f k = U.fromList (map f (take n randomBools))
 
 benchReverse :: Int -> Benchmark
 benchReverse k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit/reverseInPlace"    $ nf reverseBit    (randomVec Bit k)
-  , bench "Bit/reverse"           $ nf reverseBit'   (randomVec Bit k)
-  , bench "Bit.TS/reverseInPlace" $ nf reverseBitTS  (randomVec TS.Bit k)
-  , bench "Bit.TS/reverse"        $ nf reverseBitTS' (randomVec TS.Bit k)
-  , bench "Vector"                $ nf reverseVector (randomVec id k)
+  [ bench "Bit/reverseBits"    $ nf reverseBit    (randomVec Bit k)
+  , bench "Bit/reverse"        $ nf reverseBit'   (randomVec Bit k)
+  , bench "Bit.TS/reverseBits" $ nf reverseBitTS  (randomVec TS.Bit k)
+  , bench "Bit.TS/reverse"     $ nf reverseBitTS' (randomVec TS.Bit k)
+  , bench "Vector"             $ nf reverseVector (randomVec id k)
   ]
 
 reverseBit :: U.Vector Bit -> U.Vector Bit
-reverseBit = U.modify reverseInPlace
+reverseBit = reverseBits
 
 reverseBit' :: U.Vector Bit -> U.Vector Bit
 reverseBit' = U.reverse
 
 reverseBitTS :: U.Vector TS.Bit -> U.Vector TS.Bit
-reverseBitTS = U.modify TS.reverseInPlace
+reverseBitTS = TS.reverseBits
 
 reverseBitTS' :: U.Vector TS.Bit -> U.Vector TS.Bit
 reverseBitTS' = U.reverse

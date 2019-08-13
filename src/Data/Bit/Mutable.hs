@@ -142,10 +142,6 @@ excludeBitsInPlace is xs = loop 0 0
 
 -- | Reverse the order of bits in-place.
 --
--- Combine with 'Data.Vector.Unboxed.modify'
--- or simply resort to 'Data.Vector.Unboxed.reverse'
--- to operate on immutable vectors.
---
 -- >>> Data.Vector.Unboxed.modify reverseInPlace (read "[1,1,0,1,0]")
 -- [0,1,0,1,1]
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
@@ -181,3 +177,4 @@ reverseInPlace xs | len == 0  = pure ()
     !j  = len - i
     !i' = i + wordSize
     !j' = j - wordSize
+{-# SPECIALIZE reverseInPlace :: U.MVector s Bit -> ST s () #-}

@@ -13,16 +13,18 @@ import Test.Tasty.QuickCheck hiding ((.&.))
 setOpTests :: TestTree
 setOpTests = testGroup
   "Set operations"
-  [ testProperty "generalize"    prop_generalize
-  , testProperty "zipBits"       prop_zipBits
-  , testProperty "zipInPlace"    prop_zipInPlace
-  , testProperty "invertBits"    prop_invertBits
-  , testProperty "invertInPlace" prop_invertInPlace
-  , testProperty "select"        prop_select_def
-  , testProperty "exclude"       prop_exclude_def
-  , testProperty "selectBits"    prop_selectBits_def
-  , testProperty "excludeBits"   prop_excludeBits_def
-  , testProperty "countBits"     prop_countBits_def
+  [ testProperty "generalize"     prop_generalize
+  , testProperty "zipBits"        prop_zipBits
+  , testProperty "zipInPlace"     prop_zipInPlace
+  , testProperty "invertBits"     prop_invertBits
+  , testProperty "invertInPlace"  prop_invertInPlace
+  , testProperty "reverseBits"    prop_reverseBits
+  , testProperty "reverseInPlace" prop_reverseInPlace
+  , testProperty "select"         prop_select_def
+  , testProperty "exclude"        prop_exclude_def
+  , testProperty "selectBits"     prop_selectBits_def
+  , testProperty "excludeBits"    prop_excludeBits_def
+  , testProperty "countBits"      prop_countBits_def
   ]
 
 prop_generalize :: Fun (Bit, Bit) Bit -> Bit -> Bit -> Property
@@ -65,6 +67,14 @@ prop_invertBits xs =
 prop_invertInPlace :: U.Vector Bit -> Property
 prop_invertInPlace xs =
   U.map complement xs === U.modify invertInPlace xs
+
+prop_reverseBits :: U.Vector Bit -> Property
+prop_reverseBits xs =
+  U.reverse xs === reverseBits xs
+
+prop_reverseInPlace :: U.Vector Bit -> Property
+prop_reverseInPlace xs =
+  U.reverse xs === U.modify reverseInPlace xs
 
 select :: U.Unbox a => U.Vector Bit -> U.Vector a -> [a]
 select mask ws = U.toList (U.map snd (U.filter (unBit . fst) (U.zip mask ws)))

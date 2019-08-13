@@ -38,7 +38,13 @@ instance Function TS.Bit where
   function f = functionMap TS.unBit TS.Bit f
 
 instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
-  arbitrary = V.new <$> arbitrary
+  arbitrary = (\v -> runST (N.run v >>= U.freeze)) <$> arbitrary
+  shrink v = let len = U.length v in
+    [ U.slice s l v
+    | s <- [0 .. len - 1]
+    , l <- [0 .. len - s]
+    , (s, l) /= (0, len)
+    ]
 
 instance (Show (v a), V.Vector v a) => Show (N.New v a) where
   showsPrec p = showsPrec p . V.new

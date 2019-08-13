@@ -37,7 +37,6 @@ mvectorTests = testGroup
     [ testProperty "cloneFromWords" prop_cloneFromWords_def
     , testProperty "cloneToWords"   prop_cloneToWords_def
     ]
-  , testProperty "reverseInPlace" prop_reverseInPlace_def
   , testGroup "MVector laws"
   $ map (uncurry testProperty)
   $ lawsProperties
@@ -223,9 +222,3 @@ prop_cloneToWords_def :: N.New B.Vector Bit -> Property
 prop_cloneToWords_def xs =
   runST (N.run xs >>= cloneToWordsM >>= V.unsafeFreeze)
     === cloneToWords (V.new xs)
-
-prop_reverseInPlace_def :: N.New B.Vector Bit -> Property
-prop_reverseInPlace_def xs =
-  runST (N.run xs >>= \v -> reverseInPlace v >> V.unsafeFreeze v)
-    === B.reverse (V.new xs)
-

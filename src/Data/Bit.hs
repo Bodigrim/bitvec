@@ -34,6 +34,7 @@ module Data.Bit.ThreadSafe
   -- * Immutable operations
   , zipBits
   , invertBits
+  , reverseBits
   , bitIndex
   , nthBitIndex
   , countBits
@@ -47,11 +48,11 @@ module Data.Bit.ThreadSafe
   , cloneToWordsM
 
   -- * Mutable operations
-  , invertInPlace
   , zipInPlace
+  , invertInPlace
+  , reverseInPlace
   , selectBitsInPlace
   , excludeBitsInPlace
-  , reverseInPlace
   ) where
 
 import Prelude hiding (and, or)
