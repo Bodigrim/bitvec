@@ -24,6 +24,7 @@ module Data.Bit.MutableTS
 
 import Control.Monad
 import Control.Monad.Primitive
+import Control.Monad.ST
 #ifndef BITVEC_THREADSAFE
 import Data.Bit.Internal
 #else
@@ -96,23 +97,15 @@ zipInPlace f xs ys = do
 
 -- | Invert (flip) all bits in-place.
 --
--- Combine with 'Data.Vector.Unboxed.modify'
--- or simply resort to 'Data.Vector.Unboxed.map' 'Data.Bits.complement'
--- to operate on immutable vectors.
---
 -- >>> Data.Vector.Unboxed.modify invertInPlace (read "[0,1,0,1,0]")
 -- [1,0,1,0,1]
 invertInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
-invertInPlace xs = loop 0
- where
-  !n = MU.length xs
-  loop !i
-    | i >= n = pure ()
-    | otherwise = do
-      x <- readWord xs i
-      writeWord xs i (complement x)
-      loop (i + wordSize)
-{-# INLINE invertInPlace #-}
+invertInPlace xs = do
+  let n = MU.length xs
+  forM_ [0, wordSize .. n - 1] $ \i -> do
+    x <- readWord xs i
+    writeWord xs i (complement x)
+{-# SPECIALIZE invertInPlace :: U.MVector s Bit -> ST s () #-}
 
 -- | Same as 'Data.Bit.selectBits', but deposit
 -- selected bits in-place. Returns a number of selected bits.

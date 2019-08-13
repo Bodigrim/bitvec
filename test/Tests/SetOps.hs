@@ -16,7 +16,8 @@ setOpTests = testGroup
   [ testProperty "generalize"    prop_generalize
   , testProperty "zipBits"       prop_zipBits
   , testProperty "zipInPlace"    prop_zipInPlace
-  , testProperty "invert"        prop_invert_def
+  , testProperty "invertBits"    prop_invertBits
+  , testProperty "invertInPlace" prop_invertInPlace
   , testProperty "select"        prop_select_def
   , testProperty "exclude"       prop_exclude_def
   , testProperty "selectBits"    prop_selectBits_def
@@ -57,9 +58,13 @@ prop_zipInPlace fun xs ys =
   where
     f = curry $ applyFun fun
 
-prop_invert_def :: U.Vector Bit -> Bool
-prop_invert_def xs =
-  U.toList (U.modify invertInPlace xs) == map complement (U.toList xs)
+prop_invertBits :: U.Vector Bit -> Property
+prop_invertBits xs =
+  U.map complement xs === invertBits xs
+
+prop_invertInPlace :: U.Vector Bit -> Property
+prop_invertInPlace xs =
+  U.map complement xs === U.modify invertInPlace xs
 
 select :: U.Unbox a => U.Vector Bit -> U.Vector a -> [a]
 select mask ws = U.toList (U.map snd (U.filter (unBit . fst) (U.zip mask ws)))

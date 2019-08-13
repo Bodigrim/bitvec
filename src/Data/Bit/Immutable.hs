@@ -14,11 +14,11 @@ module Data.Bit.ImmutableTS
   , cloneToWords
 
   , zipBits
-
+  , invertBits
   , selectBits
   , excludeBits
-  , bitIndex
 
+  , bitIndex
   , nthBitIndex
   , countBits
   , listBits
@@ -101,6 +101,20 @@ zipBits f xs ys = runST $ do
     writeWord zs i (f (indexWord xs i) (indexWord ys i))
   U.unsafeFreeze zs
 {-# INLINE zipBits #-}
+
+-- | Invert (flip) all bits.
+--
+-- >>> invertBits (read "[0,1,0,1,0]")
+-- [1,0,1,0,1]
+invertBits
+  :: U.Vector Bit
+  -> U.Vector Bit
+invertBits xs = runST $ do
+  let n = U.length xs
+  ys <- MU.new n
+  forM_ [0, wordSize .. n - 1] $ \i ->
+    writeWord ys i (complement (indexWord xs i))
+  U.unsafeFreeze ys
 
 -- | For each set bit of the first argument, deposit
 -- the corresponding bit of the second argument

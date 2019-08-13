@@ -33,6 +33,7 @@ module Data.Bit.ThreadSafe
 
   -- * Immutable operations
   , zipBits
+  , invertBits
   , bitIndex
   , nthBitIndex
   , countBits
