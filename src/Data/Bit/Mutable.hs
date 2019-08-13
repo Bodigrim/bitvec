@@ -105,7 +105,9 @@ invertInPlace xs = do
   forM_ [0, wordSize .. n - 1] $ \i -> do
     x <- readWord xs i
     writeWord xs i (complement x)
+#if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE invertInPlace :: U.MVector s Bit -> ST s () #-}
+#endif
 
 -- | Same as 'Data.Bit.selectBits', but deposit
 -- selected bits in-place. Returns a number of selected bits.
@@ -177,4 +179,6 @@ reverseInPlace xs | len == 0  = pure ()
     !j  = len - i
     !i' = i + wordSize
     !j' = j - wordSize
+#if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE reverseInPlace :: U.MVector s Bit -> ST s () #-}
+#endif

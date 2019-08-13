@@ -79,10 +79,10 @@ install:
   - cat cabal.project.local || true
   - if [ -f "./configure.ac" ]; then (cd "." && autoreconf -i); fi
   - rm -f cabal.project.freeze
-  - ${CABAL} new-freeze -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dry
+  - ${CABAL} new-freeze -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --constraint "quickcheck-classes -aeson -semigroupoids -semirings comonad -distributive" --dry
   - "cat \"cabal.project.freeze\" | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
   - rm  "cabal.project.freeze"
-  - ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --constraint "quickcheck-classes -aeson -semigroupoids" --dep -j2 all
+  - ${CABAL} new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --constraint "quickcheck-classes -aeson -semigroupoids -semirings comonad -distributive" --dep -j2 all
   - ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
   - rm -rf .ghc.environment.* "."/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
