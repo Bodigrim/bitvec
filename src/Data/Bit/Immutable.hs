@@ -14,6 +14,7 @@ module Data.Bit.ImmutableTS
   , cloneToWords
 
   , zipBits
+  , zipBits0
   , invertBits
   , selectBits
   , excludeBits
@@ -102,6 +103,22 @@ zipBits f xs ys = runST $ do
     writeWord zs i (f (indexWord xs i) (indexWord ys i))
   U.unsafeFreeze zs
 {-# INLINE zipBits #-}
+
+zipBits0
+  :: (forall a . Bits a => a -> a -> a)
+  -> U.Vector Bit
+  -> U.Vector Bit
+  -> U.Vector Bit
+zipBits0 f xs ys = runST $ do
+  let lx = U.length xs
+      ly = U.length ys
+      (shorterLen, longerLen, longer) = if lx >= ly then (ly, lx, xs) else (lx, ly, ys)
+  zs <- MU.new longerLen
+  forM_ [0, wordSize .. shorterLen - 1] $ \i ->
+    writeWord zs i (f (indexWord xs i) (indexWord ys i))
+  U.unsafeCopy (MU.drop shorterLen zs) (U.drop shorterLen longer)
+  U.unsafeFreeze zs
+{-# INLINE zipBits0 #-}
 
 -- | Invert (flip) all bits.
 --

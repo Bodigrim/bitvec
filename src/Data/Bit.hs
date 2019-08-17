@@ -53,15 +53,20 @@ module Data.Bit.ThreadSafe
   , reverseInPlace
   , selectBitsInPlace
   , excludeBitsInPlace
+
+  -- * F(2) polynomials
+  , F2Poly(..)
   ) where
 
 import Prelude hiding (and, or)
 
 #ifndef BITVEC_THREADSAFE
+import Data.Bit.F2Poly
 import Data.Bit.Immutable
 import Data.Bit.Internal
 import Data.Bit.Mutable
 #else
+import Data.Bit.F2PolyTS
 import Data.Bit.ImmutableTS
 import Data.Bit.InternalTS
 import Data.Bit.MutableTS

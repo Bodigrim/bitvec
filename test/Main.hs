@@ -14,7 +14,7 @@ import Tests.Vector (vectorTests)
 main :: IO ()
 main = defaultMain $ testGroup
   "All"
-  [lawsTests, mvectorTests, TS.mvectorTests, setOpTests, vectorTests]
+  [lawsTests, f2polyTests, mvectorTests, TS.mvectorTests, setOpTests, vectorTests]
 
 lawsTests :: TestTree
 lawsTests = testGroup "Laws"
@@ -28,5 +28,13 @@ lawsTests = testGroup "Laws"
   , showReadLaws    (Proxy :: Proxy Bit)
   , numLaws         (Proxy :: Proxy Bit)
   , integralLaws    (Proxy :: Proxy Bit)
+  ]
+
+f2polyTests :: TestTree
+f2polyTests = testGroup "F2Poly"
+  $ map (uncurry testProperty)
+  $ concatMap lawsProperties
+  [ showLaws        (Proxy :: Proxy F2Poly)
+  , numLaws         (Proxy :: Proxy F2Poly)
   ]
 
