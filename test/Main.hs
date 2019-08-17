@@ -14,11 +14,19 @@ import Tests.Vector (vectorTests)
 main :: IO ()
 main = defaultMain $ testGroup
   "All"
-  [showReadTests, mvectorTests, TS.mvectorTests, setOpTests, vectorTests]
+  [lawsTests, mvectorTests, TS.mvectorTests, setOpTests, vectorTests]
 
-showReadTests :: TestTree
-showReadTests =
-  testGroup "Show/Read"
-    $ map (uncurry testProperty)
-    $ lawsProperties
-    $ showReadLaws (Proxy :: Proxy Bit)
+lawsTests :: TestTree
+lawsTests = testGroup "Laws"
+  $ map (uncurry testProperty)
+  $ concatMap lawsProperties
+  [ bitsLaws        (Proxy :: Proxy Bit)
+  , eqLaws          (Proxy :: Proxy Bit)
+  , ordLaws         (Proxy :: Proxy Bit)
+  , boundedEnumLaws (Proxy :: Proxy Bit)
+  , showLaws        (Proxy :: Proxy Bit)
+  , showReadLaws    (Proxy :: Proxy Bit)
+  , numLaws         (Proxy :: Proxy Bit)
+  , integralLaws    (Proxy :: Proxy Bit)
+  ]
+

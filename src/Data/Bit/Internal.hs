@@ -28,6 +28,7 @@ module Data.Bit.InternalTS
 
 #include "vector.h"
 
+import Control.Exception
 import Control.Monad
 import Control.Monad.Primitive
 import Control.Monad.ST
@@ -62,6 +63,37 @@ newtype Bit = Bit { unBit :: Bool }
 newtype Bit = Bit { unBit :: Bool }
   deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
 #endif
+
+-- | There is only one lawful 'Num' instance possible
+-- with '+' = 'xor' and
+-- 'fromInteger' = 'Bit' . 'odd'.
+instance Num Bit where
+  Bit a * Bit b = Bit (a && b)
+  Bit a + Bit b = Bit (a /= b)
+  Bit a - Bit b = Bit (a /= b)
+  negate = id
+  abs    = id
+  signum = id
+  fromInteger = Bit . odd
+
+instance Real Bit where
+  toRational (Bit False) = 0
+  toRational (Bit True)  = 1
+
+instance Integral Bit where
+  quotRem _ (Bit False) = throw DivideByZero
+  quotRem x (Bit True)  = (x, Bit False)
+  quot    _ (Bit False) = throw DivideByZero
+  quot    x (Bit True)  = x
+  rem     _ (Bit False) = throw DivideByZero
+  rem     _ (Bit True)  = Bit False
+
+  divMod = quotRem
+  div    = quot
+  mod    = rem
+
+  toInteger (Bit False) = 0
+  toInteger (Bit True)  = 1
 
 instance Show Bit where
   showsPrec _ (Bit False) = showString "0"
