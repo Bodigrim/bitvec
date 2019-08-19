@@ -17,7 +17,6 @@ import Data.Bit.InternalTS
 #endif
 import Data.Bits
 import Data.Coerce
-import Data.List (foldl')
 import qualified Data.Vector.Unboxed as U
 
 newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
@@ -38,14 +37,19 @@ instance Num F2Poly where
 mulBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 mulBits xs ys
   | lenXs == 0 || lenYs == 0 = U.empty
-  | otherwise = U.generate lenZs $ \k ->
-      let is = [max (k - lenYs + 1) 0 .. min k (lenXs - 1)]
-        in foldl' xor (Bit False) $ flip map is $ \i ->
-            (.&.) (U.unsafeIndex xs i) (U.unsafeIndex ys (k - i))
+  | otherwise = U.generate lenZs go
   where
     lenXs = U.length xs
     lenYs = U.length ys
     lenZs = lenXs + lenYs - 1
+    rys   = reverseBits ys
+
+    go :: Int -> Bit
+    go k = fromIntegral $ countBits $ zipBits (.&.) (U.drop xFrom xs) (U.drop yFrom rys)
+      where
+        xFrom = max (k - (lenYs - 1)) 0
+        yFrom = max 0 (lenYs - 1 - k)
+
 
 dropWhileEnd
   :: U.Vector Bit
