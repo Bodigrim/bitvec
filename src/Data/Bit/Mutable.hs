@@ -83,7 +83,7 @@ cloneToWordsM v = do
 -- [0,1,0,1,1,1] -- note trailing garbage
 zipInPlace
   :: PrimMonad m
-  => (forall a . Bits a => a -> a -> a)
+  => (forall a . FiniteBits a => a -> a -> a)
   -> Vector Bit
   -> MVector (PrimState m) Bit
   -> m ()
