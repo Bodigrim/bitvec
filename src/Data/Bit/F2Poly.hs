@@ -8,6 +8,8 @@ module Data.Bit.F2PolyTS
   ( F2Poly(..)
   ) where
 
+import Control.Monad
+import Control.Monad.ST
 #ifndef BITVEC_THREADSAFE
 import Data.Bit.Immutable
 import Data.Bit.Internal
@@ -20,6 +22,7 @@ import Data.Bits
 import Data.Coerce
 import Data.List hiding (dropWhileEnd)
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as MU
 
 newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
   deriving (Show)
@@ -34,7 +37,56 @@ instance Num F2Poly where
   abs    = id
   signum = id
   fromInteger = F2Poly . U.singleton . fromInteger
-  (*) = coerce mulBits
+  (*) = coerce karatsuba
+
+karatsubaThreshold :: Int
+karatsubaThreshold = 4096
+
+karatsuba :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+karatsuba xs ys
+  | lenXs <= karatsubaThreshold || lenYs <= karatsubaThreshold
+  = mulBits xs ys
+  | otherwise = runST $ do
+    zs <- MU.unsafeNew lenZs
+    forM_ [0, wordSize .. lenZs - 1] $ \k -> do
+      let z0  = indexWord0 zs0   k
+          z11 = indexWord0 zs11 (k - m)
+          z10 = indexWord0 zs0  (k - m)
+          z12 = indexWord0 zs2  (k - m)
+          z2  = indexWord0 zs2  (k - 2 * m)
+      writeWord zs k (z0 `xor` z11 `xor` z10 `xor` z12 `xor` z2)
+    U.unsafeFreeze zs
+  where
+    lenXs = U.length xs
+    lenYs = U.length ys
+    lenZs = lenXs + lenYs - 1
+
+    m'    = ((lenXs `min` lenYs) + 1) `quot` 2
+    m     = if karatsubaThreshold < wordSize then m' else m' - modWordSize m'
+
+    xs0  = U.slice 0 m xs
+    xs1  = U.slice m (lenXs - m) xs
+    ys0  = U.slice 0 m ys
+    ys1  = U.slice m (lenYs - m) ys
+
+    xs01 = zipBits0 xor xs0 xs1
+    ys01 = zipBits0 xor ys0 ys1
+    zs0  = karatsuba xs0 ys0
+    zs2  = karatsuba xs1 ys1
+    zs11 = karatsuba xs01 ys01
+
+indexWord0 :: U.Vector Bit -> Int -> Word
+indexWord0 bv i
+  | i <= - wordSize         = 0
+  | lenI <= 0               = 0
+  | i < 0, lenI >= wordSize = word0
+  | i < 0                   = word0 .&. loMask lenI
+  | lenI >= wordSize        = word
+  | otherwise               = word .&. loMask lenI
+  where
+    lenI  = U.length bv - i
+    word  = indexWord bv i
+    word0 = indexWord bv 0 `unsafeShiftL` (- i)
 
 mulBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 mulBits xs ys
