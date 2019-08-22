@@ -35,6 +35,7 @@ import Control.Monad.ST
 import Data.Bits
 import Data.Bit.Utils
 import Data.Primitive.ByteArray
+import Data.Ratio
 import Data.Typeable
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as MV
@@ -94,6 +95,13 @@ instance Integral Bit where
 
   toInteger (Bit False) = 0
   toInteger (Bit True)  = 1
+
+instance Fractional Bit where
+  fromRational x = fromInteger (numerator x) `quot` fromInteger (denominator x)
+  _ / Bit False     = throw DivideByZero
+  x / Bit True      = x
+  recip (Bit False) = throw DivideByZero
+  recip (Bit True)  = Bit True
 
 instance Show Bit where
   showsPrec _ (Bit False) = showString "0"
