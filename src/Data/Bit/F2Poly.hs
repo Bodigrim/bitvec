@@ -15,8 +15,10 @@ import Data.Bit.Internal
 import Data.Bit.ImmutableTS
 import Data.Bit.InternalTS
 #endif
+import Data.Bit.Utils
 import Data.Bits
 import Data.Coerce
+import Data.List hiding (dropWhileEnd)
 import qualified Data.Vector.Unboxed as U
 
 newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
@@ -45,11 +47,21 @@ mulBits xs ys
     rys   = reverseBits ys
 
     go :: Int -> Bit
-    go k = fromIntegral $ countBits $ zipBits (.&.) (U.drop xFrom xs) (U.drop yFrom rys)
+    go k = zipAndCountParityBits (U.drop xFrom xs) (U.drop yFrom rys)
       where
         xFrom = max (k - (lenYs - 1)) 0
         yFrom = max 0 (lenYs - 1 - k)
 
+zipAndCountParityBits :: U.Vector Bit -> U.Vector Bit -> Bit
+zipAndCountParityBits xs ys
+  | nMod == 0 = fromIntegral $ popCnt
+  | otherwise = fromIntegral $ popCnt `xor` lastPopCnt
+  where
+    n = min (U.length xs) (U.length ys)
+    nMod = modWordSize n
+    ff i = indexWord xs i .&. indexWord ys i
+    popCnt = foldl' (\acc i -> acc `xor` popCount (ff i)) 0 [0, wordSize .. n - nMod - 1]
+    lastPopCnt = popCount (ff (n - nMod) .&. loMask nMod)
 
 dropWhileEnd
   :: U.Vector Bit
