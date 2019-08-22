@@ -135,6 +135,7 @@ benchmark gauge
     Bench.BitIndex
     Bench.Invert
     Bench.Intersection
+    Bench.Product
     Bench.RandomFlip
     Bench.RandomRead
     Bench.RandomWrite
