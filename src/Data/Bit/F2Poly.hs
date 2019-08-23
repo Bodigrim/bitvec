@@ -10,7 +10,9 @@ module Data.Bit.F2Poly
 #else
 module Data.Bit.F2PolyTS
 #endif
-  ( F2Poly(..)
+  ( F2Poly
+  , unF2Poly
+  , toF2Poly
   ) where
 
 import Control.DeepSeq
@@ -33,19 +35,21 @@ import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Generics
 
 newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
-  deriving (Show, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Show, Typeable, Generic, NFData)
 
-instance Eq F2Poly where
-  F2Poly xs == F2Poly ys = dropWhileEnd xs == dropWhileEnd ys
+toF2Poly :: U.Vector Bit -> F2Poly
+toF2Poly = F2Poly . dropWhileEnd
 
 instance Num F2Poly where
-  (+) = coerce xorBits
-  (-) = coerce xorBits
+  (+) = coerce ((dropWhileEnd .) . xorBits)
+  (-) = coerce ((dropWhileEnd .) . xorBits)
   negate = id
   abs    = id
   signum = id
-  fromInteger = F2Poly . U.singleton . fromInteger
-  (*) = coerce karatsuba
+  fromInteger n
+    | odd n     = F2Poly (U.singleton (Bit True))
+    | otherwise = F2Poly U.empty
+  (*) = coerce ((dropWhileEnd .) . karatsuba)
 
 xorBits
   :: U.Vector Bit

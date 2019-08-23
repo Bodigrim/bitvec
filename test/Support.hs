@@ -47,8 +47,8 @@ instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
     ]
 
 instance Arbitrary F2Poly where
-  arbitrary = F2Poly <$> arbitrary
-  shrink (F2Poly v) = F2Poly <$> shrink v
+  arbitrary = toF2Poly <$> arbitrary
+  shrink v = toF2Poly <$> shrink (unF2Poly v)
 
 instance (Show (v a), V.Vector v a) => Show (N.New v a) where
   showsPrec p = showsPrec p . V.new

@@ -55,7 +55,9 @@ module Data.Bit.ThreadSafe
   , excludeBitsInPlace
 
   -- * F(2) polynomials
-  , F2Poly(..)
+  , F2Poly
+  , unF2Poly
+  , toF2Poly
   ) where
 
 import Prelude hiding (and, or)
