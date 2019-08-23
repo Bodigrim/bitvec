@@ -13,6 +13,7 @@ description:
   .
   The <https://hackage.haskell.org/package/vector vector>
   package represents unboxed arrays of 'Bool'
+  spending 1 byte (8 bits) per boolean.
   This library provides a newtype wrapper 'Bit' and a custom instance
   of unboxed 'Vector', which packs bits densely,
   achieving __8x less memory footprint.__
