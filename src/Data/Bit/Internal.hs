@@ -2,6 +2,7 @@
 
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MagicHash                  #-}
@@ -28,6 +29,7 @@ module Data.Bit.InternalTS
 
 #include "vector.h"
 
+import Control.DeepSeq
 import Control.Exception
 import Control.Monad
 import Control.Monad.Primitive
@@ -40,6 +42,7 @@ import Data.Typeable
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as MV
 import qualified Data.Vector.Unboxed as U
+import GHC.Generics
 
 #ifdef BITVEC_THREADSAFE
 import GHC.Exts
@@ -53,7 +56,7 @@ import GHC.Exts
 -- than vectors of 'Bool' (which stores one value per byte).
 -- but random writes are up to 10% slower.
 newtype Bit = Bit { unBit :: Bool }
-  deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
+  deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable, Generic, NFData)
 #else
 -- | A newtype wrapper with a custom instance
 -- of "Data.Vector.Unboxed", which packs booleans
@@ -62,7 +65,7 @@ newtype Bit = Bit { unBit :: Bool }
 -- than vectors of 'Bool' (which stores one value per byte).
 -- but random writes are up to 20% slower.
 newtype Bit = Bit { unBit :: Bool }
-  deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable)
+  deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable, Generic, NFData)
 #endif
 
 -- | There is only one lawful 'Num' instance possible

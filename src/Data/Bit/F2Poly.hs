@@ -1,4 +1,8 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                        #-}
+
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 #ifndef BITVEC_THREADSAFE
 module Data.Bit.F2Poly
@@ -8,6 +12,7 @@ module Data.Bit.F2PolyTS
   ( F2Poly(..)
   ) where
 
+import Control.DeepSeq
 import Control.Monad
 import Control.Monad.ST
 #ifndef BITVEC_THREADSAFE
@@ -21,11 +26,13 @@ import Data.Bit.Utils
 import Data.Bits
 import Data.Coerce
 import Data.List hiding (dropWhileEnd)
+import Data.Typeable
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
+import GHC.Generics
 
 newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
-  deriving (Show)
+  deriving (Show, Typeable, Generic, NFData)
 
 instance Eq F2Poly where
   F2Poly xs == F2Poly ys = dropWhileEnd xs == dropWhileEnd ys
