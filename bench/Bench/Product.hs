@@ -34,7 +34,7 @@ benchProduct k = bgroup (show (1 `shiftL` k :: Int))
   ]
 
 productBit :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-productBit xs ys = unF2Poly (F2Poly xs * F2Poly ys)
+productBit xs ys = unF2Poly (toF2Poly xs * toF2Poly ys)
 
 productBitTS :: U.Vector TS.Bit -> U.Vector TS.Bit -> U.Vector TS.Bit
-productBitTS xs ys = TS.unF2Poly (TS.F2Poly xs * TS.F2Poly ys)
+productBitTS xs ys = TS.unF2Poly (TS.toF2Poly xs * TS.toF2Poly ys)
