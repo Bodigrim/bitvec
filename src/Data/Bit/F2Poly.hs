@@ -45,7 +45,7 @@ instance Num F2Poly where
   (-) = coerce ((dropWhileEnd .) . xorBits)
   negate = id
   abs    = id
-  signum = id
+  signum = const (F2Poly (U.singleton (Bit True)))
   fromInteger n
     | odd n     = F2Poly (U.singleton (Bit True))
     | otherwise = F2Poly U.empty
