@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes                 #-}
 
 #ifndef BITVEC_THREADSAFE
 module Data.Bit.F2Poly
@@ -38,13 +39,27 @@ instance Eq F2Poly where
   F2Poly xs == F2Poly ys = dropWhileEnd xs == dropWhileEnd ys
 
 instance Num F2Poly where
-  (+) = coerce (zipBits0 xor)
-  (-) = coerce (zipBits0 xor)
+  (+) = coerce xorBits
+  (-) = coerce xorBits
   negate = id
   abs    = id
   signum = id
   fromInteger = F2Poly . U.singleton . fromInteger
   (*) = coerce karatsuba
+
+xorBits
+  :: U.Vector Bit
+  -> U.Vector Bit
+  -> U.Vector Bit
+xorBits xs ys = runST $ do
+  let lx = U.length xs
+      ly = U.length ys
+      (shorterLen, longerLen, longer) = if lx >= ly then (ly, lx, xs) else (lx, ly, ys)
+  zs <- MU.new longerLen
+  forM_ [0, wordSize .. shorterLen - 1] $ \i ->
+    writeWord zs i (indexWord xs i `xor` indexWord ys i)
+  U.unsafeCopy (MU.drop shorterLen zs) (U.drop shorterLen longer)
+  U.unsafeFreeze zs
 
 karatsubaThreshold :: Int
 karatsubaThreshold = 4096
@@ -76,8 +91,8 @@ karatsuba xs ys
     ys0  = U.slice 0 m ys
     ys1  = U.slice m (lenYs - m) ys
 
-    xs01 = zipBits0 xor xs0 xs1
-    ys01 = zipBits0 xor ys0 ys1
+    xs01 = xorBits xs0 xs1
+    ys01 = xorBits ys0 ys1
     zs0  = karatsuba xs0 ys0
     zs2  = karatsuba xs1 ys1
     zs11 = karatsuba xs01 ys01
