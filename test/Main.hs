@@ -36,5 +36,6 @@ f2polyTests = testGroup "F2Poly"
   $ concatMap lawsProperties
   [ showLaws        (Proxy :: Proxy F2Poly)
   , numLaws         (Proxy :: Proxy F2Poly)
+  , integralLaws    (Proxy :: Proxy F2Poly)
   ]
 

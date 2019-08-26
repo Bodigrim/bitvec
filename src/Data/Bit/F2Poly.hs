@@ -1,8 +1,11 @@
 {-# LANGUAGE CPP                        #-}
 
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 
 #ifndef BITVEC_THREADSAFE
@@ -16,23 +19,31 @@ module Data.Bit.F2PolyTS
   ) where
 
 import Control.DeepSeq
+import Control.Exception
 import Control.Monad
 import Control.Monad.ST
 #ifndef BITVEC_THREADSAFE
 import Data.Bit.Immutable
 import Data.Bit.Internal
+import Data.Bit.Mutable
 #else
 import Data.Bit.ImmutableTS
 import Data.Bit.InternalTS
+import Data.Bit.MutableTS
 #endif
 import Data.Bit.Utils
 import Data.Bits
 import Data.Coerce
 import Data.List hiding (dropWhileEnd)
+import Data.Primitive.ByteArray
 import Data.Typeable
+import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
+import GHC.Exts
 import GHC.Generics
+import GHC.Integer.GMP.Internals
+import Unsafe.Coerce
 
 newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
   deriving (Eq, Ord, Show, Typeable, Generic, NFData)
@@ -40,16 +51,47 @@ newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
 toF2Poly :: U.Vector Bit -> F2Poly
 toF2Poly = F2Poly . dropWhileEnd
 
+-- | 'fromInteger' converts a binary polynomial, encoded as 'Integer',
+-- to 'F2Poly' encoding.
 instance Num F2Poly where
   (+) = coerce ((dropWhileEnd .) . xorBits)
   (-) = coerce ((dropWhileEnd .) . xorBits)
   negate = id
   abs    = id
   signum = const (F2Poly (U.singleton (Bit True)))
-  fromInteger n
-    | odd n     = F2Poly (U.singleton (Bit True))
-    | otherwise = F2Poly U.empty
   (*) = coerce ((dropWhileEnd .) . karatsuba)
+  fromInteger = \case
+    S# i# -> if (I# i# < 0)
+      then error "F2Poly.fromInteger: argument must be non-negative"
+      else fromBigNat $ wordToBigNat (int2Word# i#)
+    Jp# bn# -> fromBigNat bn#
+    Jn#{}   -> error "F2Poly.fromInteger: argument must be non-negative"
+
+instance Enum F2Poly where
+  toEnum   = fromIntegral
+  fromEnum = fromIntegral
+
+instance Real F2Poly where
+  toRational = fromIntegral
+
+-- | 'toInteger' converts a binary polynomial, encoded as 'F2Poly',
+-- to 'Integer' encoding.
+instance Integral F2Poly where
+  toInteger = bigNatToInteger . toBigNat
+  quotRem (F2Poly xs) (F2Poly ys) = (F2Poly (dropWhileEnd qs), F2Poly (dropWhileEnd rs))
+    where
+      (qs, rs) = quotRemBits xs ys
+
+fromBigNat :: BigNat -> F2Poly
+fromBigNat bn@(BN# arr)
+  = F2Poly
+  $ dropWhileEnd
+  $ BitVec 0 (mulWordSize (I# (sizeofBigNat# bn))) (ByteArray arr)
+
+toBigNat :: F2Poly -> BigNat
+toBigNat (F2Poly xs) = BN# arr
+  where
+    !(P.Vector _ _ (ByteArray arr)) = unsafeCoerce (cloneToWords xs)
 
 xorBits
   :: U.Vector Bit
@@ -151,6 +193,25 @@ sqrBits xs = runST $ do
       writeWord zs (i `shiftL` 1) z0
       writeWord zs (i `shiftL` 1 + wordSize) z1
     U.unsafeFreeze zs
+
+quotRemBits :: U.Vector Bit -> U.Vector Bit -> (U.Vector Bit, U.Vector Bit)
+quotRemBits xs ys
+  | U.null ys = throw DivideByZero
+  | U.length xs < U.length ys = (U.empty, xs)
+  | otherwise = runST $ do
+    let lenXs = U.length xs
+        lenYs = U.length ys
+        lenQs = lenXs - lenYs + 1
+    qs <- MU.replicate lenQs (Bit False)
+    rs <- MU.unsafeNew lenXs
+    U.unsafeCopy rs xs
+    forM_ [lenQs - 1, lenQs - 2 .. 0] $ \i -> do
+      Bit r <- MU.unsafeRead rs (lenYs - 1 + i)
+      when r $ do
+        MU.unsafeWrite qs i (Bit True)
+        zipInPlace xor ys (MU.drop i rs)
+    let rs' = MU.unsafeSlice 0 lenYs rs
+    (,) <$> U.unsafeFreeze qs <*> U.unsafeFreeze rs'
 
 dropWhileEnd
   :: U.Vector Bit
