@@ -19,11 +19,16 @@ module Data.Bit.Utils
   , loMask
   , hiMask
   , sparseBits
+  , fromPrimVector
+  , toPrimVector
   ) where
 
 #include "MachDeps.h"
 
 import Data.Bits
+import qualified Data.Vector.Primitive as P
+import qualified Data.Vector.Unboxed as U
+import Unsafe.Coerce
 
 -- |The number of bits in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
 wordSize :: Int
@@ -182,3 +187,9 @@ loMask n = 1 `shiftL` n - 1
 
 hiMask :: Int -> Word
 hiMask n = complement (1 `shiftL` n - 1)
+
+fromPrimVector :: P.Vector Word -> U.Vector Word
+fromPrimVector = unsafeCoerce
+
+toPrimVector :: U.Vector Word -> P.Vector Word
+toPrimVector = unsafeCoerce

@@ -41,7 +41,6 @@ import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
-import Unsafe.Coerce
 
 -- | Cast a vector of words to a vector of bits.
 -- Cf. 'Data.Bit.castFromWordsM'.
@@ -50,7 +49,8 @@ import Unsafe.Coerce
 -- [1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 castFromWords :: U.Vector Word -> U.Vector Bit
 castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
-  where P.Vector off len arr = unsafeCoerce ws
+  where
+    P.Vector off len arr = toPrimVector ws
 
 -- | Try to cast a vector of bits to a vector of words.
 -- It succeeds if a vector of bits is aligned.
@@ -60,10 +60,10 @@ castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
 -- prop> castToWords (castFromWords v) == Just v
 castToWords :: U.Vector Bit -> Maybe (U.Vector Word)
 castToWords (BitVec s n ws)
-  | aligned s, aligned n = Just $ unsafeCoerce $ P.Vector (divWordSize s)
-                                                          (divWordSize n)
-                                                          ws
+  | aligned s, aligned n =
+    Just $ fromPrimVector $ P.Vector (divWordSize s) (divWordSize n) ws
   | otherwise = Nothing
+
 
 -- | Clone a vector of bits to a new unboxed vector of words.
 -- If the bits don't completely fill the words, the last word will be zero-padded.

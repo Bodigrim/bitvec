@@ -43,7 +43,6 @@ import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Exts
 import GHC.Generics
 import GHC.Integer.GMP.Internals
-import Unsafe.Coerce
 
 newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
   deriving (Eq, Ord, Show, Typeable, Generic, NFData)
@@ -91,7 +90,7 @@ fromBigNat bn@(BN# arr)
 toBigNat :: F2Poly -> BigNat
 toBigNat (F2Poly xs) = BN# arr
   where
-    !(P.Vector _ _ (ByteArray arr)) = unsafeCoerce (cloneToWords xs)
+    !(P.Vector _ _ (ByteArray arr)) = toPrimVector (cloneToWords xs)
 
 xorBits
   :: U.Vector Bit
