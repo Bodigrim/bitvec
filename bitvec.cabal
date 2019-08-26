@@ -57,8 +57,11 @@ source-repository head
 
 flag bmi2
   description: Enable bmi2 instruction set
-  manual: False
   default: False
+
+flag gmp
+  description: Use integer-gmp for binary polynomials
+  default: True
 
 library
   exposed-modules:
@@ -68,9 +71,11 @@ library
     base >=4.8 && <5,
     deepseq,
     ghc-prim,
-    integer-gmp,
     primitive >=0.5,
     vector >=0.11
+  if flag(gmp)
+    build-depends:
+      integer-gmp
   if (flag(bmi2)) && (impl(ghc >=8.4.1))
     build-depends:
       bits-extra >=0.0.0.4 && <0.1
@@ -95,6 +100,8 @@ library
   if (flag(bmi2)) && (impl(ghc >=8.4.1))
     ghc-options: -mbmi2 -msse4.2
     cpp-options: -DBMI2_ENABLED
+  if flag(gmp)
+    cpp-options: -DWithGmp
 
 test-suite bitvec-tests
   type: exitcode-stdio-1.0

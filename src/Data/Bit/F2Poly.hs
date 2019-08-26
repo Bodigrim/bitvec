@@ -35,14 +35,17 @@ import Data.Bit.Utils
 import Data.Bits
 import Data.Coerce
 import Data.List hiding (dropWhileEnd)
-import Data.Primitive.ByteArray
 import Data.Typeable
-import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
-import GHC.Exts
 import GHC.Generics
+
+#if WithGmp
+import Data.Primitive.ByteArray
+import qualified Data.Vector.Primitive as P
+import GHC.Exts
 import GHC.Integer.GMP.Internals
+#endif
 
 -- | Binary polynomials of one variable, backed
 -- by an unboxed 'Data.Vector.Unboxed.Vector' 'Bit'.
@@ -81,12 +84,7 @@ instance Num F2Poly where
   abs    = id
   signum = const (F2Poly (U.singleton (Bit True)))
   (*) = coerce ((dropWhileEnd .) . karatsuba)
-  fromInteger = \case
-    S# i# -> if (I# i# < 0)
-      then error "F2Poly.fromInteger: argument must be non-negative"
-      else fromBigNat $ wordToBigNat (int2Word# i#)
-    Jp# bn# -> fromBigNat bn#
-    Jn#{}   -> error "F2Poly.fromInteger: argument must be non-negative"
+  fromInteger = F2Poly . dropWhileEnd . integerToBits
 
 instance Enum F2Poly where
   toEnum   = fromIntegral
@@ -98,24 +96,13 @@ instance Real F2Poly where
 -- | 'toInteger' converts a binary polynomial, encoded as 'F2Poly',
 -- to 'Integer' encoding.
 instance Integral F2Poly where
-  toInteger = bigNatToInteger . toBigNat
+  toInteger = bitsToInteger . unF2Poly
   quotRem (F2Poly xs) (F2Poly ys) = (F2Poly (dropWhileEnd qs), F2Poly (dropWhileEnd rs))
     where
       (qs, rs) = quotRemBits xs ys
   rem = coerce ((dropWhileEnd .) . remBits)
   divMod = quotRem
   mod = rem
-
-fromBigNat :: BigNat -> F2Poly
-fromBigNat bn@(BN# arr)
-  = F2Poly
-  $ dropWhileEnd
-  $ BitVec 0 (mulWordSize (I# (sizeofBigNat# bn))) (ByteArray arr)
-
-toBigNat :: F2Poly -> BigNat
-toBigNat (F2Poly xs) = BN# arr
-  where
-    !(P.Vector _ _ (ByteArray arr)) = toPrimVector (cloneToWords xs)
 
 xorBits
   :: U.Vector Bit
@@ -261,3 +248,40 @@ dropWhileEnd xs = U.unsafeSlice 0 (go (U.length xs)) xs
   where
     go 0 = 0
     go n = if unBit (U.unsafeIndex xs (n - 1)) then n else go (n - 1)
+
+#if WithGmp
+
+integerToBits :: Integer -> U.Vector Bit
+integerToBits = \case
+  S# i# -> if (I# i# < 0)
+    then error "F2Poly.fromInteger: argument must be non-negative"
+    else fromBigNat $ wordToBigNat (int2Word# i#)
+  Jp# bn# -> fromBigNat bn#
+  Jn#{}   -> error "F2Poly.fromInteger: argument must be non-negative"
+
+fromBigNat :: BigNat -> U.Vector Bit
+fromBigNat bn@(BN# arr) = BitVec 0 (mulWordSize (I# (sizeofBigNat# bn))) (ByteArray arr)
+
+bitsToInteger :: U.Vector Bit -> Integer
+bitsToInteger xs = bigNatToInteger (BN# arr)
+  where
+    !(P.Vector _ _ (ByteArray arr)) = toPrimVector (cloneToWords xs)
+
+#else
+
+integerToBits :: Integer -> U.Vector Bit
+integerToBits x = U.generate (bitLen x) (Bit . testBit x)
+
+bitLen :: Integer -> Int
+bitLen x
+  = fst
+  $ head
+  $ dropWhile (\(_, b) -> x >= b)
+  $ map (\a -> (a, 1 `shiftL` a))
+  $ map (1 `shiftL`)
+  $ [0..]
+
+bitsToInteger :: U.Vector Bit -> Integer
+bitsToInteger = U.ifoldl' (\acc i (Bit b) -> if b then acc `setBit` i else acc) 0
+
+#endif
