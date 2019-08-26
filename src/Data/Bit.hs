@@ -54,7 +54,7 @@ module Data.Bit.ThreadSafe
   , selectBitsInPlace
   , excludeBitsInPlace
 
-  -- * F(2) polynomials
+  -- * Binary polynomials
   , F2Poly
   , unF2Poly
   , toF2Poly

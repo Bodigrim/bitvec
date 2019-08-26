@@ -44,13 +44,35 @@ import GHC.Exts
 import GHC.Generics
 import GHC.Integer.GMP.Internals
 
-newtype F2Poly = F2Poly { unF2Poly :: U.Vector Bit }
+-- | Binary polynomials of one variable, backed
+-- by an unboxed 'Data.Vector.Unboxed.Vector' 'Bit'.
+--
+-- Polynomials are stored normalized, without leading zero coefficients.
+--
+-- 'Ord' instance does not make much sense mathematically,
+-- it is defined only for the sake of 'Data.Set.Set', 'Data.Map.Map', etc.
+--
+-- >>> :set -XBinaryLiterals
+-- >>> -- (1 + x) (1 + x + x^2) = 1 + x^3 (mod 2)
+-- >>> 0b11 * 0b111 :: F2Poly
+-- F2Poly {unF2Poly = [1,0,0,1]}
+newtype F2Poly = F2Poly {
+  unF2Poly :: U.Vector Bit
+  -- ^ Convert 'F2Poly' to a vector of coefficients
+  -- (first element corresponds to a constant term).
+  }
   deriving (Eq, Ord, Show, Typeable, Generic, NFData)
 
+-- | Make 'F2Poly' from a list of coefficients
+-- (first element corresponds to a constant term).
 toF2Poly :: U.Vector Bit -> F2Poly
 toF2Poly = F2Poly . dropWhileEnd
 
--- | 'fromInteger' converts a binary polynomial, encoded as 'Integer',
+-- | Addition and multiplication are evaluated modulo 2.
+--
+-- 'abs' = 'id' and 'signum' = 'const' 1.
+--
+-- 'fromInteger' converts a binary polynomial, encoded as 'Integer',
 -- to 'F2Poly' encoding.
 instance Num F2Poly where
   (+) = coerce ((dropWhileEnd .) . xorBits)
@@ -80,6 +102,9 @@ instance Integral F2Poly where
   quotRem (F2Poly xs) (F2Poly ys) = (F2Poly (dropWhileEnd qs), F2Poly (dropWhileEnd rs))
     where
       (qs, rs) = quotRemBits xs ys
+  rem = coerce ((dropWhileEnd .) . remBits)
+  divMod = quotRem
+  mod = rem
 
 fromBigNat :: BigNat -> F2Poly
 fromBigNat bn@(BN# arr)
@@ -211,6 +236,23 @@ quotRemBits xs ys
         zipInPlace xor ys (MU.drop i rs)
     let rs' = MU.unsafeSlice 0 lenYs rs
     (,) <$> U.unsafeFreeze qs <*> U.unsafeFreeze rs'
+
+remBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+remBits xs ys
+  | U.null ys = throw DivideByZero
+  | U.length xs < U.length ys = xs
+  | otherwise = runST $ do
+    let lenXs = U.length xs
+        lenYs = U.length ys
+        lenQs = lenXs - lenYs + 1
+    rs <- MU.unsafeNew lenXs
+    U.unsafeCopy rs xs
+    forM_ [lenQs - 1, lenQs - 2 .. 0] $ \i -> do
+      Bit r <- MU.unsafeRead rs (lenYs - 1 + i)
+      when r $ do
+        zipInPlace xor ys (MU.drop i rs)
+    let rs' = MU.unsafeSlice 0 lenYs rs
+    U.unsafeFreeze rs'
 
 dropWhileEnd
   :: U.Vector Bit
