@@ -117,6 +117,7 @@ indexWord0 bv i
 mulBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 mulBits xs ys
   | lenXs == 0 || lenYs == 0 = U.empty
+  | xs == ys  = sqrBits xs
   | otherwise = U.generate lenZs go
   where
     lenXs = U.length xs
@@ -140,6 +141,16 @@ zipAndCountParityBits xs ys
     ff i = indexWord xs i .&. indexWord ys i
     popCnt = foldl' (\acc i -> acc `xor` popCount (ff i)) 0 [0, wordSize .. n - nMod - 1]
     lastPopCnt = popCount (ff (n - nMod) .&. loMask nMod)
+
+sqrBits :: U.Vector Bit -> U.Vector Bit
+sqrBits xs = runST $ do
+    let lenXs = U.length xs
+    zs <- MU.new (lenXs `shiftL` 1)
+    forM_ [0, wordSize .. lenXs - 1] $ \i -> do
+      let (z0, z1) = sparseBits (indexWord xs i)
+      writeWord zs (i `shiftL` 1) z0
+      writeWord zs (i `shiftL` 1 + wordSize) z1
+    U.unsafeFreeze zs
 
 dropWhileEnd
   :: U.Vector Bit

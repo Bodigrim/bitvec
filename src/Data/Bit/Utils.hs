@@ -18,6 +18,7 @@ module Data.Bit.Utils
   , ffs
   , loMask
   , hiMask
+  , sparseBits
   ) where
 
 #include "MachDeps.h"
@@ -126,6 +127,55 @@ selectWord m x = loop 0 0 0
                          (ct + 1)
                          (if testBit x i then setBit y ct else y)
     | otherwise = loop (i + 1) ct y
+
+#if WORD_SIZE_IN_BITS == 64
+
+-- | Insert 0 between each consecutive bits of an input.
+-- xyzw --> (x0y0, z0w0)
+sparseBits :: Word -> (Word, Word)
+sparseBits w = (x, y)
+  where
+    x = sparseBitsInternal (w .&. loMask 32)
+    y = sparseBitsInternal (w `shiftR` 32)
+
+sparseBitsInternal :: Word -> Word
+sparseBitsInternal x = x4
+  where
+    t  = (x  `xor` (x  `shiftR` 16)) .&. 0x00000000ffff0000
+    x0 = x  `xor` (t  `xor` (t  `shiftL` 16));
+
+    t0 = (x0 `xor` (x0 `shiftR` 8)) .&. 0x0000ff000000ff00;
+    x1 = x0 `xor` (t0 `xor` (t0 `shiftL` 8));
+    t1 = (x1 `xor` (x1 `shiftR` 4)) .&. 0x00f000f000f000f0;
+    x2 = x1 `xor` (t1 `xor` (t1 `shiftL` 4));
+    t2 = (x2 `xor` (x2 `shiftR` 2)) .&. 0x0c0c0c0c0c0c0c0c;
+    x3 = x2 `xor` (t2 `xor` (t2 `shiftL` 2));
+    t3 = (x3 `xor` (x3 `shiftR` 1)) .&. 0x2222222222222222;
+    x4 = x3 `xor` (t3 `xor` (t3 `shiftL` 1));
+
+#else
+
+-- | Insert 0 between each consecutive bits of an input.
+-- xyzw --> (x0y0, z0w0)
+sparseBits :: Word -> (Word, Word)
+sparseBits w = (x, y)
+  where
+    x = sparseBitsInternal (w .&. loMask 16)
+    y = sparseBitsInternal (w `shiftR` 16)
+
+sparseBitsInternal :: Word -> Word
+sparseBitsInternal x0 = x4
+  where
+    t0 = (x0 `xor` (x0 `shiftR` 8)) .&. 0x0000ff00;
+    x1 = x0 `xor` (t0 `xor` (t0 `shiftL` 8));
+    t1 = (x1 `xor` (x1 `shiftR` 4)) .&. 0x00f000f0;
+    x2 = x1 `xor` (t1 `xor` (t1 `shiftL` 4));
+    t2 = (x2 `xor` (x2 `shiftR` 2)) .&. 0x0c0c0c0c;
+    x3 = x2 `xor` (t2 `xor` (t2 `shiftL` 2));
+    t3 = (x3 `xor` (x3 `shiftR` 1)) .&. 0x22222222;
+    x4 = x3 `xor` (t3 `xor` (t3 `shiftL` 1));
+
+#endif
 
 loMask :: Int -> Word
 loMask n = 1 `shiftL` n - 1
