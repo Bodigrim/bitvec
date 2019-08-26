@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Main where
 
 import Data.Bit
@@ -26,7 +28,9 @@ lawsTests = testGroup "Laws"
   , boundedEnumLaws (Proxy :: Proxy Bit)
   , showLaws        (Proxy :: Proxy Bit)
   , showReadLaws    (Proxy :: Proxy Bit)
+#if MIN_VERSION_quickcheck_classes(0,6,3)
   , numLaws         (Proxy :: Proxy Bit)
+#endif
   , integralLaws    (Proxy :: Proxy Bit)
   ]
 
@@ -35,7 +39,9 @@ f2polyTests = testGroup "F2Poly"
   $ map (uncurry testProperty)
   $ concatMap lawsProperties
   [ showLaws        (Proxy :: Proxy F2Poly)
+#if MIN_VERSION_quickcheck_classes(0,6,3)
   , numLaws         (Proxy :: Proxy F2Poly)
+#endif
   , integralLaws    (Proxy :: Proxy F2Poly)
   ]
 
