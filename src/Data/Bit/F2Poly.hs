@@ -70,6 +70,7 @@ karatsubaThreshold = 4096
 
 karatsuba :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 karatsuba xs ys
+  | xs == ys = sqrBits xs
   | lenXs <= karatsubaThreshold || lenYs <= karatsubaThreshold
   = mulBits xs ys
   | otherwise = runST $ do
@@ -117,7 +118,6 @@ indexWord0 bv i
 mulBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 mulBits xs ys
   | lenXs == 0 || lenYs == 0 = U.empty
-  | xs == ys  = sqrBits xs
   | otherwise = U.generate lenZs go
   where
     lenXs = U.length xs
