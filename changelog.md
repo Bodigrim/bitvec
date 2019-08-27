@@ -1,3 +1,10 @@
+# 1.0.1.0
+
+* Implement arithmetic of binary polynomials.
+* Add `invertBits` and `reverseBits` functions.
+* Add `Num`, `Real`, `Integral`, `Fractional` and `NFData` instances.
+* Performance improvements.
+
 # 1.0.0.1
 
 * Performance improvements.
