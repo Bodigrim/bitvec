@@ -91,7 +91,7 @@ cloneToWords v = runST $ do
 -- >>> zipBits xor (read "[1,1,0]") (read "[0,1,1]") -- symmetric difference
 -- [1,0,1]
 zipBits
-  :: (forall a . FiniteBits a => a -> a -> a)
+  :: (forall a . Bits a => a -> a -> a)
   -> U.Vector Bit
   -> U.Vector Bit
   -> U.Vector Bit
