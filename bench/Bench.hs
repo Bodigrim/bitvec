@@ -10,6 +10,7 @@ import Bench.RandomFlip
 import Bench.RandomRead
 import Bench.RandomWrite
 import Bench.Reverse
+import Bench.Sum
 import Bench.Union
 
 main :: IO ()
@@ -22,5 +23,6 @@ main = defaultMain
   , bgroup "randomFlip"   $ map benchRandomFlip   [5..10]
   , bgroup "randomRead"   $ map benchRandomRead   [5..10]
   , bgroup "reverse"      $ map benchReverse      [5..10]
+  , bgroup "sum"          $ map benchSum          [5..10]
   , bgroup "union"        $ map benchUnion        [5..10]
   ]

@@ -150,5 +150,6 @@ benchmark gauge
     Bench.RandomRead
     Bench.RandomWrite
     Bench.Reverse
+    Bench.Sum
     Bench.Union
   ghc-options: -O2 -Wall
