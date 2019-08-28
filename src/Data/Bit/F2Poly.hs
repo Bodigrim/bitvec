@@ -45,6 +45,8 @@ import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import GHC.Exts
 import GHC.Integer.GMP.Internals
+import GHC.Integer.Logarithms
+import Unsafe.Coerce
 #endif
 
 -- | Binary polynomials of one variable, backed
@@ -69,7 +71,7 @@ newtype F2Poly = F2Poly {
 -- | Make 'F2Poly' from a list of coefficients
 -- (first element corresponds to a constant term).
 toF2Poly :: U.Vector Bit -> F2Poly
-toF2Poly = F2Poly . dropWhileEnd
+toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 
 -- | Addition and multiplication are evaluated modulo 2.
 --
@@ -78,17 +80,29 @@ toF2Poly = F2Poly . dropWhileEnd
 -- 'fromInteger' converts a binary polynomial, encoded as 'Integer',
 -- to 'F2Poly' encoding.
 instance Num F2Poly where
-  (+) = coerce ((dropWhileEnd .) . xorBits)
-  (-) = coerce ((dropWhileEnd .) . xorBits)
+  (+) = coerce xorBits
+  (-) = coerce xorBits
   negate = id
   abs    = id
   signum = const (F2Poly (U.singleton (Bit True)))
   (*) = coerce ((dropWhileEnd .) . karatsuba)
+#if WithGmp
+  fromInteger n = F2Poly $ BitVec 0 len (integerToByteArray n)
+    where
+      len = if n <= 0 then 0 else I# (integerLog2# n) + 1
+#else
   fromInteger = F2Poly . dropWhileEnd . integerToBits
+#endif
 
 instance Enum F2Poly where
-  toEnum   = fromIntegral
   fromEnum = fromIntegral
+#if WithGmp
+  toEnum n  = F2Poly $ BitVec 0 len (intToByteArray n)
+    where
+      len = wordSize - countLeadingZeros n
+#else
+  toEnum = fromIntegral
+#endif
 
 instance Real F2Poly where
   toRational = fromIntegral
@@ -108,16 +122,29 @@ xorBits
   :: U.Vector Bit
   -> U.Vector Bit
   -> U.Vector Bit
-xorBits xs ys = runST $ do
+#if WithGmp
+-- GMP has platform-dependent ASM implementations for mpn_xor_n,
+-- which are impossible to beat by native Haskell.
+xorBits (BitVec _ 0 _) ys = ys
+xorBits xs (BitVec _ 0 _) = xs
+xorBits (BitVec 0 lx xarr) (BitVec 0 ly yarr) = case lx `compare` ly of
+  LT -> BitVec 0 ly zs
+  EQ -> dropWhileEnd $ BitVec 0 (lx `min` (sizeofByteArray zs `shiftL` 3)) zs
+  GT -> BitVec 0 lx zs
+  where
+    zs = fromBigNat (toBigNat xarr `xorBigNat` toBigNat yarr)
+#endif
+xorBits xs ys = dropWhileEnd $ runST $ do
   let lx = U.length xs
       ly = U.length ys
       (shorterLen, longerLen, longer) = if lx >= ly then (ly, lx, xs) else (lx, ly, ys)
-  zs <- MU.new longerLen
+  zs <- MU.replicate longerLen (Bit False)
   forM_ [0, wordSize .. shorterLen - 1] $ \i ->
     writeWord zs i (indexWord xs i `xor` indexWord ys i)
   U.unsafeCopy (MU.drop shorterLen zs) (U.drop shorterLen longer)
   U.unsafeFreeze zs
 
+-- | Must be >= wordSize.
 karatsubaThreshold :: Int
 karatsubaThreshold = 4096
 
@@ -171,7 +198,11 @@ indexWord0 bv i
 mulBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 mulBits xs ys
   | lenXs == 0 || lenYs == 0 = U.empty
-  | otherwise = U.generate lenZs go
+  | otherwise = runST $ do
+    zs <- MU.replicate lenZs (Bit False)
+    forM_ [0 .. lenZs - 1] $ \k ->
+      MU.unsafeWrite zs k (go k)
+    U.unsafeFreeze zs
   where
     lenXs = U.length xs
     lenYs = U.length ys
@@ -198,7 +229,7 @@ zipAndCountParityBits xs ys
 sqrBits :: U.Vector Bit -> U.Vector Bit
 sqrBits xs = runST $ do
     let lenXs = U.length xs
-    zs <- MU.new (lenXs `shiftL` 1)
+    zs <- MU.replicate (lenXs `shiftL` 1) (Bit False)
     forM_ [0, wordSize .. lenXs - 1] $ \i -> do
       let (z0, z1) = sparseBits (indexWord xs i)
       writeWord zs (i `shiftL` 1) z0
@@ -214,7 +245,7 @@ quotRemBits xs ys
         lenYs = U.length ys
         lenQs = lenXs - lenYs + 1
     qs <- MU.replicate lenQs (Bit False)
-    rs <- MU.unsafeNew lenXs
+    rs <- MU.replicate lenXs (Bit False)
     U.unsafeCopy rs xs
     forM_ [lenQs - 1, lenQs - 2 .. 0] $ \i -> do
       Bit r <- MU.unsafeRead rs (lenYs - 1 + i)
@@ -232,7 +263,7 @@ remBits xs ys
     let lenXs = U.length xs
         lenYs = U.length ys
         lenQs = lenXs - lenYs + 1
-    rs <- MU.unsafeNew lenXs
+    rs <- MU.replicate lenXs (Bit False)
     U.unsafeCopy rs xs
     forM_ [lenQs - 1, lenQs - 2 .. 0] $ \i -> do
       Bit r <- MU.unsafeRead rs (lenYs - 1 + i)
@@ -246,26 +277,39 @@ dropWhileEnd
   -> U.Vector Bit
 dropWhileEnd xs = U.unsafeSlice 0 (go (U.length xs)) xs
   where
-    go 0 = 0
-    go n = if unBit (U.unsafeIndex xs (n - 1)) then n else go (n - 1)
+    go n
+      | n < wordSize = wordSize - countLeadingZeros (indexWord xs 0 .&. loMask n)
+      | otherwise    = case indexWord xs (n - wordSize) of
+        0 -> go (n - wordSize)
+        w -> n - countLeadingZeros w
 
 #if WithGmp
 
-integerToBits :: Integer -> U.Vector Bit
-integerToBits = \case
-  S# i# -> if (I# i# < 0)
-    then error "F2Poly.fromInteger: argument must be non-negative"
-    else fromBigNat $ wordToBigNat (int2Word# i#)
+bitsToByteArray :: U.Vector Bit -> ByteArray#
+bitsToByteArray xs = arr
+  where
+    ys = if U.null xs then U.singleton 0 else cloneToWords xs
+    !(P.Vector _ _ (ByteArray arr)) = toPrimVector ys
+
+intToByteArray :: Int -> ByteArray
+intToByteArray (I# i#) = fromBigNat $ wordToBigNat (int2Word# i#)
+
+integerToByteArray :: Integer -> ByteArray
+integerToByteArray = \case
+  S# i#   -> fromBigNat $ wordToBigNat (int2Word# i#)
   Jp# bn# -> fromBigNat bn#
   Jn#{}   -> error "F2Poly.fromInteger: argument must be non-negative"
 
-fromBigNat :: BigNat -> U.Vector Bit
-fromBigNat bn@(BN# arr) = BitVec 0 (mulWordSize (I# (sizeofBigNat# bn))) (ByteArray arr)
+fromBigNat :: BigNat -> ByteArray
+fromBigNat = unsafeCoerce
+-- fromBigNat (BN# arr) = ByteArray arr
+
+toBigNat :: ByteArray -> BigNat
+toBigNat = unsafeCoerce
+-- toBigNat (ByteArray arr) = BN# arr
 
 bitsToInteger :: U.Vector Bit -> Integer
-bitsToInteger xs = bigNatToInteger (BN# arr)
-  where
-    !(P.Vector _ _ (ByteArray arr)) = toPrimVector (cloneToWords xs)
+bitsToInteger xs = bigNatToInteger (BN# (bitsToByteArray xs))
 
 #else
 
