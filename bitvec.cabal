@@ -155,6 +155,7 @@ benchmark gauge
     Bench.RandomFlip
     Bench.RandomRead
     Bench.RandomWrite
+    Bench.Remainder
     Bench.Reverse
     Bench.Sum
     Bench.Union

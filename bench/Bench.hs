@@ -9,6 +9,7 @@ import Bench.Product
 import Bench.RandomFlip
 import Bench.RandomRead
 import Bench.RandomWrite
+import Bench.Remainder
 import Bench.Reverse
 import Bench.Sum
 import Bench.Union
@@ -22,6 +23,7 @@ main = defaultMain
   , bgroup "randomWrite"  $ map benchRandomWrite  [5..14]
   , bgroup "randomFlip"   $ map benchRandomFlip   [5..14]
   , bgroup "randomRead"   $ map benchRandomRead   [5..14]
+  , bgroup "remainder"    $ map benchRemainder    [5..14]
   , bgroup "reverse"      $ map benchReverse      [5..14]
   , bgroup "sum"          $ map benchSum          [5..14]
   , bgroup "union"        $ map benchUnion        [5..14]
