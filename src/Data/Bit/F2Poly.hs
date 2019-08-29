@@ -198,22 +198,65 @@ indexWord0 bv i
 mulBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 mulBits xs ys
   | lenXs == 0 || lenYs == 0 = U.empty
+  | lenXs <= wordSize && lenYs <= wordSize = mulShortShort x0 y0
+  | lenYs <= wordSize                      = mulLongShort  xs y0
+  | lenXs <= wordSize                      = mulLongShort  ys x0
   | otherwise = runST $ do
     zs <- MU.replicate lenZs (Bit False)
-    forM_ [0 .. lenZs - 1] $ \k ->
-      MU.unsafeWrite zs k (go k)
+    forM_ [0 .. lenYs - 1] $ \k ->
+      MU.unsafeWrite zs k
+        (zipAndCountParityBits xs (U.unsafeSlice (lenYs - 1 - k) (k + 1) rys))
+    forM_ [lenYs .. lenZs - 1] $ \k ->
+      MU.unsafeWrite zs k
+        (zipAndCountParityBits (U.unsafeSlice (k - (lenYs - 1)) (lenXs + lenYs + 1 - k) xs) rys)
     U.unsafeFreeze zs
   where
     lenXs = U.length xs
     lenYs = U.length ys
     lenZs = lenXs + lenYs - 1
     rys   = reverseBits ys
+    x0 = indexWord xs 0 .&. loMask lenXs
+    y0 = indexWord ys 0 .&. loMask lenYs
 
-    go :: Int -> Bit
-    go k = zipAndCountParityBits (U.drop xFrom xs) (U.drop yFrom rys)
-      where
-        xFrom = max (k - (lenYs - 1)) 0
-        yFrom = max 0 (lenYs - 1 - k)
+mulShortShort :: Word -> Word -> U.Vector Bit
+mulShortShort xs ys = runST $ do
+  zs <- MU.replicate lenZs (Bit False)
+  forM_ [0 .. lenYs - 1] $ \k -> do
+    let yk = rys `shiftR` (lenYs - 1 - k)
+        l  = (k + 1) `min` lenXs
+    MU.unsafeWrite zs k (fromIntegral $ popCount $ xs .&. yk .&. loMask l)
+  forM_ [lenYs .. lenZs - 1] $ \k -> do
+    let xk = xs `shiftR` (k - (lenYs - 1))
+        l  = (lenXs + lenYs + 1 - k) `min` lenYs
+    MU.unsafeWrite zs k (fromIntegral $ popCount $ xk .&. rys .&. loMask l)
+  U.unsafeFreeze zs
+  where
+    clzXs = countLeadingZeros xs
+    lenXs = wordSize - clzXs
+    clzYs = countLeadingZeros ys
+    lenYs = wordSize - clzYs
+    lenZs = lenXs + lenYs - 1
+    rys   = reverseWord (ys `shiftL` clzYs)
+
+mulLongShort :: U.Vector Bit -> Word -> U.Vector Bit
+mulLongShort xs ys = runST $ do
+  zs <- MU.replicate lenZs (Bit False)
+  forM_ [0 .. lenYs - 1] $ \k -> do
+    let yk = rys `shiftR` (lenYs - 1 - k)
+        l  = (k + 1) `min` lenXs
+    MU.unsafeWrite zs k (fromIntegral $ popCount $ x0 .&. yk .&. loMask l)
+  forM_ [lenYs .. lenZs - 1] $ \k -> do
+    let xk = indexWord xs (k - (lenYs - 1))
+        l  = (lenXs + lenYs + 1 - k) `min` lenYs
+    MU.unsafeWrite zs k (fromIntegral $ popCount $ xk .&. rys .&. loMask l)
+  U.unsafeFreeze zs
+  where
+    lenXs = U.length xs
+    clzYs = countLeadingZeros ys
+    lenYs = wordSize - clzYs
+    lenZs = lenXs + lenYs - 1
+    rys   = reverseWord (ys `shiftL` clzYs)
+    x0    = indexWord xs 0
 
 zipAndCountParityBits :: U.Vector Bit -> U.Vector Bit -> Bit
 zipAndCountParityBits xs ys

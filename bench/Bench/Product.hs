@@ -29,10 +29,12 @@ randomVec2 f k = U.fromList (map f (take n $ drop n randomBools))
 
 benchProduct :: Int -> Benchmark
 benchProduct k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit/product"    $ nf (\x -> productBit    (randomVec Bit k) x)    (randomVec2 Bit k)
-  , bench "Bit/square"     $ nf (\x -> productBit    (randomVec Bit k) x)    (randomVec Bit k)
-  , bench "Bit.TS/product" $ nf (\x -> productBitTS  (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
-  , bench "Bit.TS/square"  $ nf (\x -> productBitTS  (randomVec TS.Bit k) x) (randomVec TS.Bit k)
+  [ bench "Bit/product"         $ nf (\x -> productBit    (randomVec Bit k) x)    (randomVec2 Bit k)
+  , bench "Bit/productShort"    $ nf (\x -> productBit    (randomVec Bit k) x)    (U.take 32 $ randomVec2 Bit k)
+  , bench "Bit/square"          $ nf (\x -> productBit    (randomVec Bit k) x)    (randomVec Bit k)
+  , bench "Bit.TS/product"      $ nf (\x -> productBitTS  (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
+  , bench "Bit.TS/productShort" $ nf (\x -> productBitTS  (randomVec TS.Bit k) x) (U.take 32 $ randomVec2 TS.Bit k)
+  , bench "Bit.TS/square"       $ nf (\x -> productBitTS  (randomVec TS.Bit k) x) (randomVec TS.Bit k)
   ]
 
 productBit :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
