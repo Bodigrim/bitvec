@@ -87,9 +87,11 @@ instance Num F2Poly where
   signum = const (F2Poly (U.singleton (Bit True)))
   (*) = coerce ((dropWhileEnd .) . karatsuba)
 #if WithGmp
-  fromInteger n = F2Poly $ BitVec 0 len (integerToByteArray n)
-    where
-      len = if n <= 0 then 0 else I# (integerLog2# n) + 1
+  fromInteger !n = case n of
+    S# i#   -> F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
+                      $ fromBigNat $ wordToBigNat (int2Word# i#)
+    Jp# bn# -> F2Poly $ BitVec 0 (I# (integerLog2# n) + 1) $ fromBigNat bn#
+    Jn#{}   -> error "F2Poly.fromInteger: argument must be non-negative"
 #else
   fromInteger = F2Poly . dropWhileEnd . integerToBits
 #endif
@@ -97,9 +99,8 @@ instance Num F2Poly where
 instance Enum F2Poly where
   fromEnum = fromIntegral
 #if WithGmp
-  toEnum n  = F2Poly $ BitVec 0 len (intToByteArray n)
-    where
-      len = wordSize - countLeadingZeros n
+  toEnum !(I# i#) = F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
+                           $ fromBigNat $ wordToBigNat (int2Word# i#)
 #else
   toEnum = fromIntegral
 #endif
@@ -333,15 +334,6 @@ bitsToByteArray xs = arr
   where
     ys = if U.null xs then U.singleton 0 else cloneToWords xs
     !(P.Vector _ _ (ByteArray arr)) = toPrimVector ys
-
-intToByteArray :: Int -> ByteArray
-intToByteArray (I# i#) = fromBigNat $ wordToBigNat (int2Word# i#)
-
-integerToByteArray :: Integer -> ByteArray
-integerToByteArray = \case
-  S# i#   -> fromBigNat $ wordToBigNat (int2Word# i#)
-  Jp# bn# -> fromBigNat bn#
-  Jn#{}   -> error "F2Poly.fromInteger: argument must be non-negative"
 
 fromBigNat :: BigNat -> ByteArray
 fromBigNat = unsafeCoerce
