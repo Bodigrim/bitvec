@@ -88,6 +88,7 @@ library
   other-modules:
     Data.Bit.F2Poly
     Data.Bit.F2PolyTS
+    Data.Bit.Gmp
     Data.Bit.Immutable
     Data.Bit.ImmutableTS
     Data.Bit.Internal

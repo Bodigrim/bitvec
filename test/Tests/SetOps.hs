@@ -114,12 +114,12 @@ generalize f = case (f (Bit False) (Bit False), f (Bit False) (Bit True), f (Bit
   (Bit False, Bit True,  Bit True,  Bit False) -> \x y -> x `xor` y
   (Bit False, Bit True,  Bit True,  Bit True)  -> \x y -> x .|. y
 
-  (Bit True,  Bit False, Bit False, Bit False) -> \x y -> complement x .&. complement y
+  (Bit True,  Bit False, Bit False, Bit False) -> \x y -> complement (x .|. y)
   (Bit True,  Bit False, Bit False, Bit True)  -> \x y -> complement (x `xor` y)
   (Bit True,  Bit False, Bit True,  Bit False) -> \_ y -> complement y
   (Bit True,  Bit False, Bit True,  Bit True)  -> \x y -> x .|. complement y
 
   (Bit True,  Bit True,  Bit False, Bit False) -> \x _ -> complement x
   (Bit True,  Bit True,  Bit False, Bit True)  -> \x y -> complement x .|. y
-  (Bit True,  Bit True,  Bit True,  Bit False) -> \x y -> complement x .|. complement y
+  (Bit True,  Bit True,  Bit True,  Bit False) -> \x y -> complement (x .&. y)
   (Bit True,  Bit True,  Bit True,  Bit True)  -> \_ _ -> complement zeroBits

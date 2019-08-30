@@ -28,6 +28,7 @@ module Data.Bit.ImmutableTS
 import Control.Monad
 import Control.Monad.ST
 import Data.Bits
+import Data.Bit.Gmp
 #ifndef BITVEC_THREADSAFE
 import Data.Bit.Internal
 import Data.Bit.Mutable
@@ -41,6 +42,12 @@ import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
+
+#if WORD_SIZE_IN_BITS == 64
+# define GMP_LIMB_SHIFT 3
+#else
+# define GMP_LIMB_SHIFT 2
+#endif
 
 -- | Cast a vector of words to a vector of bits.
 -- Cf. 'Data.Bit.castFromWordsM'.
@@ -110,6 +117,14 @@ zipBits f xs ys = runST $ do
 invertBits
   :: U.Vector Bit
   -> U.Vector Bit
+invertBits (BitVec _ 0 _) = U.empty
+#if UseLibGmp
+invertBits (BitVec 0 l arg) = runST $ do
+  let w = nWords l
+  brr <- newByteArray (w `shiftL` GMP_LIMB_SHIFT)
+  mpnCom brr arg w
+  BitVec 0 l <$> unsafeFreezeByteArray brr
+#endif
 invertBits xs = runST $ do
   let n = U.length xs
   ys <- MU.new n
