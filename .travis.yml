@@ -106,6 +106,14 @@ script:
   - ${CABAL} new-build -w ${HC} --disable-tests --disable-benchmarks all
 
   # build & run tests, build benchmarks
+  - ${CABAL} new-build --constraint "quickcheck-classes -aeson -semigroupoids -semirings comonad -distributive" -f "-integer-gmp" -w ${HC} ${TEST} ${BENCH} all
+  - if [ "x$TEST" = "x--enable-tests" ]; then ${CABAL} new-test --constraint "quickcheck-classes -aeson -semigroupoids -semirings comonad -distributive" -f "-integer-gmp" -w ${HC} ${TEST} ${BENCH} all; fi
+
+  # build & run tests, build benchmarks
+  - ${CABAL} new-build --constraint "quickcheck-classes -aeson -semigroupoids -semirings comonad -distributive" -f "-libgmp" -w ${HC} ${TEST} ${BENCH} all
+  - if [ "x$TEST" = "x--enable-tests" ]; then ${CABAL} new-test --constraint "quickcheck-classes -aeson -semigroupoids -semirings comonad -distributive" -f "-libgmp" -w ${HC} ${TEST} ${BENCH} all; fi
+
+  # build & run tests, build benchmarks
   - ${CABAL} new-build --constraint "quickcheck-classes -aeson -semigroupoids -semirings comonad -distributive" -w ${HC} ${TEST} ${BENCH} all
   - if [ "x$TEST" = "x--enable-tests" ]; then ${CABAL} new-test --constraint "quickcheck-classes -aeson -semigroupoids -semirings comonad -distributive" -w ${HC} ${TEST} ${BENCH} all; fi
 

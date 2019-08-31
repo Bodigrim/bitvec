@@ -59,8 +59,12 @@ flag bmi2
   description: Enable bmi2 instruction set
   default: False
 
-flag gmp
-  description: Use integer-gmp for binary polynomials
+flag integer-gmp
+  description: Use integer-gmp package for binary polynomials
+  default: True
+
+flag libgmp
+  description: Link against GMP library
   default: True
 
 library
@@ -73,9 +77,6 @@ library
     ghc-prim,
     primitive >=0.5,
     vector >=0.11
-  if flag(gmp)
-    build-depends:
-      integer-gmp
   if (flag(bmi2)) && (impl(ghc >=8.4.1))
     build-depends:
       bits-extra >=0.0.0.4 && <0.1
@@ -97,11 +98,15 @@ library
     Data.Bit.Utils
   ghc-options: -O2 -Wall
   include-dirs: src
-  if (flag(bmi2)) && (impl(ghc >=8.4.1))
+  if flag(bmi2) && impl(ghc >=8.4.1)
     ghc-options: -mbmi2 -msse4.2
     cpp-options: -DBMI2_ENABLED
-  if flag(gmp)
-    cpp-options: -DWithGmp
+  if flag(integer-gmp) && impl(ghc >=8.0.1)
+    build-depends: integer-gmp
+    cpp-options: -DUseIntegerGmp
+  if flag(libgmp)
+    extra-libraries: gmp
+    cpp-options: -DUseLibGmp
 
 test-suite bitvec-tests
   type: exitcode-stdio-1.0

@@ -40,7 +40,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Generics
 
-#if WithGmp
+#if UseIntegerGmp
 import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import GHC.Exts
@@ -86,7 +86,7 @@ instance Num F2Poly where
   abs    = id
   signum = const (F2Poly (U.singleton (Bit True)))
   (*) = coerce ((dropWhileEnd .) . karatsuba)
-#if WithGmp
+#if UseIntegerGmp
   fromInteger !n = case n of
     S# i#   -> F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
                       $ fromBigNat $ wordToBigNat (int2Word# i#)
@@ -98,7 +98,7 @@ instance Num F2Poly where
 
 instance Enum F2Poly where
   fromEnum = fromIntegral
-#if WithGmp
+#if UseIntegerGmp
   toEnum !(I# i#) = F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
                            $ fromBigNat $ wordToBigNat (int2Word# i#)
 #else
@@ -123,7 +123,7 @@ xorBits
   :: U.Vector Bit
   -> U.Vector Bit
   -> U.Vector Bit
-#if WithGmp
+#if UseIntegerGmp
 -- GMP has platform-dependent ASM implementations for mpn_xor_n,
 -- which are impossible to beat by native Haskell.
 xorBits (BitVec _ 0 _) ys = ys
@@ -327,7 +327,7 @@ dropWhileEnd xs = U.unsafeSlice 0 (go (U.length xs)) xs
         0 -> go (n - wordSize)
         w -> n - countLeadingZeros w
 
-#if WithGmp
+#if UseIntegerGmp
 
 bitsToByteArray :: U.Vector Bit -> ByteArray#
 bitsToByteArray xs = arr
