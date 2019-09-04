@@ -374,6 +374,10 @@ nthInWords (Bit False) !k !off !len !arr = go off k
 -- for <https://en.wikipedia.org/wiki/Succinct_data_structure succinct dictionaries>.
 countBits :: U.Vector Bit -> Int
 countBits (BitVec _ 0 _)                      = 0
+#if UseLibGmp
+countBits (BitVec 0 len arr) | modWordSize len == 0 =
+  fromIntegral (mpnPopcount arr (divWordSize len))
+#endif
 countBits (BitVec off len arr) | offBits == 0 = case modWordSize len of
   0    -> countBitsInWords (P.Vector offWords lWords arr)
   nMod -> countBitsInWords (P.Vector offWords (lWords - 1) arr)
