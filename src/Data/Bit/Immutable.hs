@@ -102,6 +102,21 @@ zipBits
   -> U.Vector Bit
   -> U.Vector Bit
   -> U.Vector Bit
+zipBits _ (BitVec _ 0 _) _ = U.empty
+zipBits _ _ (BitVec _ 0 _) = U.empty
+#if UseLibGmp
+zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2)
+  | f (Bit True)  (Bit True)  == Bit True
+  , f (Bit True)  (Bit False) == Bit False
+  , f (Bit False) (Bit True)  == Bit False
+  , f (Bit False) (Bit False) == Bit False
+  = runST $ do
+    let l = l1 `min` l2
+        w = nWords l
+    brr <- newByteArray (w `shiftL` GMP_LIMB_SHIFT)
+    mpnAndN brr arg1 arg2 w
+    BitVec 0 l <$> unsafeFreezeByteArray brr
+#endif
 zipBits f xs ys = runST $ do
   let n = min (U.length xs) (U.length ys)
   zs <- MU.new n
