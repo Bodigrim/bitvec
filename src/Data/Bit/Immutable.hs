@@ -109,16 +109,32 @@ zipBits
 zipBits _ (BitVec _ 0 _) _ = U.empty
 zipBits _ _ (BitVec _ 0 _) = U.empty
 #if UseLibGmp
-zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2)
-  | f (Bit True)  (Bit True)  == Bit True
-  , f (Bit True)  (Bit False) == Bit False
-  , f (Bit False) (Bit True)  == Bit False
-  , f (Bit False) (Bit False) == Bit False
-  = runST $ do
+zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2) = runST $ do
     let l = l1 `min` l2
         w = nWords l
-    brr <- newByteArray (w `shiftL` GMP_LIMB_SHIFT)
-    mpnAndN brr arg1 arg2 w
+        b = w `shiftL` GMP_LIMB_SHIFT
+    brr <- newByteArray b
+    let ff = unBit $ f (Bit False) (Bit False)
+        ft = unBit $ f (Bit False) (Bit True)
+        tf = unBit $ f (Bit True)  (Bit False)
+        tt = unBit $ f (Bit True)  (Bit True)
+    case (ff, ft, tf, tt) of
+      (False, False, False, False) -> setByteArray brr 0 w (zeroBits :: Word)
+      (False, False, False, True)  -> mpnAndN  brr arg1 arg2 w
+      (False, False, True,  False) -> mpnAndnN brr arg1 arg2 w
+      (False, False, True,  True)  -> copyByteArray brr 0 arg1 0 b
+      (False, True,  False, False) -> mpnAndnN brr arg2 arg1 w
+      (False, True,  False, True)  -> copyByteArray brr 0 arg2 0 b
+      (False, True,  True,  False) -> mpnXorN  brr arg1 arg2 w
+      (False, True,  True,  True)  -> mpnIorN  brr arg1 arg2 w
+      (True,  False, False, False) -> mpnNiorN brr arg1 arg2 w
+      (True,  False, False, True)  -> mpnXnorN brr arg1 arg2 w
+      (True,  False, True,  False) -> mpnCom   brr arg2      w
+      (True,  False, True,  True)  -> mpnIornN brr arg1 arg2 w
+      (True,  True,  False, False) -> mpnCom   brr arg1      w
+      (True,  True,  False, True)  -> mpnIornN brr arg2 arg1 w
+      (True,  True,  True,  False) -> mpnNandN brr arg1 arg2 w
+      (True,  True,  True,  True)  -> setByteArray brr 0 w (complement zeroBits :: Word)
     BitVec 0 l <$> unsafeFreezeByteArray brr
 #endif
 zipBits f xs ys = runST $ do
