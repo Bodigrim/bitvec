@@ -90,7 +90,12 @@ cloneToWords v = runST $ do
 {-# INLINE cloneToWords #-}
 
 -- | Zip two vectors with the given function.
--- Similar to 'Data.Vector.Unboxed.zipWith', but up to 64x faster.
+-- Similar to 'Data.Vector.Unboxed.zipWith',
+-- but up to 1000x (!) faster.
+--
+-- For sufficiently dense sets, represented as bitmaps,
+-- 'zipBits' is up to 32x faster than
+-- 'Data.IntSet.union', 'Data.IntSet.intersection', etc.
 --
 -- >>> import Data.Bits
 -- >>> zipBits (.&.) (read "[1,1,0]") (read "[0,1,1]") -- intersection
