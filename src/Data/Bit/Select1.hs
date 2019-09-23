@@ -141,7 +141,9 @@ select1Word32 = select1Word32Broadword
 select1 :: Word -> Int -> Int
 #if WORD_SIZE_IN_BITS == 64
 select1 w i = fromIntegral $ select1Word64 (fromIntegral w) (fromIntegral i)
-#else
+#elif WORD_SIZE_IN_BITS == 32
 select1 w i = fromIntegral $ select1Word32 (fromIntegral w) (fromIntegral i)
+#else
+#error unsupported WORD_SIZE_IN_BITS config
 #endif
 {-# INLINE select1 #-}

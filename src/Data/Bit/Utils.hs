@@ -103,7 +103,7 @@ reverseWord x0 = x6
   x4 = ((x3 .&. 0x00FF00FF00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00FF00FF00) `shiftR`  8)
   x5 = ((x4 .&. 0x0000FFFF0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000FFFF0000) `shiftR` 16)
   x6 = ((x5 .&. 0x00000000FFFFFFFF) `shiftL` 32) .|. ((x5 .&. 0xFFFFFFFF00000000) `shiftR` 32)
-#else
+#elif WORD_SIZE_IN_BITS == 32
 reverseWord :: Word -> Word
 reverseWord x0 = x5
  where
@@ -112,6 +112,8 @@ reverseWord x0 = x5
   x3 = ((x2 .&. 0x0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0) `shiftR`  4)
   x4 = ((x3 .&. 0x00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00) `shiftR`  8)
   x5 = ((x4 .&. 0x0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000) `shiftR` 16)
+#else
+#error unsupported WORD_SIZE_IN_BITS config
 #endif
 
 reversePartialWord :: Int -> Word -> Word
@@ -158,7 +160,7 @@ sparseBitsInternal x = x4
     t3 = (x3 `xor` (x3 `shiftR` 1)) .&. 0x2222222222222222;
     x4 = x3 `xor` (t3 `xor` (t3 `shiftL` 1));
 
-#else
+#elif WORD_SIZE_IN_BITS == 32
 
 -- | Insert 0 between each consecutive bits of an input.
 -- xyzw --> (x0y0, z0w0)
@@ -180,6 +182,8 @@ sparseBitsInternal x0 = x4
     t3 = (x3 `xor` (x3 `shiftR` 1)) .&. 0x22222222;
     x4 = x3 `xor` (t3 `xor` (t3 `shiftL` 1));
 
+#else
+#error unsupported WORD_SIZE_IN_BITS config
 #endif
 
 loMask :: Int -> Word

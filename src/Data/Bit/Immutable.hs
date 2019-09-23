@@ -43,10 +43,14 @@ import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
+#include "MachDeps.h"
+
 #if WORD_SIZE_IN_BITS == 64
-# define GMP_LIMB_SHIFT 3
+#define GMP_LIMB_SHIFT 3
+#elif WORD_SIZE_IN_BITS == 32
+#define GMP_LIMB_SHIFT 2
 #else
-# define GMP_LIMB_SHIFT 2
+#error unsupported WORD_SIZE_IN_BITS config
 #endif
 
 -- | Cast a vector of words to a vector of bits.
