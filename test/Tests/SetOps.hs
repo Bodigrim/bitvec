@@ -13,18 +13,19 @@ import Test.Tasty.QuickCheck hiding ((.&.))
 setOpTests :: TestTree
 setOpTests = testGroup
   "Set operations"
-  [ testProperty "generalize"     prop_generalize
-  , testProperty "zipBits"        prop_zipBits
-  , testProperty "zipInPlace"     prop_zipInPlace
-  , testProperty "invertBits"     prop_invertBits
-  , testProperty "invertInPlace"  prop_invertInPlace
-  , testProperty "reverseBits"    prop_reverseBits
-  , testProperty "reverseInPlace" prop_reverseInPlace
-  , testProperty "select"         prop_select_def
-  , testProperty "exclude"        prop_exclude_def
-  , testProperty "selectBits"     prop_selectBits_def
-  , testProperty "excludeBits"    prop_excludeBits_def
-  , testProperty "countBits"      prop_countBits_def
+  [ testProperty "generalize"      prop_generalize
+  , testProperty "zipBits"         prop_zipBits
+  , testProperty "zipInPlace"      prop_zipInPlace
+  , testProperty "invertBits"      prop_invertBits
+  , testProperty "invertBitsWords" prop_invertBitsWords
+  , testProperty "invertInPlace"   prop_invertInPlace
+  , testProperty "reverseBits"     prop_reverseBits
+  , testProperty "reverseInPlace"  prop_reverseInPlace
+  , testProperty "select"          prop_select_def
+  , testProperty "exclude"         prop_exclude_def
+  , testProperty "selectBits"      prop_selectBits_def
+  , testProperty "excludeBits"     prop_excludeBits_def
+  , testProperty "countBits"       prop_countBits_def
   ]
 
 prop_generalize :: Fun (Bit, Bit) Bit -> Bit -> Bit -> Property
@@ -63,6 +64,12 @@ prop_zipInPlace fun xs ys =
 prop_invertBits :: U.Vector Bit -> Property
 prop_invertBits xs =
   U.map complement xs === invertBits xs
+
+prop_invertBitsWords :: U.Vector Word -> Property
+prop_invertBitsWords ws =
+  U.map complement xs === invertBits xs
+  where
+    xs = castFromWords ws
 
 prop_invertInPlace :: U.Vector Bit -> Property
 prop_invertInPlace xs =
