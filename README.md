@@ -1,6 +1,6 @@
 # bitvec [![Build Status](https://travis-ci.org/Bodigrim/bitvec.svg)](https://travis-ci.org/Bodigrim/bitvec) [![Hackage](http://img.shields.io/hackage/v/bitvec.svg)](https://hackage.haskell.org/package/bitvec) [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/bitvec/badge)](https://matrix.hackage.haskell.org/package/bitvec) [![Stackage LTS](http://stackage.org/package/bitvec/badge/lts)](http://stackage.org/lts/package/bitvec) [![Stackage Nightly](http://stackage.org/package/bitvec/badge/nightly)](http://stackage.org/nightly/package/bitvec)
 
-A newtype over `Bool` with a better `Vector` instance.
+A newtype over `Bool` with a better `Vector` instance: 8x less memory, up to 1000x faster.
 
 The [`vector`](https://hackage.haskell.org/package/vector)
 package represents unboxed arrays of `Bool`
@@ -12,7 +12,7 @@ The performance stays mostly the same;
 the most significant degradation happens for random writes
 (up to 10% slower).
 On the other hand, for certain bulk bit operations
-`Vector Bit` is up to 64x faster than `Vector Bool`.
+`Vector Bit` is up to 1000x faster than `Vector Bool`.
 
 ## Thread safety
 
@@ -22,16 +22,6 @@ On the other hand, for certain bulk bit operations
   then modify a bit, then write the whole word back.
 * `Data.Bit.ThreadSafe` is slower (up to 20%),
   but writes and flips are thread-safe.
-
-## Similar packages
-
-* [`bv`](https://hackage.haskell.org/package/bv) and
-  [`bv-little`](https://hackage.haskell.org/package/bv-little)
-  do not offer mutable vectors.
-
-* [`array`](https://hackage.haskell.org/package/array)
-  is memory-efficient for `Bool`, but lacks
-  a handy `Vector` interface and is not thread-safe.
 
 ## Quick start
 
@@ -105,6 +95,7 @@ of a vector (giving us [the prime-counting function](https://en.wikipedia.org/wi
 
 And vice versa, query an address of the _n_-th set bit
 (which corresponds to the _n_-th prime number here):
+
 ```haskell
 > nthBitIndex (Bit True) 10 eratosthenes
 Just 29
@@ -116,3 +107,71 @@ In this case it is vital to switch from `Data.Bit` to `Data.Bit.ThreadSafe`,
 because the former is thread-unsafe with regards to writes.
 There is a moderate performance penalty (up to 20%)
 for using the thread-safe interface.
+
+## Sets
+
+Bit vectors can be used as a blazingly fast representation of sets
+as long as their elements are `Enum`eratable and sufficiently dense,
+leaving `IntSet` far behind.
+
+For example, consider three possible representations of a set of `Word16`:
+
+* As an `IntSet` with a readily available `union` function.
+* As a 64k long unboxed `Vector Bool`, implementing union as `zipWith (||)`.
+* As a 64k long unboxed `Vector Bit`, implementing union as `zipBits (.|.)`.
+
+In our benchmarks (see `bench` folder) for not-too-sparse sets
+the union of `Vector Bit` evaluates 24x-36x faster than the union of `IntSet`
+and stunningly outperforms `Vector Bool` 500x-1000x.
+
+## Binary polynomials
+
+Binary polynomials are polynomials with coefficients modulo 2.
+Their applications include coding theory and cryptography.
+While one can successfully implement them with `poly` package,
+operating on `UPoly Bit`,
+this package provides even faster arithmetic routines
+exposed via `F2Poly` data type and its instances.
+
+```haskell
+> :set -XBinaryLiterals
+> -- (1 + x) (1 + x + x^2) = 1 + x^3 (mod 2)
+> 0b11 * 0b111 :: F2Poly
+F2Poly {unF2Poly = [1,0,0,1]}
+```
+
+Use `fromInteger` / `toInteger` to convert binary polynomials
+from `Integer` to `F2Poly` and back.
+
+## Package flags
+
+This package supports the following flags to facilitate dependency management.
+Disabling them does not diminish `bitvec`'s capabilities, but makes certain operations slower.
+
+* Flag `integer-gmp`, enabled by default.
+
+  Depend on `integer-gmp` package and use it to speed up operations on binary polynomials.
+  Normally `integer-gmp` is shipped with core libraries anyways, so there is little to gain
+  from disabling it, unless you use a custom build of GHC.
+
+* Flag `libgmp`, enabled by default.
+
+  Link against [GMP](https://gmplib.org/) library and use it to for ultimate performance of
+  `zipBits`, `invertBits` and `countBits`. GMP is readily available on most machines
+  (`brew install gmp` on macOS), but you may find useful to disable this flag working
+  with exotic setup.
+
+* Flag `bmi2`, disabled by default, experimental.
+
+  Depend on `bits-extra` package and use it for `nthBitIndex`.
+  This is supposed to be faster, but have not been properly polished yet.
+
+## Similar packages
+
+* [`bv`](https://hackage.haskell.org/package/bv) and
+  [`bv-little`](https://hackage.haskell.org/package/bv-little)
+  do not offer mutable vectors.
+
+* [`array`](https://hackage.haskell.org/package/array)
+  is memory-efficient for `Bool`, but lacks
+  a handy `Vector` interface and is not thread-safe.
