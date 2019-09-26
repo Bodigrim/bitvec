@@ -132,7 +132,7 @@ test-suite bitvec-tests
     Tests.MVectorTS
     Tests.SetOps
     Tests.Vector
-  ghc-options: -Wall
+  ghc-options: -Wall -threaded -rtsopts
   include-dirs: test
 
 benchmark gauge
