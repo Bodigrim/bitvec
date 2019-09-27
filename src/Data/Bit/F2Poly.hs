@@ -123,11 +123,11 @@ xorBits
   :: U.Vector Bit
   -> U.Vector Bit
   -> U.Vector Bit
+xorBits (BitVec _ 0 _) ys = ys
+xorBits xs (BitVec _ 0 _) = xs
 #if UseIntegerGmp
 -- GMP has platform-dependent ASM implementations for mpn_xor_n,
 -- which are impossible to beat by native Haskell.
-xorBits (BitVec _ 0 _) ys = ys
-xorBits xs (BitVec _ 0 _) = xs
 xorBits (BitVec 0 lx xarr) (BitVec 0 ly yarr) = case lx `compare` ly of
   LT -> BitVec 0 ly zs
   EQ -> dropWhileEnd $ BitVec 0 (lx `min` (sizeofByteArray zs `shiftL` 3)) zs
