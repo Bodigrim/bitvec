@@ -11,24 +11,26 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 vectorTests :: TestTree
-vectorTests = testGroup
-  "Data.Vector.Unboxed.Bit"
-  [ testGroup
-    "Data.Vector.Unboxed functions"
+vectorTests = testGroup "Data.Vector.Unboxed.Bit"
+  [ testGroup "Data.Vector.Unboxed functions"
     [ testProperty "toList . fromList == id" prop_toList_fromList
     , testProperty "fromList . toList == id" prop_fromList_toList
     , testProperty "slice"                   prop_slice_def
     ]
-  , testProperty "cloneFromWords" prop_cloneFromWords_def
+  , tenTimesLess $
+    testProperty "cloneFromWords" prop_cloneFromWords_def
   , testProperty "cloneToWords"   prop_cloneToWords_def
   , testProperty "reverse"        prop_reverse_def
   , testProperty "countBits"      prop_countBits_def
   , testProperty "listBits"       prop_listBits_def
   , testGroup "Boolean operations"
-              [testProperty "and" prop_and_def, testProperty "or" prop_or_def]
-  , testGroup "Search operations" [testProperty "first" prop_first_def]
-  , testGroup
-    "nthBitIndex"
+    [ testProperty "and" prop_and_def
+    , testProperty "or" prop_or_def
+    ]
+  , testGroup "Search operations"
+    [ testProperty "first" prop_first_def
+    ]
+  , testGroup "nthBitIndex"
     [ testCase "special case 1" case_nthBit_1
     , testProperty "matches bitIndex True"              prop_nthBit_1
     , testProperty "matches bitIndex False"             prop_nthBit_2
@@ -115,10 +117,13 @@ prop_nthBit_4 (Positive n) xs = case nthBitIndex (Bit False) (n + 1) xs of
       Just k  -> i === j + k + 1
 
 prop_nthBit_5 :: Positive Int -> U.Vector Bit -> Property
-prop_nthBit_5 (Positive n) xs =
-  n <= countBits xs ==> case nthBitIndex (Bit True) n xs of
+prop_nthBit_5 (Positive n) xs = count > 0 ==>
+  case nthBitIndex (Bit True) n' xs of
     Nothing -> property False
-    Just i  -> countBits (U.take (i + 1) xs) === n
+    Just i  -> countBits (U.take (i + 1) xs) === n'
+  where
+    count = countBits xs
+    n' = n `mod` count + 1
 
 case_nthBit_1 :: IO ()
 case_nthBit_1 =

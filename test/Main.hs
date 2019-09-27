@@ -8,6 +8,7 @@ import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
+import Support
 import Tests.MVector (mvectorTests)
 import qualified Tests.MVectorTS as TS (mvectorTests)
 import Tests.SetOps (setOpTests)
@@ -19,9 +20,9 @@ main = defaultMain $ testGroup
   [lawsTests, f2polyTests, mvectorTests, TS.mvectorTests, setOpTests, vectorTests]
 
 lawsTests :: TestTree
-lawsTests = testGroup "Laws"
-  $ map (uncurry testProperty)
-  $ concatMap lawsProperties
+lawsTests = adjustOption (const $ QuickCheckTests 100)
+  $ testGroup "Bit"
+  $ map lawsToTest
   [ bitsLaws        (Proxy :: Proxy Bit)
   , eqLaws          (Proxy :: Proxy Bit)
   , ordLaws         (Proxy :: Proxy Bit)
@@ -36,12 +37,13 @@ lawsTests = testGroup "Laws"
 
 f2polyTests :: TestTree
 f2polyTests = testGroup "F2Poly"
-  $ map (uncurry testProperty)
-  $ concatMap lawsProperties
-  [ showLaws        (Proxy :: Proxy F2Poly)
+  [ tenTimesLess $ lawsToTest $
+    showLaws (Proxy :: Proxy F2Poly)
 #if MIN_VERSION_quickcheck_classes(0,6,3)
-  , numLaws         (Proxy :: Proxy F2Poly)
+  , lawsToTest $
+    numLaws (Proxy :: Proxy F2Poly)
 #endif
-  , integralLaws    (Proxy :: Proxy F2Poly)
+  , lawsToTest $
+    integralLaws (Proxy :: Proxy F2Poly)
   ]
 

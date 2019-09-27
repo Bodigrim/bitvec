@@ -27,20 +27,17 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 mvectorTests :: TestTree
-mvectorTests = testGroup
-  "Data.Vector.Unboxed.Mutable.Bit"
-  [ testGroup
-    "Data.Vector.Unboxed.Mutable functions"
-    [testProperty "slice" prop_slice_def, testProperty "grow" prop_grow_def]
-  , testGroup
-    "Read/write Words"
-    [ testProperty "cloneFromWords" prop_cloneFromWords_def
+mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
+  [ testGroup "Data.Vector.Unboxed.Mutable functions"
+    [ tenTimesLess $
+      testProperty "slice" prop_slice_def
+    , testProperty "grow"  prop_grow_def]
+  , testGroup "Read/write Words"
+    [ tenTimesLess $
+      testProperty "cloneFromWords" prop_cloneFromWords_def
     , testProperty "cloneToWords"   prop_cloneToWords_def
     ]
-  , testGroup "MVector laws"
-  $ map (uncurry testProperty)
-  $ lawsProperties
-  $ muvectorLaws (Proxy :: Proxy Bit)
+  , lawsToTest $ muvectorLaws (Proxy :: Proxy Bit)
   , testCase "basicInitialize 1" case_write_init_read1
   , testCase "basicInitialize 2" case_write_init_read2
   , testCase "basicInitialize 3" case_write_init_read3
@@ -58,14 +55,16 @@ mvectorTests = testGroup
   , testCase "basicUnsafeCopy3"  case_write_copy_read3
   , testCase "basicUnsafeCopy4"  case_write_copy_read4
   , testCase "basicUnsafeCopy5"  case_write_copy_read5
-  , testProperty "flipBit" prop_flipBit
+  , tenTimesLess $
+    testProperty "flipBit" prop_flipBit
   ]
 
 prop_flipBit :: B.Vector Bit -> NonNegative Int -> Property
-prop_flipBit xs (NonNegative k) = k < B.length xs ==> ys === ys'
- where
-  ys  = B.modify (\v -> M.modify v complement k) xs
-  ys' = B.modify (\v -> flipBit v k) xs
+prop_flipBit xs (NonNegative k) = B.length xs > 0 ==> ys === ys'
+  where
+    k'  = k `mod` B.length xs
+    ys  = B.modify (\v -> M.modify v complement k') xs
+    ys' = B.modify (\v -> flipBit v k') xs
 
 case_write_init_read1 :: IO ()
 case_write_init_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
@@ -196,7 +195,10 @@ case_write_copy_read5 = assertEqual "should be equal" (Bit True) $ runST $ do
   M.read dst 46
 
 prop_slice_def
-  :: NonNegative Int -> NonNegative Int -> N.New B.Vector Bit -> Property
+  :: NonNegative Int
+  -> NonNegative Int
+  -> N.New B.Vector Bit
+  -> Property
 prop_slice_def (NonNegative s) (NonNegative n) xs =
   s + n < V.length (V.new xs) ==> runST $ do
     let xs' = V.new xs

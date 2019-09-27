@@ -21,8 +21,6 @@ setOpTests = testGroup
   , testProperty "invertInPlace"   prop_invertInPlace
   , testProperty "reverseBits"     prop_reverseBits
   , testProperty "reverseInPlace"  prop_reverseInPlace
-  , testProperty "select"          prop_select_def
-  , testProperty "exclude"         prop_exclude_def
   , testProperty "selectBits"      prop_selectBits_def
   , testProperty "excludeBits"     prop_excludeBits_def
   , testProperty "countBits"       prop_countBits_def
@@ -83,29 +81,20 @@ prop_reverseInPlace :: U.Vector Bit -> Property
 prop_reverseInPlace xs =
   U.reverse xs === U.modify reverseInPlace xs
 
-select :: U.Unbox a => U.Vector Bit -> U.Vector a -> [a]
-select mask ws = U.toList (U.map snd (U.filter (unBit . fst) (U.zip mask ws)))
+select :: U.Unbox a => U.Vector Bit -> U.Vector a -> U.Vector a
+select mask ws = U.map snd (U.filter (unBit . fst) (U.zip mask ws))
 
-prop_select_def :: U.Vector Bit -> U.Vector Word -> Bool
-prop_select_def xs ys =
-  select xs ys == [ x | (Bit True, x) <- zip (U.toList xs) (U.toList ys) ]
+exclude :: U.Unbox a => U.Vector Bit -> U.Vector a -> U.Vector a
+exclude mask ws = U.map snd (U.filter (not . unBit . fst) (U.zip mask ws))
 
-exclude :: U.Unbox a => U.Vector Bit -> U.Vector a -> [a]
-exclude mask ws =
-  U.toList (U.map snd (U.filter (not . unBit . fst) (U.zip mask ws)))
+prop_selectBits_def :: U.Vector Bit -> U.Vector Bit -> Property
+prop_selectBits_def xs ys = selectBits xs ys === select xs ys
 
-prop_exclude_def :: U.Vector Bit -> U.Vector Word -> Bool
-prop_exclude_def xs ys =
-  exclude xs ys == [ x | (Bit False, x) <- zip (U.toList xs) (U.toList ys) ]
+prop_excludeBits_def :: U.Vector Bit -> U.Vector Bit -> Property
+prop_excludeBits_def xs ys = excludeBits xs ys === exclude xs ys
 
-prop_selectBits_def :: U.Vector Bit -> U.Vector Bit -> Bool
-prop_selectBits_def xs ys = selectBits xs ys == U.fromList (select xs ys)
-
-prop_excludeBits_def :: U.Vector Bit -> U.Vector Bit -> Bool
-prop_excludeBits_def xs ys = excludeBits xs ys == U.fromList (exclude xs ys)
-
-prop_countBits_def :: U.Vector Bit -> Bool
-prop_countBits_def xs = countBits xs == U.length (selectBits xs xs)
+prop_countBits_def :: U.Vector Bit -> Property
+prop_countBits_def xs = countBits xs === U.length (selectBits xs xs)
 
 -------------------------------------------------------------------------------
 

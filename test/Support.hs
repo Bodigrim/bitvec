@@ -15,6 +15,8 @@ import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.New as N
 import qualified Data.Vector.Unboxed as U
+import Test.QuickCheck.Classes
+import Test.Tasty
 import Test.Tasty.QuickCheck
 
 instance Arbitrary Bit where
@@ -131,3 +133,11 @@ withNonEmptyMVec
   -> Property
 withNonEmptyMVec f g = forAll arbitrary $ \xs ->
   let xs' = V.new xs in not (U.null xs') ==> f xs' === runST (N.run xs >>= g)
+
+tenTimesLess :: TestTree -> TestTree
+tenTimesLess = adjustOption $
+  \(QuickCheckTests n) -> QuickCheckTests (max 100 (n `div` 10))
+
+lawsToTest :: Laws -> TestTree
+lawsToTest (Laws name props) =
+  testGroup name $ map (uncurry testProperty) props
