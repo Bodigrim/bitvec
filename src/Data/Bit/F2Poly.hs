@@ -35,13 +35,13 @@ import Data.Bit.Utils
 import Data.Bits
 import Data.Coerce
 import Data.List hiding (dropWhileEnd)
+import Data.Primitive.ByteArray
 import Data.Typeable
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Generics
 
 #if UseIntegerGmp
-import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import GHC.Exts
 import GHC.Integer.GMP.Internals
@@ -72,6 +72,12 @@ newtype F2Poly = F2Poly {
 -- (first element corresponds to a constant term).
 toF2Poly :: U.Vector Bit -> F2Poly
 toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
+
+-- | Valid 'F2Poly' has offset 0 and no trailing garbage.
+_isValid :: F2Poly -> Bool
+_isValid (F2Poly (BitVec o l arr)) = o == 0 && l == l'
+  where
+    l' = U.length $ dropWhileEnd $ BitVec 0 (sizeofByteArray arr `shiftL` 3) arr
 
 -- | Addition and multiplication are evaluated modulo 2.
 --
