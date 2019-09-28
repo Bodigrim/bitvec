@@ -31,7 +31,8 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
   [ testGroup "Data.Vector.Unboxed.Mutable functions"
     [ tenTimesLess $
       testProperty "slice" prop_slice_def
-    , testProperty "grow"  prop_grow_def]
+    , testProperty "grow"  prop_grow_def
+    ]
   , testGroup "Read/write Words"
     [ tenTimesLess $
       testProperty "cloneFromWords" prop_cloneFromWords_def
@@ -200,11 +201,15 @@ prop_slice_def
   -> N.New B.Vector Bit
   -> Property
 prop_slice_def (NonNegative s) (NonNegative n) xs =
-  s + n < V.length (V.new xs) ==> runST $ do
+  l > 0 ==> runST $ do
     let xs' = V.new xs
     xs1 <- N.run xs
-    xs2 <- V.unsafeFreeze (M.slice s n xs1)
-    return (B.toList xs2 === sliceList s n (B.toList xs'))
+    xs2 <- V.unsafeFreeze (M.slice s' n' xs1)
+    return (B.toList xs2 === sliceList s' n' (B.toList xs'))
+  where
+    l = V.length (V.new xs)
+    s' = s `mod` l
+    n' = n `mod` (l - s')
 
 prop_grow_def :: B.Vector Bit -> NonNegative Int -> Bool
 prop_grow_def xs (NonNegative m) = runST $ do
