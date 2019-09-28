@@ -215,7 +215,7 @@ mulBits xs ys
         (zipAndCountParityBits xs (U.unsafeSlice (lenYs - 1 - k) (k + 1) rys))
     forM_ [lenYs .. lenZs - 1] $ \k ->
       MU.unsafeWrite zs k
-        (zipAndCountParityBits (U.unsafeSlice (k - (lenYs - 1)) (lenXs + lenYs + 1 - k) xs) rys)
+        (zipAndCountParityBits (U.unsafeSlice (k - (lenYs - 1)) (lenXs + lenYs - 1 - k) xs) rys)
     U.unsafeFreeze zs
   where
     lenXs = U.length xs
