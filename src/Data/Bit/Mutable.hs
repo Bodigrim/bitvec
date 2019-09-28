@@ -57,7 +57,9 @@ castToWordsM (BitMVec s n ws)
 -- If the bits don't completely fill the words, the last word will be zero-padded.
 -- Cf. 'Data.Bit.cloneToWords'.
 cloneToWordsM
-  :: PrimMonad m => MVector (PrimState m) Bit -> m (MVector (PrimState m) Word)
+  :: PrimMonad m
+  => MVector (PrimState m) Bit
+  -> m (MVector (PrimState m) Word)
 cloneToWordsM v = do
   let lenBits  = MU.length v
       lenWords = nWords lenBits
