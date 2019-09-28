@@ -3,6 +3,7 @@
 module Main where
 
 import Data.Bit
+import Data.Bits
 import Data.Proxy
 import Test.QuickCheck.Classes
 import Test.Tasty
@@ -15,9 +16,14 @@ import Tests.SetOps (setOpTests)
 import Tests.Vector (vectorTests)
 
 main :: IO ()
-main = defaultMain $ testGroup
-  "All"
-  [lawsTests, f2polyTests, mvectorTests, TS.mvectorTests, setOpTests, vectorTests]
+main = defaultMain $ testGroup "All"
+  [ lawsTests
+  , f2polyTests
+  , mvectorTests
+  , TS.mvectorTests
+  , setOpTests
+  , vectorTests
+  ]
 
 lawsTests :: TestTree
 lawsTests = adjustOption (const $ QuickCheckTests 100)
@@ -37,7 +43,9 @@ lawsTests = adjustOption (const $ QuickCheckTests 100)
 
 f2polyTests :: TestTree
 f2polyTests = testGroup "F2Poly"
-  [ tenTimesLess $ lawsToTest $
+  [ testProperty "Addition"       prop_f2polyAdd
+  , testProperty "Multiplication" prop_f2polyMul
+  , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
 #if MIN_VERSION_quickcheck_classes(0,6,3)
   , lawsToTest $
@@ -47,3 +55,15 @@ f2polyTests = testGroup "F2Poly"
     integralLaws (Proxy :: Proxy F2Poly)
   ]
 
+prop_f2polyAdd :: F2Poly -> F2Poly -> Property
+prop_f2polyAdd x y = x + y === fromInteger (toInteger x `xor` toInteger y)
+
+prop_f2polyMul :: F2Poly -> F2Poly -> Property
+prop_f2polyMul x y = x * y === fromInteger (toInteger x `binMul` toInteger y)
+
+binMul :: Integer -> Integer -> Integer
+binMul = go 0
+  where
+    go :: Integer -> Integer -> Integer -> Integer
+    go acc _ 0 = acc
+    go acc x y = go (if odd y then acc `xor` x else acc) (x `shiftL` 1) (y `shiftR` 1)
