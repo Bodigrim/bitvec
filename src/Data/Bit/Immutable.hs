@@ -28,7 +28,9 @@ module Data.Bit.ImmutableTS
 import Control.Monad
 import Control.Monad.ST
 import Data.Bits
+#if UseLibGmp
 import Data.Bit.Gmp
+#endif
 #ifndef BITVEC_THREADSAFE
 import Data.Bit.Internal
 import Data.Bit.Mutable
