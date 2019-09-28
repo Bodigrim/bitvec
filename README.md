@@ -117,8 +117,8 @@ leaving `IntSet` far behind.
 For example, consider three possible representations of a set of `Word16`:
 
 * As an `IntSet` with a readily available `union` function.
-* As a 64k long unboxed `Vector Bool`, implementing union as `zipWith (||)`.
-* As a 64k long unboxed `Vector Bit`, implementing union as `zipBits (.|.)`.
+* As a 64k-long unboxed `Vector Bool`, implementing union as `zipWith (||)`.
+* As a 64k-long unboxed `Vector Bit`, implementing union as `zipBits (.|.)`.
 
 In our benchmarks (see `bench` folder) for not-too-sparse sets
 the union of `Vector Bit` evaluates 24x-36x faster than the union of `IntSet`
