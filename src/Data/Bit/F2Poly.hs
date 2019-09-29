@@ -125,6 +125,7 @@ instance Integral F2Poly where
   divMod = quotRem
   mod = rem
 
+-- | Inputs must be valid for wrapping into F2Poly: no trailing garbage is allowed.
 xorBits
   :: U.Vector Bit
   -> U.Vector Bit
@@ -151,12 +152,14 @@ xorBits xs ys = dropWhileEnd $ runST $ do
   U.unsafeCopy (MU.drop shorterLen zs) (U.drop shorterLen longer)
   U.unsafeFreeze zs
 
--- | Must be >= wordSize.
+-- | Must be >= 2 * wordSize.
 karatsubaThreshold :: Int
 karatsubaThreshold = 4096
 
 karatsuba :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 karatsuba xs ys
+  | karatsubaThreshold < 2 * wordSize
+  = error $ "karatsubaThreshold must be >= " ++ show (2 * wordSize)
   | xs == ys = sqrBits xs
   | lenXs <= karatsubaThreshold || lenYs <= karatsubaThreshold
   = mulBits xs ys
@@ -176,12 +179,12 @@ karatsuba xs ys
     lenZs = lenXs + lenYs - 1
 
     m'    = ((lenXs `min` lenYs) + 1) `quot` 2
-    m     = if karatsubaThreshold < wordSize then m' else m' - modWordSize m'
+    m     = m' - modWordSize m'
 
-    xs0  = U.slice 0 m xs
-    xs1  = U.slice m (lenXs - m) xs
-    ys0  = U.slice 0 m ys
-    ys1  = U.slice m (lenYs - m) ys
+    xs0  = U.unsafeSlice 0 m xs
+    xs1  = U.unsafeSlice m (lenXs - m) xs
+    ys0  = U.unsafeSlice 0 m ys
+    ys1  = U.unsafeSlice m (lenYs - m) ys
 
     xs01 = xorBits xs0 xs1
     ys01 = xorBits ys0 ys1
