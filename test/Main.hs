@@ -1,4 +1,5 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP       #-}
+{-# LANGUAGE MagicHash #-}
 
 module Main where
 
@@ -6,6 +7,8 @@ import Data.Bit
 import Data.Bits
 import Data.Proxy
 import qualified Data.Vector.Unboxed as U
+import GHC.Exts
+import GHC.Integer.Logarithms
 import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -47,6 +50,7 @@ f2polyTests = testGroup "F2Poly"
   [ testProperty "Addition"       prop_f2polyAdd
   , testProperty "Multiplication" prop_f2polyMul
   , testProperty "Multiplication long" prop_f2polyMulLong
+  , testProperty "Remainder"      prop_f2polyRem
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
 #if MIN_VERSION_quickcheck_classes(0,6,3)
@@ -69,9 +73,22 @@ prop_f2polyMulLong xs ys = x * y === fromInteger (toInteger x `binMul` toInteger
     x = toF2Poly $ castFromWords xs
     y = toF2Poly $ castFromWords ys
 
+prop_f2polyRem :: F2Poly -> F2Poly -> Property
+prop_f2polyRem x y = y /= 0 ==> x `rem` y === fromInteger (toInteger x `binRem` toInteger y)
+
 binMul :: Integer -> Integer -> Integer
 binMul = go 0
   where
     go :: Integer -> Integer -> Integer -> Integer
     go acc _ 0 = acc
     go acc x y = go (if odd y then acc `xor` x else acc) (x `shiftL` 1) (y `shiftR` 1)
+
+binRem :: Integer -> Integer -> Integer
+binRem x y = go x
+  where
+    binLog n = I# (integerLog2# n)
+    ly = binLog y
+
+    go z = if lz < ly then z else go (z `xor` (y `shiftL` (lz - ly)))
+      where
+        lz = binLog z

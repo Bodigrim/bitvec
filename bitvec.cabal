@@ -115,6 +115,7 @@ test-suite bitvec-tests
   build-depends:
     base >=4.8 && <5,
     bitvec,
+    integer-gmp,
     primitive >=0.5,
     quickcheck-classes >=0.6.1,
     vector >=0.11,
@@ -141,6 +142,7 @@ benchmark gauge
     bitvec,
     containers,
     gauge,
+    integer-gmp,
     random,
     vector
   type: exitcode-stdio-1.0
