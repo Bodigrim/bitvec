@@ -5,6 +5,7 @@ module Main where
 import Data.Bit
 import Data.Bits
 import Data.Proxy
+import qualified Data.Vector.Unboxed as U
 import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -45,6 +46,7 @@ f2polyTests :: TestTree
 f2polyTests = testGroup "F2Poly"
   [ testProperty "Addition"       prop_f2polyAdd
   , testProperty "Multiplication" prop_f2polyMul
+  , testProperty "Multiplication long" prop_f2polyMulLong
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
 #if MIN_VERSION_quickcheck_classes(0,6,3)
@@ -60,6 +62,12 @@ prop_f2polyAdd x y = x + y === fromInteger (toInteger x `xor` toInteger y)
 
 prop_f2polyMul :: F2Poly -> F2Poly -> Property
 prop_f2polyMul x y = x * y === fromInteger (toInteger x `binMul` toInteger y)
+
+prop_f2polyMulLong :: U.Vector Word -> U.Vector Word -> Property
+prop_f2polyMulLong xs ys = x * y === fromInteger (toInteger x `binMul` toInteger y)
+  where
+    x = toF2Poly $ castFromWords xs
+    y = toF2Poly $ castFromWords ys
 
 binMul :: Integer -> Integer -> Integer
 binMul = go 0
