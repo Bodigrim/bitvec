@@ -5,6 +5,7 @@ module Bench.Sum
 import Data.Bit
 import qualified Data.Bit.ThreadSafe as TS
 import Data.Bits
+import Data.List
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Gauge.Main
@@ -27,16 +28,18 @@ randomVec2 f k = U.fromList (map f (take n $ drop n randomBools))
   where
     n = 1 `shiftL` k
 
+randomInteger :: Int -> Integer
+randomInteger k = toInteger $ toF2Poly $ randomVec Bit k
+
+randomInteger2 :: Int -> Integer
+randomInteger2 k = toInteger $ toF2Poly $ randomVec2 Bit k
+
 benchSum :: Int -> Benchmark
 benchSum k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit/add"    $ nf (\x -> sumBit    (randomVec Bit k) x)    (randomVec2 Bit k)
-  , bench "Bit/sum"    $ nf sum [(1 :: F2Poly) .. fromInteger (1 `shiftL` k)]
-  , bench "Bit.TS/add" $ nf (\x -> sumBitTS  (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
-  , bench "Bit.TS/sum" $ nf sum [(1 :: TS.F2Poly) .. fromInteger (1 `shiftL` k)]
+  [ bench "Bit/add"     $ nf (\x -> (+) (toF2Poly $ randomVec Bit k) x)    (toF2Poly $ randomVec2 Bit k)
+  , bench "Bit/sum"     $ nf (foldl' (+) 0) [(1 :: F2Poly) .. fromInteger (1 `shiftL` k)]
+  , bench "Bit.TS/add"  $ nf (\x -> (+) (TS.toF2Poly $ randomVec TS.Bit k) x) (TS.toF2Poly $ randomVec2 TS.Bit k)
+  , bench "Bit.TS/sum"  $ nf (foldl' (+) 0) [(1 :: TS.F2Poly) .. fromInteger (1 `shiftL` k)]
+  , bench "Integer/add" $ nf (\x -> xor (randomInteger k) x) (randomInteger2 k)
+  , bench "Integer/sum" $ nf (foldl' xor 0) [(1 :: Integer) .. fromInteger (1 `shiftL` k)]
   ]
-
-sumBit :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-sumBit xs ys = unF2Poly (toF2Poly xs + toF2Poly ys)
-
-sumBitTS :: U.Vector TS.Bit -> U.Vector TS.Bit -> U.Vector TS.Bit
-sumBitTS xs ys = TS.unF2Poly (TS.toF2Poly xs + TS.toF2Poly ys)

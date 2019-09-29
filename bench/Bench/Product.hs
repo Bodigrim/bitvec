@@ -27,18 +27,28 @@ randomVec2 f k = U.fromList (map f (take n $ drop n randomBools))
   where
     n = 1 `shiftL` k
 
+randomInteger :: Int -> Integer
+randomInteger k = toInteger $ toF2Poly $ randomVec Bit k
+
+randomInteger2 :: Int -> Integer
+randomInteger2 k = toInteger $ toF2Poly $ randomVec2 Bit k
+
 benchProduct :: Int -> Benchmark
 benchProduct k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit/product"         $ nf (\x -> productBit    (randomVec Bit k) x)    (randomVec2 Bit k)
-  , bench "Bit/productShort"    $ nf (\x -> productBit    (randomVec Bit k) x)    (U.take 32 $ randomVec2 Bit k)
-  , bench "Bit/square"          $ nf (\x -> productBit    (randomVec Bit k) x)    (randomVec Bit k)
-  , bench "Bit.TS/product"      $ nf (\x -> productBitTS  (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
-  , bench "Bit.TS/productShort" $ nf (\x -> productBitTS  (randomVec TS.Bit k) x) (U.take 32 $ randomVec2 TS.Bit k)
-  , bench "Bit.TS/square"       $ nf (\x -> productBitTS  (randomVec TS.Bit k) x) (randomVec TS.Bit k)
+  [ bench "Bit/product"          $ nf (\x -> (*) (toF2Poly $ randomVec Bit k) x)    (toF2Poly $ randomVec2 Bit k)
+  , bench "Bit/productShort"     $ nf (\x -> (*) (toF2Poly $ randomVec Bit k) x)    (toF2Poly $ U.take 32 $ randomVec2 Bit k)
+  , bench "Bit/square"           $ nf (\x -> (*) (toF2Poly $ randomVec Bit k) x)    (toF2Poly $ randomVec Bit k)
+  , bench "Bit.TS/product"       $ nf (\x -> (*) (TS.toF2Poly $ randomVec TS.Bit k) x) (TS.toF2Poly $ randomVec2 TS.Bit k)
+  , bench "Bit.TS/productShort"  $ nf (\x -> (*) (TS.toF2Poly $ randomVec TS.Bit k) x) (TS.toF2Poly $ U.take 32 $ randomVec2 TS.Bit k)
+  , bench "Bit.TS/square"        $ nf (\x -> (*) (TS.toF2Poly $ randomVec TS.Bit k) x) (TS.toF2Poly $ randomVec TS.Bit k)
+  , bench "Integer/product"      $ nf (\x -> binMul (randomInteger k) x) (randomInteger2 k)
+  , bench "Integer/productShort" $ nf (\x -> binMul (randomInteger k) x) ((1 `shiftL` 32 - 1) .&. randomInteger2 k)
+  , bench "Integer/square"       $ nf (\x -> binMul (randomInteger k) x) (randomInteger k)
   ]
 
-productBit :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-productBit xs ys = unF2Poly (toF2Poly xs * toF2Poly ys)
-
-productBitTS :: U.Vector TS.Bit -> U.Vector TS.Bit -> U.Vector TS.Bit
-productBitTS xs ys = TS.unF2Poly (TS.toF2Poly xs * TS.toF2Poly ys)
+binMul :: Integer -> Integer -> Integer
+binMul = go 0
+  where
+    go :: Integer -> Integer -> Integer -> Integer
+    go acc _ 0 = acc
+    go acc x y = go (if odd y then acc `xor` x else acc) (x `shiftL` 1) (y `shiftR` 1)
