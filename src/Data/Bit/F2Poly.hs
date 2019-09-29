@@ -278,8 +278,8 @@ mulLongShort xs ys = runST $ do
 
 zipAndCountParityBits :: U.Vector Bit -> U.Vector Bit -> Bit
 zipAndCountParityBits xs ys
-  | nMod == 0 = fromIntegral $ popCnt
-  | otherwise = fromIntegral $ popCnt `xor` lastPopCnt
+  | nMod == 0 = Bit $ odd $ popCnt
+  | otherwise = Bit $ odd $ popCnt `xor` lastPopCnt
   where
     n = min (U.length xs) (U.length ys)
     nMod = modWordSize n
