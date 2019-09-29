@@ -102,6 +102,14 @@ instance Num F2Poly where
   fromInteger = F2Poly . dropWhileEnd . integerToBits
 #endif
 
+  {-# INLINE (+)         #-}
+  {-# INLINE (-)         #-}
+  {-# INLINE negate      #-}
+  {-# INLINE abs         #-}
+  {-# INLINE signum      #-}
+  {-# INLINE (*)         #-}
+  {-# INLINE fromInteger #-}
+
 instance Enum F2Poly where
   fromEnum = fromIntegral
 #if UseIntegerGmp
