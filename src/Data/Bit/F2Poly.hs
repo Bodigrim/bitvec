@@ -128,7 +128,6 @@ instance Integral F2Poly where
   quotRem (F2Poly xs) (F2Poly ys) = (F2Poly (dropWhileEnd qs), F2Poly (dropWhileEnd rs))
     where
       (qs, rs) = quotRemBits xs ys
-  rem = coerce ((dropWhileEnd .) . remBits)
   divMod = quotRem
   mod = rem
 
@@ -261,23 +260,6 @@ quotRemBits xs ys
         zipInPlace xor ys (MU.drop i rs)
     let rs' = MU.unsafeSlice 0 lenYs rs
     (,) <$> U.unsafeFreeze qs <*> U.unsafeFreeze rs'
-
-remBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-remBits xs ys
-  | U.null ys = throw DivideByZero
-  | U.length xs < U.length ys = xs
-  | otherwise = runST $ do
-    let lenXs = U.length xs
-        lenYs = U.length ys
-        lenQs = lenXs - lenYs + 1
-    rs <- MU.replicate lenXs (Bit False)
-    U.unsafeCopy rs xs
-    forM_ [lenQs - 1, lenQs - 2 .. 0] $ \i -> do
-      Bit r <- MU.unsafeRead rs (lenYs - 1 + i)
-      when r $ do
-        zipInPlace xor ys (MU.drop i rs)
-    let rs' = MU.unsafeSlice 0 lenYs rs
-    U.unsafeFreeze rs'
 
 dropWhileEnd
   :: U.Vector Bit
