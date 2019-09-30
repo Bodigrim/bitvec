@@ -1,8 +1,9 @@
 {-# LANGUAGE CPP              #-}
 
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes       #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 #ifndef BITVEC_THREADSAFE
 module Data.Bit.Mutable
@@ -32,6 +33,7 @@ import Data.Bit.InternalTS
 #endif
 import Data.Bit.Utils
 import Data.Bits
+import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
@@ -84,17 +86,52 @@ cloneToWordsM v = do
 -- >>> modify (zipInPlace (.&.) (read "[1,1,0]")) (read "[0,1,1,1,1,1]")
 -- [0,1,0,1,1,1] -- note trailing garbage
 zipInPlace
-  :: PrimMonad m
+  :: forall m.
+     PrimMonad m
   => (forall a . Bits a => a -> a -> a)
   -> Vector Bit
   -> MVector (PrimState m) Bit
   -> m ()
-zipInPlace f xs ys = do
-  let n = min (U.length xs) (MU.length ys)
-  forM_ [0, wordSize .. n - 1] $ \i -> do
-    let x = indexWord xs i
-    y <- readWord ys i
-    writeWord ys i (f x y)
+zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
+  go (l `min` l') off off'
+  where
+    go :: Int -> Int -> Int -> m ()
+    go len offXs offYs
+      | shft == 0 =
+        go' len offXs (divWordSize offYs)
+      | len <= wordSize = do
+        y <- readWord vecYs 0
+        writeWord vecYs 0 (f x y)
+      | otherwise = do
+        y <- readByteArray ys base
+        writeByteArray ys base $
+          (y .&. loMask shft) .|. (f (x `shiftL` shft) y .&. hiMask shft)
+        go' (len - wordSize + shft) (offXs + wordSize - shft) (base + 1)
+      where
+        vecXs = BitVec  offXs len xs
+        vecYs = BitMVec offYs len ys
+        x     = indexWord vecXs 0
+        shft  = modWordSize offYs
+        base  = divWordSize offYs
+
+    go' :: Int -> Int -> Int -> m ()
+    go' len offXs offYsW = do
+      forM_ [0 .. divWordSize len - 1] $ \i -> do
+        let x = indexWord vecXs (mulWordSize i)
+        y <- readByteArray ys (i + offYsW)
+        writeByteArray ys (i + offYsW) (f x y)
+      when (modWordSize len /= 0) $ do
+        let ix = len - modWordSize len
+        let x = indexWord vecXs ix
+        y <- readWord vecYs ix
+        writeWord vecYs ix (f x y)
+      where
+        vecXs = BitVec  offXs len xs
+        vecYs = BitMVec (mulWordSize offYsW) len ys
+
+#if __GLASGOW_HASKELL__ >= 800
+{-# SPECIALIZE zipInPlace :: (forall a. Bits a => a -> a -> a) -> Vector Bit -> MVector s Bit -> ST s () #-}
+#endif
 {-# INLINE zipInPlace #-}
 
 -- | Invert (flip) all bits in-place.
