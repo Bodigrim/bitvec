@@ -53,6 +53,7 @@ modWordSize x = x .&. (wordSize - 1)
 
 mulWordSize :: Bits a => a -> a
 mulWordSize x = unsafeShiftL x lgWordSize
+{-# INLINE mulWordSize #-}
 
 -- number of words needed to store n bits
 nWords :: Int -> Int
@@ -188,12 +189,16 @@ sparseBitsInternal x0 = x4
 
 loMask :: Int -> Word
 loMask n = 1 `shiftL` n - 1
+{-# INLINE loMask #-}
 
 hiMask :: Int -> Word
 hiMask n = complement (1 `shiftL` n - 1)
+{-# INLINE hiMask #-}
 
 fromPrimVector :: P.Vector Word -> U.Vector Word
 fromPrimVector = unsafeCoerce
+{-# INLINE fromPrimVector #-}
 
 toPrimVector :: U.Vector Word -> P.Vector Word
 toPrimVector = unsafeCoerce
+{-# INLINE toPrimVector #-}
