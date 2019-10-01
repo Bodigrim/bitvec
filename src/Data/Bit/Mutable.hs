@@ -105,7 +105,7 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
       | otherwise = do
         y <- readByteArray ys base
         writeByteArray ys base $
-          (y .&. loMask shft) .|. (f (x `shiftL` shft) y .&. hiMask shft)
+          (y .&. loMask shft) .|. (f (x `unsafeShiftL` shft) y .&. hiMask shft)
         go' (len - wordSize + shft) (offXs + wordSize - shft) (base + 1)
       where
         vecXs = BitVec  offXs len xs
@@ -116,18 +116,44 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
 
     go' :: Int -> Int -> Int -> m ()
     go' len offXs offYsW = do
-      forM_ [0 .. divWordSize len - 1] $ \i -> do
-        let x = indexWord vecXs (mulWordSize i)
-        y <- readByteArray ys (i + offYsW)
-        writeByteArray ys (i + offYsW) (f x y)
+      if shft == 0
+        then loopAligned offYsW
+        else loop offYsW (indexByteArray xs base)
       when (modWordSize len /= 0) $ do
         let ix = len - modWordSize len
         let x = indexWord vecXs ix
         y <- readWord vecYs ix
         writeWord vecYs ix (f x y)
+
       where
+
         vecXs = BitVec  offXs len xs
         vecYs = BitMVec (mulWordSize offYsW) len ys
+        shft  = modWordSize offXs
+        shft' = wordSize - shft
+        base  = divWordSize offXs
+        base0 = base - offYsW
+        base1 = base0 + 1
+        iMax  = divWordSize len + offYsW
+
+        loopAligned :: Int -> m ()
+        loopAligned !i
+          | i >= iMax = pure ()
+          | otherwise =  do
+            let x = indexByteArray xs (base0 + i) :: Word
+            y <- readByteArray ys i
+            writeByteArray ys i (f x y)
+            loopAligned (i + 1)
+
+        loop :: Int -> Word -> m ()
+        loop !i !acc
+          | i >= iMax = pure ()
+          | otherwise =  do
+            let accNew = indexByteArray xs (base1 + i)
+                x = (acc `unsafeShiftR` shft) .|. (accNew `unsafeShiftL` shft')
+            y <- readByteArray ys i
+            writeByteArray ys i (f x y)
+            loop (i + 1) accNew
 
 #if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE zipInPlace :: (forall a. Bits a => a -> a -> a) -> Vector Bit -> MVector s Bit -> ST s () #-}
