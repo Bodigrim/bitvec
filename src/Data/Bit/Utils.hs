@@ -188,11 +188,11 @@ sparseBitsInternal x0 = x4
 #endif
 
 loMask :: Int -> Word
-loMask n = 1 `shiftL` n - 1
+loMask n = 1 `unsafeShiftL` n - 1
 {-# INLINE loMask #-}
 
 hiMask :: Int -> Word
-hiMask n = complement (1 `shiftL` n - 1)
+hiMask n = complement (1 `unsafeShiftL` n - 1)
 {-# INLINE hiMask #-}
 
 fromPrimVector :: P.Vector Word -> U.Vector Word
