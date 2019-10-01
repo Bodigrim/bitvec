@@ -49,7 +49,7 @@ f2polyTests :: TestTree
 f2polyTests = testGroup "F2Poly"
   [ testProperty "Addition"       prop_f2polyAdd
   , testProperty "Multiplication" prop_f2polyMul
-  , testProperty "Multiplication long" prop_f2polyMulLong
+  , tenTimesLess $ testProperty "Multiplication long" prop_f2polyMulLong
   , testProperty "Remainder"      prop_f2polyRem
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)

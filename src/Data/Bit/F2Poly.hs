@@ -160,7 +160,7 @@ xorBits xs ys = dropWhileEnd $ runST $ do
 
 -- | Must be >= 2 * wordSize.
 karatsubaThreshold :: Int
-karatsubaThreshold = 1024
+karatsubaThreshold = 2048
 
 karatsuba :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 karatsuba xs ys
