@@ -303,7 +303,7 @@ bitLen x
   $ dropWhile (\(_, b) -> x >= b)
   $ map (\a -> (a, 1 `shiftL` a))
   $ map (1 `shiftL`)
-  $ [0..]
+  $ [lgWordSize..]
 
 bitsToInteger :: U.Vector Bit -> Integer
 bitsToInteger = U.ifoldl' (\acc i (Bit b) -> if b then acc `setBit` i else acc) 0

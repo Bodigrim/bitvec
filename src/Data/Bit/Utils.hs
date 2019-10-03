@@ -2,7 +2,8 @@
 {-# LANGUAGE CPP                        #-}
 
 module Data.Bit.Utils
-  ( modWordSize
+  ( lgWordSize
+  , modWordSize
   , divWordSize
   , mulWordSize
   , wordSize
