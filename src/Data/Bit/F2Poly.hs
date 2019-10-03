@@ -234,13 +234,13 @@ mulBits' xs ys = runST $ do
 
 sqrBits :: U.Vector Bit -> U.Vector Bit
 sqrBits xs = runST $ do
-    let lenXs = U.length xs
-    zs <- MU.replicate (lenXs `shiftL` 1) (Bit False)
-    forM_ [0, wordSize .. lenXs - 1] $ \i -> do
-      let (z0, z1) = sparseBits (indexWord xs i)
-      writeWord zs (i `shiftL` 1) z0
-      writeWord zs (i `shiftL` 1 + wordSize) z1
-    U.unsafeFreeze zs
+  let lenXs = U.length xs
+  zs <- MU.replicate (mulWordSize (nWords lenXs `shiftL` 1)) (Bit False)
+  forM_ [0, wordSize .. lenXs - 1] $ \i -> do
+    let (z0, z1) = sparseBits (indexWord xs i)
+    writeWord zs (i `shiftL` 1) z0
+    writeWord zs ((i `shiftL` 1) + wordSize) z1
+  U.unsafeFreeze zs
 
 quotRemBits :: U.Vector Bit -> U.Vector Bit -> (U.Vector Bit, U.Vector Bit)
 quotRemBits xs ys
