@@ -1,3 +1,7 @@
+# 1.0.1.2
+
+* Fix more bugs in 'F2Poly' multiplication.
+
 # 1.0.1.1
 
 * Fix bugs in 'F2Poly' multiplication.
