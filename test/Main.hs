@@ -49,7 +49,9 @@ f2polyTests :: TestTree
 f2polyTests = testGroup "F2Poly"
   [ testProperty "Addition"       prop_f2polyAdd
   , testProperty "Multiplication" prop_f2polyMul
+  , testProperty "Square" prop_f2polySqr
   , tenTimesLess $ testProperty "Multiplication long" prop_f2polyMulLong
+  , tenTimesLess $ testProperty "Square long" prop_f2polySqrLong
   , testProperty "Remainder"      prop_f2polyRem
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
@@ -67,11 +69,19 @@ prop_f2polyAdd x y = x + y === fromInteger (toInteger x `xor` toInteger y)
 prop_f2polyMul :: F2Poly -> F2Poly -> Property
 prop_f2polyMul x y = x * y === fromInteger (toInteger x `binMul` toInteger y)
 
+prop_f2polySqr :: F2Poly -> Property
+prop_f2polySqr x = x * x === fromInteger (toInteger x `binMul` toInteger x)
+
 prop_f2polyMulLong :: U.Vector Word -> U.Vector Word -> Property
 prop_f2polyMulLong xs ys = x * y === fromInteger (toInteger x `binMul` toInteger y)
   where
     x = toF2Poly $ castFromWords xs
     y = toF2Poly $ castFromWords ys
+
+prop_f2polySqrLong :: U.Vector Word -> Property
+prop_f2polySqrLong xs = x * x === fromInteger (toInteger x `binMul` toInteger x)
+  where
+    x = toF2Poly $ castFromWords xs
 
 prop_f2polyRem :: F2Poly -> F2Poly -> Property
 prop_f2polyRem x y = y /= 0 ==> x `rem` y === fromInteger (toInteger x `binRem` toInteger y)
