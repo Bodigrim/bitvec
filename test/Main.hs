@@ -14,6 +14,7 @@ import Test.Tasty
 import Test.Tasty.QuickCheck
 
 import Support
+import Tests.Conc (concTests)
 import Tests.MVector (mvectorTests)
 import qualified Tests.MVectorTS as TS (mvectorTests)
 import Tests.SetOps (setOpTests)
@@ -29,6 +30,7 @@ main = defaultMain $ testGroup "All"
   , setOpTests
   , TS.setOpTests
   , vectorTests
+  , concTests
   ]
 
 lawsTests :: TestTree

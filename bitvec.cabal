@@ -129,6 +129,7 @@ test-suite bitvec-tests
   hs-source-dirs: test
   other-modules:
     Support
+    Tests.Conc
     Tests.MVector
     Tests.MVectorTS
     Tests.SetOps
