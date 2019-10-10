@@ -39,7 +39,7 @@ lgWordSize, wordSizeMask, wordSizeMaskC :: Int
 lgWordSize = case wordSize of
   32 -> 5
   64 -> 6
-  _  -> error "wordsToBytes: unknown architecture"
+  _  -> error "lgWordSize: unknown architecture"
 
 wordSizeMask = wordSize - 1
 wordSizeMaskC = complement wordSizeMask
