@@ -16,6 +16,7 @@ module Data.Bit.F2PolyTS
   ( F2Poly
   , unF2Poly
   , toF2Poly
+  , gcdExt
   ) where
 
 import Control.DeepSeq
@@ -309,3 +310,21 @@ bitsToInteger :: U.Vector Bit -> Integer
 bitsToInteger = U.ifoldl' (\acc i (Bit b) -> if b then acc `setBit` i else acc) 0
 
 #endif
+
+-- | Execute the extended Euclidean algorithm.
+-- For polynomials @a@ and @b@, compute their unique greatest common divisor @g@
+-- and the unique coefficient polynomial @s@ satisfying @as + bt = g@.
+--
+-- >>> :set -XBinaryLiterals
+-- >>> gcdExt 0b101 0b0101
+-- (F2Poly {unF2Poly = [1,0,1]},F2Poly {unF2Poly = []})
+-- >>> gcdExt 0b11 0b111
+-- (F2Poly {unF2Poly = [1]},F2Poly {unF2Poly = [0,1]})
+gcdExt :: F2Poly -> F2Poly -> (F2Poly, F2Poly)
+gcdExt = go 1 0
+  where
+    go s s' r r'
+      | r' == 0   = (r, s)
+      | otherwise = case quotRem r r' of
+        (q, r'') -> go s' (s - q * s') r' r''
+{-# INLINE gcdExt #-}
