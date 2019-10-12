@@ -17,6 +17,7 @@ import Support
 import Tests.MVector (mvectorTests)
 import qualified Tests.MVectorTS as TS (mvectorTests)
 import Tests.SetOps (setOpTests)
+import qualified Tests.SetOpsTS as TS (setOpTests)
 import Tests.Vector (vectorTests)
 
 main :: IO ()
@@ -26,6 +27,7 @@ main = defaultMain $ testGroup "All"
   , mvectorTests
   , TS.mvectorTests
   , setOpTests
+  , TS.setOpTests
   , vectorTests
   ]
 

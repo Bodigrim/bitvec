@@ -132,6 +132,7 @@ test-suite bitvec-tests
     Tests.MVector
     Tests.MVectorTS
     Tests.SetOps
+    Tests.SetOpsTS
     Tests.Vector
   ghc-options: -Wall -threaded -rtsopts
   include-dirs: test

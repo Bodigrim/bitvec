@@ -1,6 +1,11 @@
+{-# LANGUAGE CPP        #-}
 {-# LANGUAGE RankNTypes #-}
 
+#ifndef BITVEC_THREADSAFE
 module Tests.SetOps where
+#else
+module Tests.SetOpsTS where
+#endif
 
 import Support ()
 
