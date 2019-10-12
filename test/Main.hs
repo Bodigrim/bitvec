@@ -91,8 +91,8 @@ prop_f2polyRem x y = y /= 0 ==> x `rem` y === fromInteger (toInteger x `binRem` 
 -- divisor @g@ and the unique coefficient polynomial @s@ satisfying @xs + yt = g@.
 --
 -- Thus it is sufficient to check @gcd == fst . gcdExt@ and @xs == g (mod y)@,
--- except if @y@ divides @x@, then @gcdExt x y@ is @(y, 0)@ and @xs `rem` y@ is zero
--- so that is then necessary to check @xs `rem` y == g `rem` y == 0@.
+-- except if @y@ divides @x@, then @gcdExt x y@ is @(y, 0)@ and @xs `rem` y@ is zero,
+-- so that it is then necessary to check @xs `rem` y == g `rem` y == 0@.
 prop_f2polyGCD :: F2Poly -> F2Poly -> Property
 prop_f2polyGCD x y = g === x `gcd` y .&&. (y /= 0 ==> (x * s) `rem` y === g `rem` y)
   where
