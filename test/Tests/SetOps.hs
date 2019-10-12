@@ -9,26 +9,32 @@ module Tests.SetOpsTS where
 
 import Support ()
 
+import Control.Monad
+import Control.Monad.ST
 import Data.Bit
 import Data.Bits
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as MU
 import Test.Tasty
 import Test.Tasty.QuickCheck hiding ((.&.))
 
 setOpTests :: TestTree
 setOpTests = testGroup
   "Set operations"
-  [ testProperty "generalize"      prop_generalize
-  , testProperty "zipBits"         prop_zipBits
-  , testProperty "zipInPlace"      prop_zipInPlace
-  , testProperty "invertBits"      prop_invertBits
-  , testProperty "invertBitsWords" prop_invertBitsWords
-  , testProperty "invertInPlace"   prop_invertInPlace
-  , testProperty "reverseBits"     prop_reverseBits
-  , testProperty "reverseInPlace"  prop_reverseInPlace
-  , testProperty "selectBits"      prop_selectBits_def
-  , testProperty "excludeBits"     prop_excludeBits_def
-  , testProperty "countBits"       prop_countBits_def
+  [ testProperty "generalize"       prop_generalize
+  , testProperty "zipBits"          prop_zipBits
+  , testProperty "zipInPlace"       prop_zipInPlace
+  , testProperty "invertBits"       prop_invertBits
+  , testProperty "invertBitsWords"  prop_invertBitsWords
+  , testProperty "invertInPlace"    prop_invertInPlace
+  , testProperty "invertInPlace middle" prop_invertInPlace_middle
+  , testProperty "reverseBits"      prop_reverseBits
+  , testProperty "reverseBitsWords" prop_reverseBitsWords
+  , testProperty "reverseInPlace"   prop_reverseInPlace
+  , testProperty "reverseInPlace middle" prop_reverseInPlace_middle
+  , testProperty "selectBits"       prop_selectBits_def
+  , testProperty "excludeBits"      prop_excludeBits_def
+  , testProperty "countBits"        prop_countBits_def
   ]
 
 prop_generalize :: Fun (Bit, Bit) Bit -> Bit -> Bit -> Property
@@ -78,13 +84,55 @@ prop_invertInPlace :: U.Vector Bit -> Property
 prop_invertInPlace xs =
   U.map complement xs === U.modify invertInPlace xs
 
+prop_invertInPlace_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
+prop_invertInPlace_middle (NonNegative from) (NonNegative len) (NonNegative excess) = runST $ do
+  let totalLen = from + len + excess
+  vec <- MU.new totalLen
+  forM_ [0 .. totalLen - 1] $ \i ->
+    MU.write vec i (Bit (odd i))
+  ref <- U.freeze vec
+
+  let middle = MU.slice from len vec
+  invertInPlace middle
+  wec <- U.unsafeFreeze vec
+
+  let refLeft  = U.take from ref
+      wecLeft  = U.take from wec
+      refRight = U.drop (from + len) ref
+      wecRight = U.drop (from + len) wec
+  pure $ refLeft === wecLeft .&&. refRight === wecRight
+
 prop_reverseBits :: U.Vector Bit -> Property
 prop_reverseBits xs =
   U.reverse xs === reverseBits xs
 
+prop_reverseBitsWords :: U.Vector Word -> Property
+prop_reverseBitsWords ws =
+  U.reverse xs === reverseBits xs
+  where
+    xs = castFromWords ws
+
 prop_reverseInPlace :: U.Vector Bit -> Property
 prop_reverseInPlace xs =
   U.reverse xs === U.modify reverseInPlace xs
+
+prop_reverseInPlace_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
+prop_reverseInPlace_middle (NonNegative from) (NonNegative len) (NonNegative excess) = runST $ do
+  let totalLen = from + len + excess
+  vec <- MU.new totalLen
+  forM_ [0 .. totalLen - 1] $ \i ->
+    MU.write vec i (Bit (odd i))
+  ref <- U.freeze vec
+
+  let middle = MU.slice from len vec
+  reverseInPlace middle
+  wec <- U.unsafeFreeze vec
+
+  let refLeft  = U.take from ref
+      wecLeft  = U.take from wec
+      refRight = U.drop (from + len) ref
+      wecRight = U.drop (from + len) wec
+  pure $ refLeft === wecLeft .&&. refRight === wecRight
 
 select :: U.Unbox a => U.Vector Bit -> U.Vector a -> U.Vector a
 select mask ws = U.map snd (U.filter (unBit . fst) (U.zip mask ws))
