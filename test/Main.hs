@@ -88,7 +88,7 @@ prop_f2polyRem :: F2Poly -> F2Poly -> Property
 prop_f2polyRem x y = y /= 0 ==> x `rem` y === fromInteger (toInteger x `binRem` toInteger y)
 
 prop_f2polyGCD :: F2Poly -> F2Poly -> Property
-prop_f2polyGCD x y = y /= 0 ==> (x * s) `rem` y === g
+prop_f2polyGCD x y = y /= 0 ==> (x * s) `rem` y === g `rem` y
   where
     (g, s) = gcdExt x y
 
