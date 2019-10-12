@@ -206,6 +206,12 @@ writeWord !(BitMVec off len' arr) !i' !x
   = if lenMod == 0
     then modifyByteArray arr iDiv (loMask iMod) (x `unsafeShiftL` iMod)
     else modifyByteArray arr iDiv (loMask iMod .|. hiMask lenMod) ((x `unsafeShiftL` iMod) .&. loMask lenMod)
+  | iDiv + 1 == divWordSize (len - 1)
+  = do
+    modifyByteArray arr iDiv (loMask iMod) (x `unsafeShiftL` iMod)
+    if lenMod == 0
+    then modifyByteArray arr (iDiv + 1) (hiMask iMod) (x `unsafeShiftR` (wordSize - iMod))
+    else modifyByteArray arr (iDiv + 1) (hiMask iMod .|. hiMask lenMod) (x `unsafeShiftR` (wordSize - iMod) .&. loMask lenMod)
   | otherwise
   = do
     modifyByteArray arr iDiv (loMask iMod) (x `unsafeShiftL` iMod)
