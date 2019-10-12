@@ -53,6 +53,7 @@ f2polyTests = testGroup "F2Poly"
   , tenTimesLess $ testProperty "Multiplication long" prop_f2polyMulLong
   , tenTimesLess $ testProperty "Square long" prop_f2polySqrLong
   , testProperty "Remainder"      prop_f2polyRem
+  , testProperty "GCD"            prop_f2polyGCD
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
 #if MIN_VERSION_quickcheck_classes(0,6,3)
@@ -85,6 +86,11 @@ prop_f2polySqrLong xs = x * x === fromInteger (toInteger x `binMul` toInteger x)
 
 prop_f2polyRem :: F2Poly -> F2Poly -> Property
 prop_f2polyRem x y = y /= 0 ==> x `rem` y === fromInteger (toInteger x `binRem` toInteger y)
+
+prop_f2polyGCD :: F2Poly -> F2Poly -> Property
+prop_f2polyGCD x y = y /= 0 ==> (x * s) `rem` y === g
+  where
+    (g, s) = gcdExt x y
 
 binMul :: Integer -> Integer -> Integer
 binMul = go 0
