@@ -189,10 +189,26 @@ modifyByteArray
   -> Word
   -> Word
   -> m ()
+#ifndef BITVEC_THREADSAFE
 modifyByteArray arr ix msk new = do
   old <- readByteArray arr ix
   writeByteArray arr ix (old .&. msk .|. new)
 {-# INLINE modifyByteArray #-}
+#else
+modifyByteArray (MutableByteArray mba) (I# ix) (W# msk) (W# new) = do
+  primitive $ \state ->
+    let !(# state',  _ #) = fetchAndIntArray# mba ix (word2Int# msk) state  in
+    let !(# state'', _ #) = fetchOrIntArray#  mba ix (word2Int# new) state' in
+    (# state'', () #)
+
+-- https://gitlab.haskell.org/ghc/ghc/issues/17334
+#if __GLASGOW_HASKELL__ == 808 && __GLASGOW_HASKELL_PATCHLEVEL1__ == 1
+{-# NOINLINE modifyByteArray #-}
+#else
+{-# INLINE modifyByteArray #-}
+#endif
+
+#endif
 
 -- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
 writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()
