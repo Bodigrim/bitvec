@@ -152,6 +152,7 @@ benchmark gauge
   hs-source-dirs: bench
   other-modules:
     Bench.BitIndex
+    Bench.GCD
     Bench.Invert
     Bench.Intersection
     Bench.Product

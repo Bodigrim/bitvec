@@ -3,6 +3,7 @@ module Main where
 import Gauge.Main
 
 import Bench.BitIndex
+import Bench.GCD
 import Bench.Intersection
 import Bench.Invert
 import Bench.Product
@@ -18,6 +19,7 @@ main :: IO ()
 main = defaultMain
   [ bgroup "bitIndex"     $ map benchBitIndex     [5..14]
   , bgroup "invert"       $ map benchInvert       [5..14]
+  , bgroup "gcdExt"       $ map benchGCD          [5..14]
   , bgroup "intersection" $ map benchIntersection [5..14]
   , bgroup "product"      $ map benchProduct      [5..14]
   , bgroup "randomWrite"  $ map benchRandomWrite  [5..14]

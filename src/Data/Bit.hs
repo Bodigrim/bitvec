@@ -58,6 +58,7 @@ module Data.Bit.ThreadSafe
   , F2Poly
   , unF2Poly
   , toF2Poly
+  , gcdExt
   ) where
 
 import Prelude hiding (and, or)

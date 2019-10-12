@@ -55,6 +55,7 @@ f2polyTests = testGroup "F2Poly"
   , tenTimesLess $ testProperty "Multiplication long" prop_f2polyMulLong
   , tenTimesLess $ testProperty "Square long" prop_f2polySqrLong
   , testProperty "Remainder"      prop_f2polyRem
+  , testProperty "GCD"            prop_f2polyGCD
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
 #if MIN_VERSION_quickcheck_classes(0,6,3)
@@ -87,6 +88,17 @@ prop_f2polySqrLong xs = x * x === fromInteger (toInteger x `binMul` toInteger x)
 
 prop_f2polyRem :: F2Poly -> F2Poly -> Property
 prop_f2polyRem x y = y /= 0 ==> x `rem` y === fromInteger (toInteger x `binRem` toInteger y)
+
+-- For polynomials @x@ and @y@, @gcdExt@ computes their unique greatest common
+-- divisor @g@ and the unique coefficient polynomial @s@ satisfying @xs + yt = g@.
+--
+-- Thus it is sufficient to check @gcd == fst . gcdExt@ and @xs == g (mod y)@,
+-- except if @y@ divides @x@, then @gcdExt x y@ is @(y, 0)@ and @xs `rem` y@ is zero,
+-- so that it is then necessary to check @xs `rem` y == g `rem` y == 0@.
+prop_f2polyGCD :: F2Poly -> F2Poly -> Property
+prop_f2polyGCD x y = g === x `gcd` y .&&. (y /= 0 ==> (x * s) `rem` y === g `rem` y)
+  where
+    (g, s) = x `gcdExt` y
 
 binMul :: Integer -> Integer -> Integer
 binMul = go 0
