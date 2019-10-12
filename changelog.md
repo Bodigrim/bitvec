@@ -1,10 +1,10 @@
 # 1.0.1.2
 
-* Fix more bugs in 'F2Poly' multiplication.
+* Fix more bugs in `F2Poly` multiplication.
 
 # 1.0.1.1
 
-* Fix bugs in 'F2Poly' multiplication.
+* Fix bugs in `F2Poly` multiplication.
 * Performance improvements.
 
 # 1.0.1.0
@@ -22,18 +22,18 @@
 
 * Redesign API from the scratch.
 * Add a thread-safe implementation.
-* Add 'nthBitIndex' function.
+* Add `nthBitIndex` function.
 
 # 0.2.0.1
 
-* Fix 'Read' instance.
+* Fix `Read` instance.
 
 # 0.2.0.0
 
-* Remove hand-written 'Num', 'Real', 'Integral', 'Bits' instances.
-* Derive 'Bits' and 'FiniteBits' instances.
-* Expose 'Bit' constructor directly and remove 'fromBool' function.
-* Rename 'toBool' to 'unBit'.
+* Remove hand-written `Num`, `Real`, `Integral`, `Bits` instances.
+* Derive `Bits` and `FiniteBits` instances.
+* Expose `Bit` constructor directly and remove `fromBool` function.
+* Rename `toBool` to `unBit`.
 
 # 0.1.1.0
 
