@@ -62,7 +62,7 @@ import Unsafe.Coerce
 -- >>> :set -XBinaryLiterals
 -- >>> -- (1 + x) (1 + x + x^2) = 1 + x^3 (mod 2)
 -- >>> 0b11 * 0b111 :: F2Poly
--- F2Poly {unF2Poly = [1,0,0,1]}
+-- 0b1001
 newtype F2Poly = F2Poly {
   unF2Poly :: U.Vector Bit
   -- ^ Convert 'F2Poly' to a vector of coefficients
@@ -322,9 +322,9 @@ bitsToInteger = U.ifoldl' (\acc i (Bit b) -> if b then acc `setBit` i else acc) 
 --
 -- >>> :set -XBinaryLiterals
 -- >>> gcdExt 0b101 0b0101
--- (F2Poly {unF2Poly = [1,0,1]},F2Poly {unF2Poly = []})
+-- (0b101,0b0)
 -- >>> gcdExt 0b11 0b111
--- (F2Poly {unF2Poly = [1]},F2Poly {unF2Poly = [0,1]})
+-- (0b1,0b10)
 gcdExt :: F2Poly -> F2Poly -> (F2Poly, F2Poly)
 gcdExt = go 1 0
   where
