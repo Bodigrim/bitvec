@@ -104,8 +104,7 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
         writeWord vecYs 0 (f x y)
       | otherwise = do
         y <- readByteArray ys base
-        writeByteArray ys base $
-          (y .&. loMask shft) .|. (f (x `unsafeShiftL` shft) y .&. hiMask shft)
+        modifyByteArray ys base (loMask shft) (f (x `unsafeShiftL` shft) y .&. hiMask shft)
         go' (len - wordSize + shft) (offXs + wordSize - shft) (base + 1)
       where
         vecXs = BitVec  offXs len xs

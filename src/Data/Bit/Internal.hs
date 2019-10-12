@@ -25,6 +25,7 @@ module Data.Bit.InternalTS
   , unsafeFlipBit
   , flipBit
   , WithInternals(..)
+  , modifyByteArray
   ) where
 
 #include "vector.h"
