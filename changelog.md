@@ -1,3 +1,10 @@
+# 1.0.2.0
+
+* Fix out-of-bounds writes in mutable interface.
+* Improve thread-safety of mutable interface.
+* Add extended GCD for `F2Poly`.
+* Change `Show` instance of `F2Poly`.
+
 # 1.0.1.2
 
 * Fix more bugs in `F2Poly` multiplication.
