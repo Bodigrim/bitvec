@@ -34,12 +34,14 @@ import Data.Bit.MutableTS
 #endif
 import Data.Bit.Utils
 import Data.Bits
+import Data.Char
 import Data.Coerce
 import Data.Primitive.ByteArray
 import Data.Typeable
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Generics
+import Numeric
 
 #if UseIntegerGmp
 import qualified Data.Vector.Primitive as P
@@ -66,7 +68,7 @@ newtype F2Poly = F2Poly {
   -- ^ Convert 'F2Poly' to a vector of coefficients
   -- (first element corresponds to a constant term).
   }
-  deriving (Eq, Ord, Show, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Typeable, Generic, NFData)
 
 -- | Make 'F2Poly' from a list of coefficients
 -- (first element corresponds to a constant term).
@@ -131,6 +133,9 @@ instance Integral F2Poly where
       (qs, rs) = quotRemBits xs ys
   divMod = quotRem
   mod = rem
+
+instance Show F2Poly where
+  show = (:) '0' . (:) 'b' . flip (showIntAtBase 2 intToDigit) "" . toInteger
 
 -- | Inputs must be valid for wrapping into F2Poly: no trailing garbage is allowed.
 xorBits
