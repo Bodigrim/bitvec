@@ -5,6 +5,7 @@ import Control.Monad
 import Data.Bit.ThreadSafe
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Unboxed as U
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -28,7 +29,7 @@ case_conc_invert = replicateM_ 1000 $ do
   let len  = 64
       len' = 37
   vec <- M.replicate len (Bit True)
-  ref <- V.freeze vec
+  ref <- V.freeze vec :: IO (U.Vector Bit)
   runConcurrently
     (replicateM_ 1000 $ invertInPlace (M.take len' vec))
     (replicateM_ 1000 $ invertInPlace (M.drop len' vec))
@@ -41,7 +42,7 @@ case_conc_reverse = replicateM_ 1000 $ do
       len' = 66
   vec <- M.new len
   forM_ [0 .. len - 1] $ \i -> M.write vec i (Bit $ odd i)
-  ref <- V.freeze vec
+  ref <- V.freeze vec :: IO (U.Vector Bit)
   runConcurrently
     (replicateM_ 1000 $ reverseInPlace (M.take len' vec))
     (replicateM_ 1000 $ reverseInPlace (M.drop len' vec))
