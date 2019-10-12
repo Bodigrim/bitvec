@@ -182,6 +182,18 @@ readWord !(BitMVec off len' arr) !i' = do
 #endif
 {-# INLINE readWord #-}
 
+modifyByteArray
+  :: PrimMonad m
+  => MutableByteArray (PrimState m)
+  -> Int
+  -> Word
+  -> Word
+  -> m ()
+modifyByteArray arr ix msk new = do
+  old <- readByteArray arr ix
+  writeByteArray arr ix (old .&. msk .|. new)
+{-# INLINE modifyByteArray #-}
+
 -- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
 writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()
 writeWord !(BitMVec _ 0 _) _ _ = pure ()
@@ -195,32 +207,14 @@ writeWord !(BitMVec off len' arr) !i' !x = do
   if nMod == 0
     then if len >= i + wordSize
       then writeByteArray arr loIx x
-      else do
-        loWord <- readByteArray arr loIx
-        writeByteArray arr loIx
-          $   (loWord .&. hiMask lenMod)
-          .|. (x .&. loMask lenMod)
+      else modifyByteArray arr loIx (hiMask lenMod) (x .&. loMask lenMod)
     else if loIx == divWordSize (len - 1)
-      then do
-        loWord <- readByteArray arr loIx
-        if lenMod == 0
-          then
-            writeByteArray arr loIx
-            $   (loWord .&. loMask nMod)
-            .|. (x `unsafeShiftL` nMod)
-          else
-            writeByteArray arr loIx
-            $   (loWord .&. (loMask nMod .|. hiMask lenMod))
-            .|. ((x `unsafeShiftL` nMod) .&. loMask lenMod)
+      then if lenMod == 0
+        then modifyByteArray arr loIx (loMask nMod) (x `unsafeShiftL` nMod)
+        else modifyByteArray arr loIx (loMask nMod .|. hiMask lenMod) ((x `unsafeShiftL` nMod) .&. loMask lenMod)
       else do
-        loWord <- readByteArray arr loIx
-        writeByteArray arr loIx
-          $   (loWord .&. loMask nMod)
-          .|. (x `unsafeShiftL` nMod)
-        hiWord <- readByteArray arr (loIx + 1)
-        writeByteArray arr (loIx + 1)
-          $   (hiWord .&. hiMask nMod)
-          .|. (x `unsafeShiftR` (wordSize - nMod))
+        modifyByteArray arr loIx (loMask nMod) (x `unsafeShiftL` nMod)
+        modifyByteArray arr (loIx + 1) (hiMask nMod) (x `unsafeShiftR` (wordSize - nMod))
 #if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE writeWord :: U.MVector s Bit -> Int -> Word -> ST s () #-}
 #endif
@@ -300,9 +294,7 @@ instance MV.MVector U.MVector Bit where
       0    -> setByteArray arr offWords lWords (x :: Word)
       nMod -> do
         setByteArray arr offWords (lWords - 1) (x :: Word)
-        lastWord <- readByteArray arr (offWords + lWords - 1)
-        let lastWord' = lastWord .&. hiMask nMod .|. x .&. loMask nMod
-        writeByteArray arr (offWords + lWords - 1) lastWord'
+        modifyByteArray arr (offWords + lWords - 1) (hiMask nMod) (x .&. loMask nMod)
    where
     offBits  = modWordSize off
     offWords = divWordSize off
@@ -310,27 +302,16 @@ instance MV.MVector U.MVector Bit where
   basicSet (BitMVec off len arr) (extendToWord -> x) =
     case modWordSize (off + len) of
       0 -> do
-        firstWord <- readByteArray arr offWords
-        let firstWord' = firstWord .&. loMask offBits .|. x .&. hiMask offBits
-        writeByteArray arr offWords firstWord'
+        modifyByteArray arr offWords (loMask offBits) (x .&. hiMask offBits)
         setByteArray arr (offWords + 1) (lWords - 1) (x :: Word)
       nMod -> if lWords == 1
         then do
-          theOnlyWord <- readByteArray arr offWords
           let lohiMask = loMask offBits .|. hiMask nMod
-              theOnlyWord' =
-                theOnlyWord .&. lohiMask .|. x .&. complement lohiMask
-          writeByteArray arr offWords theOnlyWord'
+          modifyByteArray arr offWords lohiMask (x .&. complement lohiMask)
         else do
-          firstWord <- readByteArray arr offWords
-          let firstWord' = firstWord .&. loMask offBits .|. x .&. hiMask offBits
-          writeByteArray arr offWords firstWord'
-
+          modifyByteArray arr offWords (loMask offBits) (x .&. hiMask offBits)
           setByteArray arr (offWords + 1) (lWords - 2) (x :: Word)
-
-          lastWord <- readByteArray arr (offWords + lWords - 1)
-          let lastWord' = lastWord .&. hiMask nMod .|. x .&. loMask nMod
-          writeByteArray arr (offWords + lWords - 1) lastWord'
+          modifyByteArray arr (offWords + lWords - 1) (hiMask nMod) (x .&. loMask nMod)
    where
     offBits  = modWordSize off
     offWords = divWordSize off
@@ -353,10 +334,7 @@ instance MV.MVector U.MVector Bit where
                              (wordsToBytes $ lDstWords - 1)
 
         lastWordSrc <- readByteArray src (offSrcWords + lDstWords - 1)
-        lastWordDst <- readByteArray dst (offDstWords + lDstWords - 1)
-        let lastWordDst' =
-              lastWordDst .&. hiMask nMod .|. lastWordSrc .&. loMask nMod
-        writeByteArray dst (offDstWords + lDstWords - 1) lastWordDst'
+        modifyByteArray dst (offDstWords + lDstWords - 1) (hiMask nMod) (lastWordSrc .&. loMask nMod)
    where
     offDstBits  = modWordSize offDst
     offDstWords = divWordSize offDst
@@ -367,14 +345,7 @@ instance MV.MVector U.MVector Bit where
     | offDstBits == offSrcBits = case modWordSize (offSrc + lenDst) of
       0 -> do
         firstWordSrc <- readByteArray src offSrcWords
-        firstWordDst <- readByteArray dst offDstWords
-        let firstWordDst' =
-              firstWordDst
-                .&. loMask offSrcBits
-                .|. firstWordSrc
-                .&. hiMask offSrcBits
-        writeByteArray dst offDstWords firstWordDst'
-
+        modifyByteArray dst offDstWords (loMask offSrcBits) (firstWordSrc .&. hiMask offSrcBits)
         copyMutableByteArray dst
                              (wordsToBytes $ offDstWords + 1)
                              src
@@ -384,34 +355,17 @@ instance MV.MVector U.MVector Bit where
         then do
           let lohiMask = loMask offSrcBits .|. hiMask nMod
           theOnlyWordSrc <- readByteArray src offSrcWords
-          theOnlyWordDst <- readByteArray dst offDstWords
-          let theOnlyWordDst' =
-                theOnlyWordDst
-                  .&. lohiMask
-                  .|. theOnlyWordSrc
-                  .&. complement lohiMask
-          writeByteArray dst offDstWords theOnlyWordDst'
+          modifyByteArray dst offDstWords lohiMask (theOnlyWordSrc .&. complement lohiMask)
         else do
           firstWordSrc <- readByteArray src offSrcWords
-          firstWordDst <- readByteArray dst offDstWords
-          let firstWordDst' =
-                firstWordDst
-                  .&. loMask offSrcBits
-                  .|. firstWordSrc
-                  .&. hiMask offSrcBits
-          writeByteArray dst offDstWords firstWordDst'
-
+          modifyByteArray dst offDstWords (loMask offSrcBits) (firstWordSrc .&. hiMask offSrcBits)
           copyMutableByteArray dst
                                (wordsToBytes $ offDstWords + 1)
                                src
                                (wordsToBytes $ offSrcWords + 1)
                                (wordsToBytes $ lDstWords - 2)
-
           lastWordSrc <- readByteArray src (offSrcWords + lDstWords - 1)
-          lastWordDst <- readByteArray dst (offDstWords + lDstWords - 1)
-          let lastWordDst' =
-                lastWordDst .&. hiMask nMod .|. lastWordSrc .&. loMask nMod
-          writeByteArray dst (offDstWords + lDstWords - 1) lastWordDst'
+          modifyByteArray dst (offDstWords + lDstWords - 1) (hiMask nMod) (lastWordSrc .&. loMask nMod)
    where
     offDstBits  = modWordSize offDst
     offDstWords = divWordSize offDst
