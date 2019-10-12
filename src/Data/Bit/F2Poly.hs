@@ -327,4 +327,3 @@ gcdExt = go 1 0
       | r' == 0   = (r, s)
       | otherwise = case quotRem r r' of
         (q, r'') -> go s' (s - q * s') r' r''
-{-# INLINE gcdExt #-}
