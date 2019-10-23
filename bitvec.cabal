@@ -1,5 +1,5 @@
 name: bitvec
-version: 1.0.1.2
+version: 1.0.2.0
 cabal-version: >=1.10
 build-type: Simple
 license: BSD3
