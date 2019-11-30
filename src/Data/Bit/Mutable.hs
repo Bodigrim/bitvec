@@ -175,7 +175,7 @@ invertInPlace xs = do
 
 -- | Same as 'Data.Bit.selectBits', but deposit
 -- selected bits in-place. Returns a number of selected bits.
--- It is caller's resposibility to trim the result to this number.
+-- It is caller's responsibility to trim the result to this number.
 selectBitsInPlace
   :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 selectBitsInPlace is xs = loop 0 0
@@ -191,7 +191,7 @@ selectBitsInPlace is xs = loop 0 0
 
 -- | Same as 'Data.Bit.excludeBits', but deposit
 -- excluded bits in-place. Returns a number of excluded bits.
--- It is caller's resposibility to trim the result to this number.
+-- It is caller's responsibility to trim the result to this number.
 excludeBitsInPlace
   :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 excludeBitsInPlace is xs = loop 0 0
