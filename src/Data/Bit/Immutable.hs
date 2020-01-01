@@ -1,8 +1,12 @@
-{-# LANGUAGE CPP              #-}
+{-# LANGUAGE CPP                  #-}
 
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes       #-}
+{-# LANGUAGE BangPatterns         #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE UndecidableInstances #-}
+
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 #ifndef BITVEC_THREADSAFE
 module Data.Bit.Immutable
@@ -54,6 +58,55 @@ import qualified Data.Vector.Unboxed.Mutable as MU
 #else
 #error unsupported WORD_SIZE_IN_BITS config
 #endif
+
+instance {-# OVERLAPPING #-} Bits (Vector Bit) where
+  (.&.) = zipBits (.&.)
+  (.|.) = zipBits (.|.)
+  xor   = zipBits xor
+  complement = invertBits
+  bitSize _ = error "bitSize is undefined"
+  bitSizeMaybe _ = Nothing
+  isSigned _ = False
+  zeroBits = U.empty
+  popCount = countBits
+
+  testBit v n
+    | n < 0 || n >= U.length v = False
+    | otherwise = unBit (U.unsafeIndex v n)
+
+  bit n
+    | n < 0 = U.empty
+    | otherwise = runST $ do
+      v <- MU.replicate (n + 1) (Bit False)
+      MU.unsafeWrite v n (Bit True)
+      U.unsafeFreeze v
+
+  shift v n = case n `compare` 0 of
+    -- shift right
+    LT
+      | U.length v + n < 0 -> U.empty
+      | otherwise -> runST $ do
+        u <- MU.new (U.length v + n)
+        U.copy u (U.drop (- n) v)
+        U.unsafeFreeze u
+    -- do not shift
+    EQ -> v
+    -- shift left
+    GT -> runST $ do
+      u <- MU.new (U.length v + n)
+      MU.set (MU.take n u) (Bit False)
+      U.copy (MU.drop n u) v
+      U.unsafeFreeze u
+
+  rotate v n'
+    | U.null v = v
+    | otherwise = runST $ do
+      let l = U.length v
+          n = n' `mod` l
+      u <- MU.new l
+      U.copy (MU.drop n u) (U.take (l - n) v)
+      U.copy (MU.take n u) (U.drop (l - n) v)
+      U.unsafeFreeze u
 
 -- | Cast a vector of words to a vector of bits.
 -- Cf. 'Data.Bit.castFromWordsM'.

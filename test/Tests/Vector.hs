@@ -4,6 +4,7 @@ import Support
 
 import Prelude hiding (and, or)
 import Data.Bit
+import Data.Bits
 import Data.List hiding (and, or)
 import qualified Data.Vector.Unboxed as U hiding (reverse, and, or, any, all, findIndex)
 import Test.Tasty
@@ -37,6 +38,12 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     , testProperty "matches sequence of bitIndex True"  prop_nthBit_3
     , testProperty "matches sequence of bitIndex False" prop_nthBit_4
     , testProperty "matches countBits"                  prop_nthBit_5
+    ]
+  , testGroup "Bits instance"
+    [ testProperty "rotate is reversible" prop_rotate
+    , testProperty "bit"                  prop_bit
+    , testProperty "shiftL"               prop_shiftL
+    , testProperty "shiftR"               prop_shiftR
     ]
   ]
 
@@ -131,3 +138,22 @@ case_nthBit_1 =
     $ nthBitIndex (Bit True) 1
     $ U.slice 61 4
     $ U.replicate 100 (Bit False)
+
+prop_rotate :: Int -> U.Vector Bit -> Property
+prop_rotate n v = v === (v `rotate` n) `rotate` (-n)
+
+prop_bit :: NonNegative Int -> Property
+prop_bit (NonNegative n) = testBit v n .&&. popCount v === 1 .&&. U.length v == n + 1
+  where
+    v :: U.Vector Bit
+    v = bit n
+
+prop_shiftL :: NonNegative Int -> U.Vector Bit -> Property
+prop_shiftL (NonNegative n) v = v === u
+  where
+    u = (v `shiftL` n) `shiftR` n
+
+prop_shiftR :: NonNegative Int -> U.Vector Bit -> Property
+prop_shiftR (NonNegative n) v = U.drop n v === U.drop n u .&&. popCount (U.take n u) === 0
+  where
+    u = (v `shiftR` n) `shiftL` n

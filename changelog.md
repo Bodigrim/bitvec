@@ -1,3 +1,7 @@
+# 1.0.X.X
+
+* Add `Bits (Vector Bit)` instance.
+
 # 1.0.2.0
 
 * Fix out-of-bounds writes in mutable interface.
