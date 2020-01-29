@@ -210,6 +210,9 @@ excludeBitsInPlace is xs = loop 0 0
 --
 -- >>> Data.Vector.Unboxed.modify reverseInPlace (read "[1,1,0,1,0]")
 -- [0,1,0,1,1]
+--
+-- Consider using @vector-rotcev@ package
+-- to reverse vectors in O(1) time.
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 reverseInPlace xs | len == 0  = pure ()
                   | otherwise = loop 0

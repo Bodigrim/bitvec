@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE MagicHash                  #-}
 
 module Data.Bit.Utils
   ( lgWordSize
@@ -29,6 +30,7 @@ module Data.Bit.Utils
 import Data.Bits
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
+import GHC.Exts
 import Unsafe.Coerce
 
 -- |The number of bits in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
@@ -95,7 +97,10 @@ meld :: Int -> Word -> Word -> Word
 meld b lo hi = (lo .&. m) .|. (hi .&. complement m) where m = mask b
 {-# INLINE meld #-}
 
-#if WORD_SIZE_IN_BITS == 64
+#if __GLASGOW_HASKELL__ >= 810
+reverseWord :: Word -> Word
+reverseWord (W# w#) = W# (bitReverse# w#)
+#elif WORD_SIZE_IN_BITS == 64
 reverseWord :: Word -> Word
 reverseWord x0 = x6
  where

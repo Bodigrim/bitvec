@@ -265,6 +265,9 @@ excludeBits is xs = runST $ do
 --
 -- >>> reverseBits (read "[1,1,0,1,0]")
 -- [0,1,0,1,1]
+--
+-- Consider using @vector-rotcev@ package
+-- to reverse vectors in O(1) time.
 reverseBits :: U.Vector Bit -> U.Vector Bit
 reverseBits xs = runST $ do
   let n    = U.length xs
