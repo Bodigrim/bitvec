@@ -108,7 +108,8 @@ instance {-# OVERLAPPING #-} Bits (Vector Bit) where
       U.copy (MU.take n u) (U.drop (l - n) v)
       U.unsafeFreeze u
 
--- | Cast a vector of words to a vector of bits.
+-- | Cast an unboxed vector of words
+-- to an unboxed vector of bits.
 -- Cf. 'Data.Bit.castFromWordsM'.
 --
 -- >>> castFromWords (Data.Vector.Unboxed.singleton 123)
@@ -118,7 +119,8 @@ castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
   where
     P.Vector off len arr = toPrimVector ws
 
--- | Try to cast a vector of bits to a vector of words.
+-- | Try to cast an unboxed vector of bits
+-- to an unboxed vector of words.
 -- It succeeds if a vector of bits is aligned.
 -- Use 'cloneToWords' otherwise.
 -- Cf. 'Data.Bit.castToWordsM'.
@@ -131,8 +133,10 @@ castToWords (BitVec s n ws)
   | otherwise = Nothing
 
 
--- | Clone a vector of bits to a new unboxed vector of words.
--- If the bits don't completely fill the words, the last word will be zero-padded.
+-- | Clone an unboxed vector of bits
+-- to a new unboxed vector of words.
+-- If the bits don't completely fill the words,
+-- the last word will be zero-padded.
 -- Cf. 'Data.Bit.cloneToWordsM'.
 --
 -- >>> cloneToWords (read "[1,1,0,1,1,1,1,0]")
