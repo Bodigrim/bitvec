@@ -438,12 +438,12 @@ instance MV.MVector U.MVector Bit where
 
 -- | Flip the bit at the given position.
 -- No bounds checks are performed.
--- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'complement',
 -- but up to 2x faster.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
 -- either you modify it with 'id' (which is 'id' altogether)
--- or with 'Data.Bits.complement' (which is 'unsafeFlipBit').
+-- or with 'complement' (which is 'unsafeFlipBit').
 --
 -- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
@@ -458,12 +458,12 @@ unsafeFlipBit (BitMVec off _ arr) !i' = do
 {-# INLINE unsafeFlipBit #-}
 
 -- | Flip the bit at the given position.
--- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'complement',
 -- but up to 2x faster.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
 -- either you modify it with 'id' (which is 'id' altogether)
--- or with 'Data.Bits.complement' (which is 'flipBit').
+-- or with 'complement' (which is 'flipBit').
 --
 -- >>> Data.Vector.Unboxed.modify (\v -> flipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
@@ -476,12 +476,12 @@ flipBit v i =
 
 -- | Flip the bit at the given position.
 -- No bounds checks are performed.
--- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'complement',
 -- but up to 33% faster and atomic.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
 -- either you modify it with 'id' (which is 'id' altogether)
--- or with 'Data.Bits.complement' (which is 'unsafeFlipBit').
+-- or with 'complement' (which is 'unsafeFlipBit').
 --
 -- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
@@ -495,12 +495,12 @@ unsafeFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
 {-# INLINE unsafeFlipBit #-}
 
 -- | Flip the bit at the given position.
--- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'complement',
 -- but up to 33% faster and atomic.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
 -- either you modify it with 'id' (which is 'id' altogether)
--- or with 'Data.Bits.complement' (which is 'flipBit').
+-- or with 'complement' (which is 'flipBit').
 --
 -- >>> Data.Vector.Unboxed.modify (\v -> flipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
