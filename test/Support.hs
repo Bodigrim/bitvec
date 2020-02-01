@@ -91,20 +91,20 @@ sliceList s n = take n . drop s
 wordSize :: Int
 wordSize = finiteBitSize (0 :: Word)
 
-packBitsToWord :: [Bit] -> (Word, [Bit])
-packBitsToWord = loop 0 0
+packBitsToWord :: FiniteBits a => [Bit] -> (a, [Bit])
+packBitsToWord = loop 0 zeroBits
  where
   loop _ w [] = (w, [])
   loop i w (x : xs)
-    | i >= wordSize = (w, x : xs)
-    | otherwise     = loop (i + 1) (if unBit x then setBit w i else w) xs
+    | i >= finiteBitSize w = (w, x : xs)
+    | otherwise            = loop (i + 1) (if unBit x then setBit w i else w) xs
 
 readWordL :: [Bit] -> Int -> Word
 readWordL xs 0 = fst (packBitsToWord xs)
 readWordL xs n = readWordL (drop n xs) 0
 
-wordToBitList :: Word -> [Bit]
-wordToBitList w = [ Bit (testBit w i) | i <- [0 .. wordSize - 1] ]
+wordToBitList :: FiniteBits a => a -> [Bit]
+wordToBitList w = [ Bit (testBit w i) | i <- [0 .. finiteBitSize w - 1] ]
 
 writeWordL :: [Bit] -> Int -> Word -> [Bit]
 writeWordL xs 0 w = zipWith const (wordToBitList w) xs ++ drop wordSize xs

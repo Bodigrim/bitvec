@@ -7,6 +7,7 @@ import Data.Bit
 import Data.Bits
 import Data.List hiding (and, or)
 import qualified Data.Vector.Unboxed as U hiding (reverse, and, or, any, all, findIndex)
+import Data.Word
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -21,6 +22,9 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
   , tenTimesLess $
     testProperty "cloneFromWords" prop_cloneFromWords_def
   , testProperty "cloneToWords"   prop_cloneToWords_def
+  , tenTimesLess $
+    testProperty "cloneFromWords8" prop_cloneFromWords8_def
+  , testProperty "cloneToWords8"   prop_cloneToWords8_def
   , testProperty "reverse"        prop_reverse_def
   , testProperty "countBits"      prop_countBits_def
   , testProperty "listBits"       prop_listBits_def
@@ -64,6 +68,17 @@ prop_cloneFromWords_def ws =
 
 prop_cloneToWords_def :: U.Vector Bit -> Bool
 prop_cloneToWords_def xs = U.toList (cloneToWords xs) == loop (U.toList xs)
+ where
+  loop [] = []
+  loop bs = case packBitsToWord bs of
+    (w, bs') -> w : loop bs'
+
+prop_cloneFromWords8_def :: U.Vector Word8 -> Property
+prop_cloneFromWords8_def ws =
+  U.toList (castFromWords8 ws) === concatMap wordToBitList (U.toList ws)
+
+prop_cloneToWords8_def :: U.Vector Bit -> Bool
+prop_cloneToWords8_def xs = U.toList (cloneToWords8 xs) == loop (U.toList xs)
  where
   loop [] = []
   loop bs = case packBitsToWord bs of

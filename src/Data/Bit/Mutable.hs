@@ -14,6 +14,8 @@ module Data.Bit.MutableTS
   , castToWordsM
   , cloneToWordsM
 
+  , cloneToWords8M
+
   , zipInPlace
 
   , invertInPlace
@@ -37,6 +39,7 @@ import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
+import Data.Word
 
 -- | Cast a vector of words to a vector of bits.
 -- Cf. 'castFromWords'.
@@ -70,6 +73,22 @@ cloneToWordsM v = do
   MU.set (MU.slice lenBits (mulWordSize lenWords - lenBits) w) (Bit False)
   pure $ MU.MV_Word $ P.MVector 0 lenWords arr
 {-# INLINE cloneToWordsM #-}
+
+-- | Clone a vector of bits to a new unboxed vector of 'Word8'.
+-- If the bits don't completely fill the words, the last 'Word8' will be zero-padded.
+-- Cf. 'cloneToWords8'.
+cloneToWords8M
+  :: PrimMonad m
+  => MVector (PrimState m) Bit
+  -> m (MVector (PrimState m) Word8)
+cloneToWords8M v = do
+  let lenBits  = MU.length v
+      lenWords = (lenBits + 7) `shiftR` 3
+  w@(BitMVec _ _ arr) <- MU.unsafeNew (lenWords `shiftL` 3)
+  MU.unsafeCopy (MU.slice 0 lenBits w) v
+  MU.set (MU.slice lenBits (lenWords `shiftL` 3 - lenBits) w) (Bit False)
+  pure $ MU.MV_Word8 $ P.MVector 0 lenWords arr
+{-# INLINE cloneToWords8M #-}
 
 -- | Zip two vectors with the given function.
 -- rewriting contents of the second argument.

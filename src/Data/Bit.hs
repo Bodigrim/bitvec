@@ -31,6 +31,10 @@ module Data.Bit.ThreadSafe
   , castToWords
   , cloneToWords
 
+  , castFromWords8
+  , castToWords8
+  , cloneToWords8
+
   -- * Immutable operations
   , zipBits
   , invertBits

@@ -17,6 +17,10 @@ module Data.Bit.ImmutableTS
   , castToWords
   , cloneToWords
 
+  , castFromWords8
+  , castToWords8
+  , cloneToWords8
+
   , zipBits
   , invertBits
   , selectBits
@@ -48,6 +52,8 @@ import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
+import Data.Word
+import Unsafe.Coerce
 
 #include "MachDeps.h"
 
@@ -146,6 +152,52 @@ cloneToWords v = runST $ do
   w  <- cloneToWordsM v'
   U.unsafeFreeze w
 {-# INLINE cloneToWords #-}
+
+-- | Cast a unboxed vector of 'Word8'
+-- to an unboxed vector of bits.
+-- This can be used in conjunction
+-- with @bytestring-to-vector@ package
+-- to convert from 'Data.ByteString.ByteString':
+--
+-- >>> :set -XOverloadedStrings
+-- >>> import Data.Vector.Storable.ByteString
+-- >>> castFromWords8 (Data.Vector.convert (byteStringToVector "abc"))
+-- [1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1,1,0]
+castFromWords8 :: U.Vector Word8 -> U.Vector Bit
+castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
+  where
+    P.Vector off len arr = unsafeCoerce ws
+
+-- | Try to cast an unboxed vector of bits
+-- to an unboxed vector of 'Word8'.
+-- It succeeds if a vector of bits is aligned.
+-- Use 'cloneToWords8' otherwise.
+--
+-- prop> castToWords8 (castFromWords8 v) == Just v
+castToWords8 :: U.Vector Bit -> Maybe (U.Vector Word8)
+castToWords8 (BitVec s n ws)
+  | s .&. 7 == 0, n .&. 7 == 0 =
+    Just $ unsafeCoerce $ P.Vector (s `shiftR` 3) (n `shiftR` 3) ws
+  | otherwise = Nothing
+
+-- | Clone an unboxed vector of bits
+-- to a new unboxed vector of 'Word8'.
+-- If the bits don't completely fill the words,
+-- the last 'Word8' will be zero-padded.
+-- This can be used in conjunction
+-- with @bytestring-to-vector@ package
+-- to convert to 'Data.ByteString.ByteString':
+--
+-- >>> :set -XOverloadedLists
+-- >>> import Data.Vector.Storable.ByteString
+-- >>> vectorToByteString (Data.Vector.convert (Data.Bit.cloneToWords8 [1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1]))
+-- "ab#"
+cloneToWords8 :: U.Vector Bit -> U.Vector Word8
+cloneToWords8 v = runST $ do
+  v' <- U.unsafeThaw v
+  w  <- cloneToWords8M v'
+  U.unsafeFreeze w
+{-# INLINE cloneToWords8 #-}
 
 -- | Zip two vectors with the given function.
 -- Similar to 'Data.Vector.Unboxed.zipWith',
