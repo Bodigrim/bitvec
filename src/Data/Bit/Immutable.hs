@@ -46,7 +46,7 @@ import Data.Bit.Mutable
 import Data.Bit.InternalTS
 import Data.Bit.MutableTS
 #endif
-import Data.Bit.Select1
+import Data.Bit.Pdep
 import Data.Bit.Utils
 import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
@@ -490,7 +490,7 @@ nthBitIndex b k (BitVec off len arr)
   lWords   = nWords (offBits + len)
 
 nthInWord :: Bit -> Int -> Word -> Either Int Int
-nthInWord (Bit b) k v = if k > c then Left (k - c) else Right (select1 w k - 1)
+nthInWord (Bit b) k v = if k > c then Left (k - c) else Right (unsafeNthTrueInWord k w)
  where
   w = if b then v else complement v
   c = popCount w
@@ -502,7 +502,7 @@ nthInWords (Bit True) !k !off !len !arr = go off k
     | n >= off + len = Left l
     | otherwise = if l > c
       then go (n + 1) (l - c)
-      else Right (mulWordSize (n - off) + select1 w l - 1)
+      else Right (mulWordSize (n - off) + unsafeNthTrueInWord l w)
    where
     w = indexByteArray arr n
     c = popCount w
@@ -512,10 +512,13 @@ nthInWords (Bit False) !k !off !len !arr = go off k
     | n >= off + len = Left l
     | otherwise = if l > c
       then go (n + 1) (l - c)
-      else Right (mulWordSize (n - off) + select1 w l - 1)
+      else Right (mulWordSize (n - off) + unsafeNthTrueInWord l w)
    where
     w = complement (indexByteArray arr n)
     c = popCount w
+
+unsafeNthTrueInWord :: Int -> Word -> Int
+unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 
 -- | Return the number of set bits in a vector (population count, popcount).
 --

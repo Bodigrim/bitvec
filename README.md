@@ -161,11 +161,6 @@ Disabling them does not diminish `bitvec`'s capabilities, but makes certain oper
   (`brew install gmp` on macOS), but you may find useful to disable this flag working
   with exotic setup.
 
-* Flag `bmi2`, disabled by default, experimental.
-
-  Depend on `bits-extra` package and use it for `nthBitIndex`.
-  This is supposed to be faster, but have not been properly polished yet.
-
 ## Similar packages
 
 * [`bv`](https://hackage.haskell.org/package/bv) and
