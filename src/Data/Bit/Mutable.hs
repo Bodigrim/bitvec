@@ -76,7 +76,7 @@ cloneToWordsM v = do
 
 -- | Clone a vector of bits to a new unboxed vector of 'Word8'.
 -- If the bits don't completely fill the words, the last 'Word8' will be zero-padded.
--- Cf. 'cloneToWords8'.
+-- Cf. 'Data.Bit.cloneToWords8'.
 cloneToWords8M
   :: PrimMonad m
   => MVector (PrimState m) Bit

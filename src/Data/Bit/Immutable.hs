@@ -172,7 +172,7 @@ castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
 -- | Try to cast an unboxed vector of bits
 -- to an unboxed vector of 'Word8'.
 -- It succeeds if a vector of bits is aligned.
--- Use 'cloneToWords8' otherwise.
+-- Use 'Data.Bit.cloneToWords8' otherwise.
 --
 -- prop> castToWords8 (castFromWords8 v) == Just v
 castToWords8 :: U.Vector Bit -> Maybe (U.Vector Word8)
