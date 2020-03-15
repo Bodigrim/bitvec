@@ -30,8 +30,12 @@ module Data.Bit.Utils
 import Data.Bits
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
+#if __GLASGOW_HASKELL__ >= 810
 import GHC.Exts
+#endif
 import Unsafe.Coerce
+
+import Data.Bit.Pdep
 
 -- |The number of bits in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
 wordSize :: Int
@@ -133,14 +137,8 @@ ffs x = Just $! (popCount (x `xor` complement (-x)) - 1)
 {-# INLINE ffs #-}
 
 selectWord :: Word -> Word -> (Int, Word)
-selectWord m x = loop 0 0 0
- where
-  loop !i !ct !y
-    | i >= wordSize = (ct, y)
-    | testBit m i = loop (i + 1)
-                         (ct + 1)
-                         (if testBit x i then setBit y ct else y)
-    | otherwise = loop (i + 1) ct y
+selectWord msk src = (popCount msk, pext src msk)
+{-# INLINE selectWord #-}
 
 #if WORD_SIZE_IN_BITS == 64
 
