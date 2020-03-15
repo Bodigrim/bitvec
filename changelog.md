@@ -1,6 +1,8 @@
 # 1.0.X.X
 
 * Add `Bits (Vector Bit)` instance.
+* Add `castFromWords8`, `castToWords8`, `cloneToWords8`
+  to facilitate interoperation with `ByteString`.
 
 # 1.0.2.0
 
