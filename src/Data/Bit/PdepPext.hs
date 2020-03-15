@@ -1,5 +1,5 @@
 -- |
--- Module:      Data.Bit.Pdep
+-- Module:      Data.Bit.PdepPext
 -- Copyright:   (c) 2020 Andrew Lelechenko
 -- Licence:     BSD3
 --
@@ -9,7 +9,7 @@
 {-# LANGUAGE CPP          #-}
 {-# LANGUAGE MagicHash    #-}
 
-module Data.Bit.Pdep
+module Data.Bit.PdepPext
   ( pdep
   , pext
   ) where

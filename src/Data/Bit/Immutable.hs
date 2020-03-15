@@ -46,7 +46,7 @@ import Data.Bit.Mutable
 import Data.Bit.InternalTS
 import Data.Bit.MutableTS
 #endif
-import Data.Bit.Pdep
+import Data.Bit.PdepPext
 import Data.Bit.Utils
 import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P

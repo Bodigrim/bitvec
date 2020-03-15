@@ -35,7 +35,7 @@ import GHC.Exts
 #endif
 import Unsafe.Coerce
 
-import Data.Bit.Pdep
+import Data.Bit.PdepPext
 
 -- |The number of bits in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
 wordSize :: Int
