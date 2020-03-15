@@ -42,7 +42,7 @@ import qualified Data.Vector.Unboxed.Mutable as MU
 import Data.Word
 
 -- | Cast a vector of words to a vector of bits.
--- Cf. 'castFromWords'.
+-- Cf. 'Data.Bit.castFromWords'.
 castFromWordsM :: MVector s Word -> MVector s Bit
 castFromWordsM (MU.MV_Word (P.MVector off len ws)) =
   BitMVec (mulWordSize off) (mulWordSize len) ws
@@ -50,7 +50,7 @@ castFromWordsM (MU.MV_Word (P.MVector off len ws)) =
 -- | Try to cast a vector of bits to a vector of words.
 -- It succeeds if a vector of bits is aligned.
 -- Use 'cloneToWordsM' otherwise.
--- Cf. 'castToWords'.
+-- Cf. 'Data.Bit.castToWords'.
 castToWordsM :: MVector s Bit -> Maybe (MVector s Word)
 castToWordsM (BitMVec s n ws)
   | aligned s, aligned n = Just $ MU.MV_Word $ P.MVector (divWordSize s)
@@ -60,7 +60,7 @@ castToWordsM (BitMVec s n ws)
 
 -- | Clone a vector of bits to a new unboxed vector of words.
 -- If the bits don't completely fill the words, the last word will be zero-padded.
--- Cf. 'cloneToWords'.
+-- Cf. 'Data.Bit.cloneToWords'.
 cloneToWordsM
   :: PrimMonad m
   => MVector (PrimState m) Bit
@@ -92,7 +92,7 @@ cloneToWords8M v = do
 
 -- | Zip two vectors with the given function.
 -- rewriting contents of the second argument.
--- Cf. 'zipBits'.
+-- Cf. 'Data.Bit.zipBits'.
 --
 -- >>> import Data.Bits
 -- >>> modify (zipInPlace (.&.) (read "[1,1,0]")) (read "[0,1,1]")
@@ -192,7 +192,7 @@ invertInPlace xs = do
 {-# SPECIALIZE invertInPlace :: U.MVector s Bit -> ST s () #-}
 #endif
 
--- | Same as 'selectBits', but deposit
+-- | Same as 'Data.Bit.selectBits', but deposit
 -- selected bits in-place. Returns a number of selected bits.
 -- It is caller's responsibility to trim the result to this number.
 selectBitsInPlace
@@ -208,7 +208,7 @@ selectBitsInPlace is xs = loop 0 0
       writeWord xs ct x'
       loop (i + wordSize) (ct + nSet)
 
--- | Same as 'excludeBits', but deposit
+-- | Same as 'Data.Bit.excludeBits', but deposit
 -- excluded bits in-place. Returns a number of excluded bits.
 -- It is caller's responsibility to trim the result to this number.
 excludeBitsInPlace
