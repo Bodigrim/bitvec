@@ -1,4 +1,4 @@
-# 1.0.X.X
+# 1.0.3.0
 
 * Add `Bits (Vector Bit)` instance.
 * Add `castFromWords8`, `castToWords8`, `cloneToWords8`
