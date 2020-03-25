@@ -46,7 +46,7 @@ category: Data, Bit Vectors
 author: Andrew Lelechenko <andrew.lelechenko@gmail.com>,
         James Cook <mokus@deepbondi.net>
 
-tested-with: GHC ==7.10.3 GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.1 GHC ==8.8.2
+tested-with: GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.1 GHC ==8.8.2 GHC ==8.8.3 GHC ==8.10.1
 extra-source-files:
   changelog.md
   README.md
@@ -68,7 +68,7 @@ library
     Data.Bit
     Data.Bit.ThreadSafe
   build-depends:
-    base >=4.8 && <5,
+    base >=4.9 && <5,
     deepseq,
     ghc-prim,
     primitive >=0.5,
@@ -103,7 +103,7 @@ test-suite bitvec-tests
   type: exitcode-stdio-1.0
   main-is: Main.hs
   build-depends:
-    base >=4.8 && <5,
+    base,
     bitvec,
     integer-gmp,
     primitive >=0.5,
