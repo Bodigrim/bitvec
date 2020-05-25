@@ -15,7 +15,7 @@ import System.Random
 
 randomVec :: [Bool]
 randomVec
-  = map (\i -> if i > (0 :: Int) then True else False)
+  = map (> (0 :: Int))
   . randoms
   . mkStdGen
   $ 42

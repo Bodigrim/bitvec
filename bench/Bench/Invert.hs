@@ -12,7 +12,7 @@ import System.Random
 
 randomBools :: [Bool]
 randomBools
-  = map (\i -> if i > (0 :: Int) then True else False)
+  = map (> (0 :: Int))
   . randoms
   . mkStdGen
   $ 42
