@@ -170,3 +170,8 @@ Disabling them does not diminish `bitvec`'s capabilities, but makes certain oper
 * [`array`](https://hackage.haskell.org/package/array)
   is memory-efficient for `Bool`, but lacks
   a handy `Vector` interface and is not thread-safe.
+
+## Additional resources
+
+* __Bit vectors without compromises__, Haskell Love, 31.07.2020:
+  [slides](https://github.com/Bodigrim/my-talks/raw/master/haskelllove2020/slides.pdf), [video](https://youtu.be/HhpH8DKFBls).
