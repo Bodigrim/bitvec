@@ -158,7 +158,10 @@ Disabling them does not diminish `bitvec`'s capabilities, but makes certain oper
 
   Link against [GMP](https://gmplib.org/) library and use it to for ultimate performance of
   `zipBits`, `invertBits` and `countBits`. GMP is readily available on most machines
-  (`brew install gmp` on macOS), but you may find useful to disable this flag working
+  ([`brew install gmp`](https://formulae.brew.sh/formula/gmp)
+  or [`port install gmp`](https://ports.macports.org/port/gmp/summary) on macOS,
+  [`pacman -S mingw-w64-x86_64-gmp`](https://packages.msys2.org/package/mingw-w64-x86_64-gmp) on MinGW),
+  but you may find useful to disable this flag working
   with exotic setup.
 
 ## Similar packages
