@@ -115,6 +115,7 @@ binRem x y = go x
     binLog n = I# (integerLog2# n)
     ly = binLog y
 
+    go 0 = 0
     go z = if lz < ly then z else go (z `xor` (y `shiftL` (lz - ly)))
       where
         lz = binLog z
