@@ -27,6 +27,9 @@ setOpTests = testGroup
 
   , testProperty "invertBits"               prop_invertBits
   , testProperty "invertBitsWords"          prop_invertBitsWords
+  , testProperty "invertBits middle"        prop_invertBits_middle
+  , testProperty "invertBitsLong middle"    prop_invertBitsLong_middle
+
   , testProperty "invertInPlace"            prop_invertInPlace
   , testProperty "invertInPlaceWords"       prop_invertInPlaceWords
   , testProperty "invertInPlace middle"     prop_invertInPlace_middle
@@ -34,6 +37,9 @@ setOpTests = testGroup
 
   , testProperty "reverseBits"               prop_reverseBits
   , testProperty "reverseBitsWords"          prop_reverseBitsWords
+  , testProperty "reverseBits middle"        prop_reverseBits_middle
+  , testProperty "reverseBitsLong middle"    prop_reverseBitsLong_middle
+
   , testProperty "reverseInPlace"            prop_reverseInPlace
   , testProperty "reverseInPlaceWords"       prop_reverseInPlaceWords
   , testProperty "reverseInPlace middle"     prop_reverseInPlace_middle
@@ -84,6 +90,18 @@ prop_invertBits xs =
 prop_invertBitsWords :: U.Vector Word -> Property
 prop_invertBitsWords = prop_invertBits . castFromWords
 
+prop_invertBits_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
+prop_invertBits_middle (NonNegative from) (NonNegative len) (NonNegative excess) =
+  U.map complement xs === invertBits xs
+  where
+    totalLen = from + len + excess
+    vec = U.generate totalLen (Bit . odd)
+    xs = U.slice from len vec
+
+prop_invertBitsLong_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
+prop_invertBitsLong_middle (NonNegative x) (NonNegative y) (NonNegative z) =
+  prop_invertBits_middle (NonNegative $ x * 31) (NonNegative $ y * 37) (NonNegative $ z * 29)
+
 prop_invertInPlace :: U.Vector Bit -> Property
 prop_invertInPlace xs =
   U.map complement xs === U.modify invertInPlace xs
@@ -103,11 +121,13 @@ prop_invertInPlace_middle (NonNegative from) (NonNegative len) (NonNegative exce
   invertInPlace middle
   wec <- U.unsafeFreeze vec
 
-  let refLeft  = U.take from ref
-      wecLeft  = U.take from wec
-      refRight = U.drop (from + len) ref
-      wecRight = U.drop (from + len) wec
-  pure $ refLeft === wecLeft .&&. refRight === wecRight
+  let refLeft   = U.take from ref
+      wecLeft   = U.take from wec
+      refRight  = U.drop (from + len) ref
+      wecRight  = U.drop (from + len) wec
+      refMiddle = U.map complement (U.take len (U.drop from ref))
+      wecMiddle = U.take len (U.drop from wec)
+  pure $ refLeft === wecLeft .&&. refRight === wecRight .&&. refMiddle === wecMiddle
 
 prop_invertInPlaceLong_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
 prop_invertInPlaceLong_middle (NonNegative x) (NonNegative y) (NonNegative z) =
@@ -119,6 +139,18 @@ prop_reverseBits xs =
 
 prop_reverseBitsWords :: U.Vector Word -> Property
 prop_reverseBitsWords = prop_reverseBits . castFromWords
+
+prop_reverseBits_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
+prop_reverseBits_middle (NonNegative from) (NonNegative len) (NonNegative excess) =
+  U.reverse xs === reverseBits xs
+  where
+    totalLen = from + len + excess
+    vec = U.generate totalLen (Bit . odd)
+    xs = U.slice from len vec
+
+prop_reverseBitsLong_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
+prop_reverseBitsLong_middle (NonNegative x) (NonNegative y) (NonNegative z) =
+  prop_reverseBits_middle (NonNegative $ x * 31) (NonNegative $ y * 37) (NonNegative $ z * 29)
 
 prop_reverseInPlace :: U.Vector Bit -> Property
 prop_reverseInPlace xs =
@@ -139,11 +171,13 @@ prop_reverseInPlace_middle (NonNegative from) (NonNegative len) (NonNegative exc
   reverseInPlace middle
   wec <- U.unsafeFreeze vec
 
-  let refLeft  = U.take from ref
-      wecLeft  = U.take from wec
-      refRight = U.drop (from + len) ref
-      wecRight = U.drop (from + len) wec
-  pure $ refLeft === wecLeft .&&. refRight === wecRight
+  let refLeft   = U.take from ref
+      wecLeft   = U.take from wec
+      refRight  = U.drop (from + len) ref
+      wecRight  = U.drop (from + len) wec
+      refMiddle = U.reverse (U.take len (U.drop from ref))
+      wecMiddle = U.take len (U.drop from wec)
+  pure $ refLeft === wecLeft .&&. refRight === wecRight .&&. refMiddle === wecMiddle
 
 prop_reverseInPlaceLong_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
 prop_reverseInPlaceLong_middle (NonNegative x) (NonNegative y) (NonNegative z) =
