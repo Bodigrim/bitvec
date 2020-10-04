@@ -148,12 +148,6 @@ from `Integer` to `F2Poly` and back.
 This package supports the following flags to facilitate dependency management.
 Disabling them does not diminish `bitvec`'s capabilities, but makes certain operations slower.
 
-* Flag `integer-gmp`, enabled by default.
-
-  Depend on `integer-gmp` package and use it to speed up operations on binary polynomials.
-  Normally `integer-gmp` is shipped with core libraries anyways, so there is little to gain
-  from disabling it, unless you use a custom build of GHC.
-
 * Flag `libgmp`, enabled by default.
 
   Link against [GMP](https://gmplib.org/) library and use it to for ultimate performance of

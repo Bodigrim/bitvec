@@ -8,7 +8,11 @@ import Data.Bits
 import Data.Proxy
 import qualified Data.Vector.Unboxed as U
 import GHC.Exts
+#ifdef MIN_VERSION_ghc_bignum
+import GHC.Num.Integer
+#else
 import GHC.Integer.Logarithms
+#endif
 import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -112,7 +116,11 @@ binMul = go 0
 binRem :: Integer -> Integer -> Integer
 binRem x y = go x
   where
+#ifdef MIN_VERSION_ghc_bignum
+    binLog n = I# (word2Int# (integerLog2# n))
+#else
     binLog n = I# (integerLog2# n)
+#endif
     ly = binLog y
 
     go 0 = 0
