@@ -42,11 +42,11 @@ prop_generalize fun x y = curry (applyFun fun) x y === generalize (curry (applyF
 
 prop_union_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_union_def xs ys =
-  zipBits (.|.) xs ys === U.zipWith (.|.) xs ys
+  xs .|. ys === U.zipWith (.|.) xs ys
 
 prop_intersection_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_intersection_def xs ys =
-  zipBits (.&.) xs ys === U.zipWith (.&.) xs ys
+  xs .&. ys === U.zipWith (.&.) xs ys
 
 prop_difference_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_difference_def xs ys =
@@ -56,7 +56,7 @@ prop_difference_def xs ys =
 
 prop_symDiff_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_symDiff_def xs ys =
-  zipBits xor xs ys === U.zipWith xor xs ys
+  xs `xor` ys === U.zipWith xor xs ys
 
 prop_zipBits :: Fun (Bit, Bit) Bit -> U.Vector Bit -> U.Vector Bit -> Property
 prop_zipBits fun xs ys =

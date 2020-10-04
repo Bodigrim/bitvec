@@ -77,11 +77,11 @@ newtype F2Poly = F2Poly {
 toF2Poly :: U.Vector Bit -> F2Poly
 toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 
--- | Valid 'F2Poly' has offset 0 and no trailing garbage.
-_isValid :: F2Poly -> Bool
-_isValid (F2Poly (BitVec o l arr)) = o == 0 && l == l'
-  where
-    l' = U.length $ dropWhileEnd $ BitVec 0 (sizeofByteArray arr `shiftL` 3) arr
+-- -- | Valid 'F2Poly' has offset 0 and no trailing garbage.
+-- _isValid :: F2Poly -> Bool
+-- _isValid (F2Poly (BitVec o l arr)) = o == 0 && l == l'
+--   where
+--     l' = U.length $ dropWhileEnd $ BitVec 0 (sizeofByteArray arr `shiftL` 3) arr
 
 -- | Addition and multiplication are evaluated modulo 2.
 --

@@ -87,11 +87,10 @@ alignDown x = x .&. wordSizeMaskC
 
 -- create a mask consisting of the lower n bits
 mask :: Int -> Word
-mask b = m
- where
-  m | b >= finiteBitSize m = complement 0
-    | b < 0                = 0
-    | otherwise            = bit b - 1
+mask b
+  | b >= wordSize = complement 0
+  | b < 0         = 0
+  | otherwise     = bit b - 1
 
 masked :: Int -> Word -> Word
 masked b x = x .&. mask b
@@ -128,8 +127,9 @@ reverseWord x0 = x5
 #endif
 
 reversePartialWord :: Int -> Word -> Word
-reversePartialWord n w | n >= wordSize = reverseWord w
-                       | otherwise     = reverseWord w `shiftR` (wordSize - n)
+reversePartialWord n w
+  | n >= wordSize = reverseWord w
+  | otherwise     = reverseWord w `shiftR` (wordSize - n)
 
 ffs :: Word -> Maybe Int
 ffs 0 = Nothing

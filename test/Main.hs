@@ -62,6 +62,8 @@ f2polyTests = testGroup "F2Poly"
   , tenTimesLess $ testProperty "Square long" prop_f2polySqrLong
   , testProperty "Remainder"      prop_f2polyRem
   , testProperty "GCD"            prop_f2polyGCD
+  , testProperty "Enum" $
+    \n -> let x = toEnum n in toEnum (fromEnum x) === (x :: F2Poly)
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
 #if MIN_VERSION_quickcheck_classes(0,6,3)

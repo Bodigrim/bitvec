@@ -35,8 +35,10 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     ]
   , testGroup "Read/write Words"
     [ tenTimesLess $
-      testProperty "cloneFromWords" prop_cloneFromWords_def
+      testProperty "castFromWords" prop_castFromWords_def
     , testProperty "cloneToWords"   prop_cloneToWords_def
+    , tenTimesLess $
+      testProperty "castToWords"    prop_castToWords_def
     ]
   , lawsToTest $ muvectorLaws (Proxy :: Proxy Bit)
   , testCase "basicInitialize 1" case_write_init_read1
@@ -220,8 +222,8 @@ prop_grow_def xs (NonNegative m) = runST $ do
   fv1 <- B.freeze v1
   return (fv0 == B.take n fv1)
 
-prop_cloneFromWords_def :: N.New B.Vector Word -> Property
-prop_cloneFromWords_def ws =
+prop_castFromWords_def :: N.New B.Vector Word -> Property
+prop_castFromWords_def ws =
   runST (N.run ws >>= pure . castFromWordsM >>= V.unsafeFreeze)
     === castFromWords (V.new ws)
 
@@ -229,3 +231,14 @@ prop_cloneToWords_def :: N.New B.Vector Bit -> Property
 prop_cloneToWords_def xs =
   runST (N.run xs >>= cloneToWordsM >>= V.unsafeFreeze)
     === cloneToWords (V.new xs)
+
+prop_castToWords_def :: N.New B.Vector Word -> Property
+prop_castToWords_def xs = runST $ do
+  vs <- N.run xs
+  vs' <- cloneToWordsM (castFromWordsM vs)
+  case castToWordsM (castFromWordsM vs) of
+    Nothing -> pure $ property False
+    Just vs'' -> do
+      ws'  <- V.unsafeFreeze vs'
+      ws'' <- V.unsafeFreeze vs''
+      pure $ ws' === ws''

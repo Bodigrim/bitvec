@@ -23,8 +23,12 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     testProperty "cloneFromWords" prop_cloneFromWords_def
   , testProperty "cloneToWords"   prop_cloneToWords_def
   , tenTimesLess $
+    testProperty "castToWords"    prop_castToWords_def
+  , tenTimesLess $
     testProperty "cloneFromWords8" prop_cloneFromWords8_def
   , testProperty "cloneToWords8"   prop_cloneToWords8_def
+  , tenTimesLess $
+    testProperty "castToWords8"    prop_castToWords8_def
   , testProperty "reverse"        prop_reverse_def
   , testProperty "countBits"      prop_countBits_def
   , testProperty "listBits"       prop_listBits_def
@@ -73,6 +77,10 @@ prop_cloneToWords_def xs = U.toList (cloneToWords xs) == loop (U.toList xs)
   loop bs = case packBitsToWord bs of
     (w, bs') -> w : loop bs'
 
+prop_castToWords_def :: U.Vector Word -> Property
+prop_castToWords_def ws =
+  Just ws === castToWords (castFromWords ws)
+
 prop_cloneFromWords8_def :: U.Vector Word8 -> Property
 prop_cloneFromWords8_def ws =
   U.toList (castFromWords8 ws) === concatMap wordToBitList (U.toList ws)
@@ -83,6 +91,10 @@ prop_cloneToWords8_def xs = U.toList (cloneToWords8 xs) == loop (U.toList xs)
   loop [] = []
   loop bs = case packBitsToWord bs of
     (w, bs') -> w : loop bs'
+
+prop_castToWords8_def :: U.Vector Word8 -> Property
+prop_castToWords8_def ws =
+  Just ws === castToWords8 (castFromWords8 ws)
 
 prop_reverse_def :: U.Vector Bit -> Bool
 prop_reverse_def xs =

@@ -53,9 +53,8 @@ castFromWordsM (MU.MV_Word (P.MVector off len ws)) =
 -- Cf. 'Data.Bit.castToWords'.
 castToWordsM :: MVector s Bit -> Maybe (MVector s Word)
 castToWordsM (BitMVec s n ws)
-  | aligned s, aligned n = Just $ MU.MV_Word $ P.MVector (divWordSize s)
-                                                         (divWordSize n)
-                                                         ws
+  | aligned s, aligned n
+  = Just $ MU.MV_Word $ P.MVector (divWordSize s) (divWordSize n) ws
   | otherwise = Nothing
 
 -- | Clone a vector of bits to a new unboxed vector of words.
@@ -265,6 +264,4 @@ reverseInPlace xs | len == 0  = pure ()
     !j  = len - i
     !i' = i + wordSize
     !j' = j - wordSize
-#if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE reverseInPlace :: U.MVector s Bit -> ST s () #-}
-#endif

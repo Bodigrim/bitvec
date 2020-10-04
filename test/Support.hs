@@ -46,7 +46,7 @@ instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
     | s <- [0 .. len - 1]
     , l <- [0 .. len - s]
     , (s, l) /= (0, len)
-    ]
+    ] ++ [ v U.// [(i, x)] | i <- [0 .. len - 1], x <- shrink (v U.! i) ]
 
 instance Arbitrary F2Poly where
   arbitrary = toF2Poly <$> arbitrary

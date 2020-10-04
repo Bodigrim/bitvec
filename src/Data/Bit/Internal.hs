@@ -469,7 +469,8 @@ unsafeFlipBit (BitMVec off _ arr) !i' = do
 -- [1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
-  BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit v i
+  BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $
+    unsafeFlipBit v i
 {-# INLINE flipBit #-}
 
 #else
