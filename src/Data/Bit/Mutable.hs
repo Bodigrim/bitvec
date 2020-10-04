@@ -232,36 +232,37 @@ excludeBitsInPlace is xs = loop 0 0
 -- Consider using @vector-rotcev@ package
 -- to reverse vectors in O(1) time.
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
-reverseInPlace xs | len == 0  = pure ()
-                  | otherwise = loop 0
- where
-  len = MU.length xs
+reverseInPlace xs
+  | len == 0  = pure ()
+  | otherwise = loop 0
+  where
+    len = MU.length xs
 
-  loop !i
-    | i' <= j' = do
-      x <- readWord xs i
-      y <- readWord xs j'
+    loop !i
+      | i' <= j' = do
+        x <- readWord xs i
+        y <- readWord xs j'
 
-      writeWord xs i  (reverseWord y)
-      writeWord xs j' (reverseWord x)
+        writeWord xs i  (reverseWord y)
+        writeWord xs j' (reverseWord x)
 
-      loop i'
-    | i' < j = do
-      let w = (j - i) `shiftR` 1
-          k = j - w
-      x <- readWord xs i
-      y <- readWord xs k
+        loop i'
+      | i' < j = do
+        let w = (j - i) `shiftR` 1
+            k = j - w
+        x <- readWord xs i
+        y <- readWord xs k
 
-      writeWord xs i (meld w (reversePartialWord w y) x)
-      writeWord xs k (meld w (reversePartialWord w x) y)
+        writeWord xs i (meld w (reversePartialWord w y) x)
+        writeWord xs k (meld w (reversePartialWord w x) y)
 
-      loop i'
-    | otherwise = do
-      let w = j - i
-      x <- readWord xs i
-      writeWord xs i (meld w (reversePartialWord w x) x)
-   where
-    !j  = len - i
-    !i' = i + wordSize
-    !j' = j - wordSize
+        loop i'
+      | otherwise = do
+        let w = j - i
+        x <- readWord xs i
+        writeWord xs i (meld w (reversePartialWord w x) x)
+     where
+      !j  = len - i
+      !i' = i + wordSize
+      !j' = j - wordSize
 {-# SPECIALIZE reverseInPlace :: U.MVector s Bit -> ST s () #-}
