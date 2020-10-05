@@ -98,17 +98,21 @@ instance Num F2Poly where
   (*) = coerce ((dropWhileEnd .) . karatsuba)
 #ifdef MIN_VERSION_ghc_bignum
   fromInteger !n = case n of
-    IS i#  -> F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
+    IS i#
+      | n < 0     -> throw Underflow
+      | otherwise -> F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
                      $ ByteArray (bigNatFromWord# (int2Word# i#))
     IP bn# -> F2Poly $ BitVec 0 (I# (word2Int# (integerLog2# n)) + 1) $ ByteArray bn#
-    IN{}   -> error "F2Poly.fromInteger: argument must be non-negative"
+    IN{}   -> throw Underflow
   {-# INLINE fromInteger #-}
 #else
   fromInteger !n = case n of
-    S# i#   -> F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
+    S# i#
+      | n < 0     -> throw Underflow
+      | otherwise -> F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
                       $ fromBigNat $ wordToBigNat (int2Word# i#)
     Jp# bn# -> F2Poly $ BitVec 0 (I# (integerLog2# n) + 1) $ fromBigNat bn#
-    Jn#{}   -> error "F2Poly.fromInteger: argument must be non-negative"
+    Jn#{}   -> throw Underflow
   {-# INLINE fromInteger #-}
 #endif
 
@@ -189,8 +193,6 @@ karatsubaThreshold = 2048
 
 karatsuba :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 karatsuba xs ys
-  | karatsubaThreshold < 2 * wordSize
-  = error $ "karatsubaThreshold must be >= " ++ show (2 * wordSize)
   | xs == ys = sqrBits xs
   | lenXs <= karatsubaThreshold || lenYs <= karatsubaThreshold
   = mulBits xs ys

@@ -112,6 +112,7 @@ test-suite bitvec-tests
   other-modules:
     Support
     Tests.Conc
+    Tests.F2Poly
     Tests.MVector
     Tests.MVectorTS
     Tests.SetOps

@@ -42,15 +42,17 @@ instance Function TS.Bit where
 instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
   arbitrary = (\v -> runST (N.run (v :: N.New U.Vector a) >>= U.freeze)) <$> arbitrary
   shrink v = let len = U.length v in
-    [ U.slice s l v
-    | s <- [0 .. len - 1]
-    , l <- [0 .. len - s]
-    , (s, l) /= (0, len)
-    ] ++ [ v U.// [(i, x)] | i <- [0 .. len - 1], x <- shrink (v U.! i) ]
+    [ U.take (len - s) v | s <- [1 .. len] ] ++
+    [ U.drop s         v | s <- [1 .. len] ] ++
+    [ v U.// [(i, x)] | i <- [0 .. len - 1], x <- shrink (v U.! i) ]
 
 instance Arbitrary F2Poly where
   arbitrary = toF2Poly <$> arbitrary
   shrink v = toF2Poly <$> shrink (unF2Poly v)
+
+instance {-# OVERLAPPING #-} Arbitrary (Large F2Poly) where
+  arbitrary = Large . toF2Poly . castFromWords <$> arbitrary
+  shrink (Large v) = Large . toF2Poly <$> shrink (unF2Poly v)
 
 instance (Show (v a), V.Vector v a) => Show (N.New v a) where
   showsPrec p = showsPrec p . V.new
@@ -70,11 +72,8 @@ instance (V.Vector v a, Arbitrary a) => Arbitrary (N.New v a) where
     slice s n = N.apply
       $ \v -> let (s', n') = trimSlice s n (M.length v) in M.slice s' n' v
   shrink v =
-    [ N.slice s l v
-    | s <- [0 .. len - 1]
-    , l <- [0 .. len - s]
-    , (s, l) /= (0, len)
-    ]
+    [ N.take s v | s <- [0 .. len - 1] ] ++
+    [ N.drop s v | s <- [1 .. len] ]
     where len = runST (M.length <$> N.run v)
 
 trimSlice :: Integral a => a -> a -> a -> (a, a)
