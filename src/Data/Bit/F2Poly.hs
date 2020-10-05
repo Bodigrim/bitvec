@@ -198,26 +198,26 @@ karatsuba xs ys
   = mulBits xs ys
   | otherwise = runST $ do
     zs <- MU.unsafeNew lenZs
-    forM_ [0, wordSize .. lenZs - 1] $ \k -> do
+    forM_ [0 .. divWordSize (lenZs - 1)] $ \k -> do
       let z0  = indexWord0 zs0   k
           z11 = indexWord0 zs11 (k - m)
           z10 = indexWord0 zs0  (k - m)
           z12 = indexWord0 zs2  (k - m)
           z2  = indexWord0 zs2  (k - 2 * m)
-      writeWord zs k (z0 `xor` z11 `xor` z10 `xor` z12 `xor` z2)
+      writeWord zs (mulWordSize k) (z0 `xor` z11 `xor` z10 `xor` z12 `xor` z2)
     U.unsafeFreeze zs
   where
     lenXs = U.length xs
     lenYs = U.length ys
     lenZs = lenXs + lenYs - 1
 
-    m'    = ((lenXs `min` lenYs) + 1) `quot` 2
-    m     = m' - modWordSize m'
+    m    = (min lenXs lenYs + 1) `unsafeShiftR` (lgWordSize + 1)
+    m'   = mulWordSize m
 
-    xs0  = U.unsafeSlice 0 m xs
-    xs1  = U.unsafeSlice m (lenXs - m) xs
-    ys0  = U.unsafeSlice 0 m ys
-    ys1  = U.unsafeSlice m (lenYs - m) ys
+    xs0  = U.unsafeSlice 0 m' xs
+    xs1  = U.unsafeSlice m' (lenXs - m') xs
+    ys0  = U.unsafeSlice 0 m' ys
+    ys1  = U.unsafeSlice m' (lenYs - m') ys
 
     xs01 = xorBits xs0 xs1
     ys01 = xorBits ys0 ys1
@@ -226,17 +226,14 @@ karatsuba xs ys
     zs11 = karatsuba xs01 ys01
 
 indexWord0 :: U.Vector Bit -> Int -> Word
-indexWord0 bv i
-  | i <= - wordSize         = 0
-  | lenI <= 0               = 0
-  | i < 0, lenI >= wordSize = word0
-  | i < 0                   = word0 .&. loMask lenI
-  | lenI >= wordSize        = word
-  | otherwise               = word .&. loMask lenI
+indexWord0 bv i'
+  | i < 0 || lenI <= 0 = 0
+  | lenI >= wordSize   = word
+  | otherwise          = word .&. loMask lenI
   where
+    i     = mulWordSize i'
     lenI  = U.length bv - i
     word  = indexWord bv i
-    word0 = indexWord bv 0 `unsafeShiftL` (- i)
 
 mulBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 mulBits xs ys
