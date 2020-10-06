@@ -1,3 +1,7 @@
+# 1.1.0.0
+
+* Fix a grave bug in `bitIndex`.
+
 # 1.0.3.0
 
 * Add `Bits (Vector Bit)` instance.
