@@ -2,9 +2,9 @@
 {-# LANGUAGE RankNTypes #-}
 
 #ifndef BITVEC_THREADSAFE
-module Tests.SetOps where
+module Tests.SetOps (setOpTests) where
 #else
-module Tests.SetOpsTS where
+module Tests.SetOpsTS (setOpTests) where
 #endif
 
 import Support ()
@@ -19,26 +19,24 @@ import Test.Tasty
 import Test.Tasty.QuickCheck hiding ((.&.))
 
 setOpTests :: TestTree
-setOpTests = testGroup
-  "Set operations"
+setOpTests = testGroup "Set operations"
   [ testProperty "generalize"               prop_generalize
   , testProperty "zipBits"                  prop_zipBits
   , testProperty "zipInPlace"               prop_zipInPlace
 
-  , testProperty "invertBits"               prop_invertBits
-  , testProperty "invertBitsWords"          prop_invertBitsWords
-  , testProperty "invertBits middle"        prop_invertBits_middle
-  , testProperty "invertBitsLong middle"    prop_invertBitsLong_middle
+  , testProperty "union"                    prop_union_def
+  , testProperty "intersection"             prop_intersection_def
+  , testProperty "difference"               prop_difference_def
+  , testProperty "symDiff"                  prop_symDiff_def
+
+  , mkGroup "invertBits" prop_invertBits
 
   , testProperty "invertInPlace"            prop_invertInPlace
   , testProperty "invertInPlaceWords"       prop_invertInPlaceWords
   , testProperty "invertInPlace middle"     prop_invertInPlace_middle
   , testProperty "invertInPlaceLong middle" prop_invertInPlaceLong_middle
 
-  , testProperty "reverseBits"               prop_reverseBits
-  , testProperty "reverseBitsWords"          prop_reverseBitsWords
-  , testProperty "reverseBits middle"        prop_reverseBits_middle
-  , testProperty "reverseBitsLong middle"    prop_reverseBitsLong_middle
+  , mkGroup "reverseBits" prop_reverseBits
 
   , testProperty "reverseInPlace"            prop_reverseInPlace
   , testProperty "reverseInPlaceWords"       prop_reverseInPlaceWords
@@ -47,8 +45,24 @@ setOpTests = testGroup
 
   , testProperty "selectBits"                prop_selectBits_def
   , testProperty "excludeBits"               prop_excludeBits_def
-  , testProperty "countBits"                 prop_countBits_def
+
+  , mkGroup "countBits" prop_countBits_def
   ]
+
+mkGroup :: String -> (U.Vector Bit -> Property) -> TestTree
+mkGroup name prop = testGroup name
+  [ testProperty "simple" prop
+  , testProperty "simple_long" (prop . getLarge)
+  , testProperty "middle" propMiddle
+  , testProperty "middle_long" propMiddleLong
+  ]
+  where
+    f m = let n = fromIntegral m :: Double in
+      odd (truncate (exp (abs (sin n) * 10)) :: Integer)
+    propMiddle (NonNegative from) (NonNegative len) (NonNegative excess) =
+      prop (U.slice from len (U.generate (from + len + excess) (Bit . f)))
+    propMiddleLong (NonNegative x) (NonNegative y) (NonNegative z) =
+      propMiddle (NonNegative $ x * 31) (NonNegative $ y * 37) (NonNegative $ z * 29)
 
 prop_generalize :: Fun (Bit, Bit) Bit -> Bit -> Bit -> Property
 prop_generalize fun x y = curry (applyFun fun) x y === generalize (curry (applyFun fun)) x y
@@ -87,27 +101,12 @@ prop_invertBits :: U.Vector Bit -> Property
 prop_invertBits xs =
   U.map complement xs === invertBits xs
 
-prop_invertBitsWords :: U.Vector Word -> Property
-prop_invertBitsWords = prop_invertBits . castFromWords
-
-prop_invertBits_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
-prop_invertBits_middle (NonNegative from) (NonNegative len) (NonNegative excess) =
-  U.map complement xs === invertBits xs
-  where
-    totalLen = from + len + excess
-    vec = U.generate totalLen (Bit . odd)
-    xs = U.slice from len vec
-
-prop_invertBitsLong_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
-prop_invertBitsLong_middle (NonNegative x) (NonNegative y) (NonNegative z) =
-  prop_invertBits_middle (NonNegative $ x * 31) (NonNegative $ y * 37) (NonNegative $ z * 29)
-
 prop_invertInPlace :: U.Vector Bit -> Property
 prop_invertInPlace xs =
   U.map complement xs === U.modify invertInPlace xs
 
-prop_invertInPlaceWords :: U.Vector Word -> Property
-prop_invertInPlaceWords = prop_invertInPlace . castFromWords
+prop_invertInPlaceWords :: Large (U.Vector Bit) -> Property
+prop_invertInPlaceWords = prop_invertInPlace . getLarge
 
 prop_invertInPlace_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
 prop_invertInPlace_middle (NonNegative from) (NonNegative len) (NonNegative excess) = runST $ do
@@ -137,27 +136,12 @@ prop_reverseBits :: U.Vector Bit -> Property
 prop_reverseBits xs =
   U.reverse xs === reverseBits xs
 
-prop_reverseBitsWords :: U.Vector Word -> Property
-prop_reverseBitsWords = prop_reverseBits . castFromWords
-
-prop_reverseBits_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
-prop_reverseBits_middle (NonNegative from) (NonNegative len) (NonNegative excess) =
-  U.reverse xs === reverseBits xs
-  where
-    totalLen = from + len + excess
-    vec = U.generate totalLen (Bit . odd)
-    xs = U.slice from len vec
-
-prop_reverseBitsLong_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
-prop_reverseBitsLong_middle (NonNegative x) (NonNegative y) (NonNegative z) =
-  prop_reverseBits_middle (NonNegative $ x * 31) (NonNegative $ y * 37) (NonNegative $ z * 29)
-
 prop_reverseInPlace :: U.Vector Bit -> Property
 prop_reverseInPlace xs =
   U.reverse xs === U.modify reverseInPlace xs
 
-prop_reverseInPlaceWords :: U.Vector Word -> Property
-prop_reverseInPlaceWords = prop_reverseInPlace . castFromWords
+prop_reverseInPlaceWords :: Large (U.Vector Bit) -> Property
+prop_reverseInPlaceWords = prop_reverseInPlace . getLarge
 
 prop_reverseInPlace_middle :: NonNegative Int -> NonNegative Int -> NonNegative Int -> Property
 prop_reverseInPlace_middle (NonNegative from) (NonNegative len) (NonNegative excess) = runST $ do

@@ -1,4 +1,6 @@
-module Tests.Conc where
+module Tests.Conc
+  ( concTests
+  ) where
 
 import Control.Concurrent
 import Control.Monad

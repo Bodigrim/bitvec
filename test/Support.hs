@@ -46,6 +46,14 @@ instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
     [ U.drop s         v | s <- [1 .. len] ] ++
     [ v U.// [(i, x)] | i <- [0 .. len - 1], x <- shrink (v U.! i) ]
 
+instance {-# OVERLAPPING #-} Arbitrary (Large (U.Vector Bit)) where
+  arbitrary = Large . castFromWords <$> arbitrary
+  shrink (Large v) = Large <$> shrink v
+
+instance {-# OVERLAPPING #-} Arbitrary (Large (U.Vector TS.Bit)) where
+  arbitrary = Large . TS.castFromWords <$> arbitrary
+  shrink (Large v) = Large <$> shrink v
+
 instance Arbitrary F2Poly where
   arbitrary = toF2Poly <$> arbitrary
   shrink v = toF2Poly <$> shrink (unF2Poly v)

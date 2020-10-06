@@ -1,9 +1,9 @@
 {-# LANGUAGE CPP #-}
 
 #ifndef BITVEC_THREADSAFE
-module Tests.MVector where
+module Tests.MVector (mvectorTests) where
 #else
-module Tests.MVectorTS where
+module Tests.MVectorTS (mvectorTests) where
 #endif
 
 import Support

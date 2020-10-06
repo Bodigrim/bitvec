@@ -1,4 +1,6 @@
-module Tests.Vector where
+module Tests.Vector
+  ( vectorTests
+  ) where
 
 import Support
 
@@ -9,40 +11,58 @@ import Data.List hiding (and, or)
 import qualified Data.Vector.Unboxed as U hiding (reverse, and, or, any, all, findIndex)
 import Data.Word
 import Test.Tasty
-import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 vectorTests :: TestTree
 vectorTests = testGroup "Data.Vector.Unboxed.Bit"
   [ testGroup "Data.Vector.Unboxed functions"
     [ testProperty "toList . fromList == id" prop_toList_fromList
-    , testProperty "fromList . toList == id" prop_fromList_toList
+    , mkGroup      "fromList . toList == id" prop_fromList_toList
     , testProperty "slice"                   prop_slice_def
     ]
   , tenTimesLess $
     testProperty "cloneFromWords" prop_cloneFromWords_def
-  , testProperty "cloneToWords"   prop_cloneToWords_def
+  , mkGroup      "cloneToWords"   prop_cloneToWords_def
   , tenTimesLess $
     testProperty "castToWords"    prop_castToWords_def
   , tenTimesLess $
     testProperty "cloneFromWords8" prop_cloneFromWords8_def
-  , testProperty "cloneToWords8"   prop_cloneToWords8_def
+  , mkGroup      "cloneToWords8"   prop_cloneToWords8_def
   , tenTimesLess $
     testProperty "castToWords8"    prop_castToWords8_def
-  , testProperty "reverse"        prop_reverse_def
-  , testProperty "countBits"      prop_countBits_def
-  , testProperty "listBits"       prop_listBits_def
-  , testGroup "Boolean operations"
-    [ testProperty "and" prop_and_def
-    , testProperty "or" prop_or_def
+  , mkGroup "reverse"        prop_reverse_def
+  , testGroup "countBits"
+    [ testProperty "special case 1" case_countBits_1
+    , mkGroup "matches definition"  prop_countBits_def
     ]
-  , testGroup "Search operations"
-    [ testProperty "first" prop_first_def
+  , testGroup "listBits"
+    [ testProperty "special case 1" case_listBits_1
+    , testProperty "special case 2" case_listBits_2
+    , mkGroup "matches definition"  prop_listBits_def
+    ]
+  , mkGroup "and"            prop_and_def
+  , mkGroup "or"             prop_or_def
+  , testGroup "bitIndex"
+    [ testProperty "special case 1" case_bitIndex_1
+    , testProperty "special case 2" case_bitIndex_2
+    , testProperty "special case 3" case_bitIndex_3
+    , testProperty "special case 4" case_bitIndex_4
+    , testProperty "special case 5" case_bitIndex_5
+    , testProperty "special case 6" case_bitIndex_6
+    , testProperty "special case 7" case_bitIndex_7
+    , mkGroup "True"               (prop_bitIndex_1 (Bit True))
+    , mkGroup "False"              (prop_bitIndex_1 (Bit False))
     ]
   , testGroup "nthBitIndex"
-    [ testCase "special case 1" case_nthBit_1
-    , testProperty "matches bitIndex True"              prop_nthBit_1
-    , testProperty "matches bitIndex False"             prop_nthBit_2
+    [ testProperty "special case 1"                     case_nthBit_1
+    , testProperty "special case 2"                     case_nthBit_2
+    , testProperty "special case 3"                     case_nthBit_3
+    , testProperty "special case 4"                     case_nthBit_4
+    , testProperty "special case 5"                     case_nthBit_5
+    , testProperty "special case 6"                     case_nthBit_6
+    , testProperty "special case 7"                     case_nthBit_7
+    , mkGroup      "matches bitIndex True"              prop_nthBit_1
+    , mkGroup      "matches bitIndex False"             prop_nthBit_2
     , testProperty "matches sequence of bitIndex True"  prop_nthBit_3
     , testProperty "matches sequence of bitIndex False" prop_nthBit_4
     , testProperty "matches countBits"                  prop_nthBit_5
@@ -55,23 +75,39 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     ]
   ]
 
-prop_toList_fromList :: [Bit] -> Bool
-prop_toList_fromList xs = U.toList (U.fromList xs) == xs
+mkGroup :: String -> (U.Vector Bit -> Property) -> TestTree
+mkGroup name prop = testGroup name
+  [ testProperty "simple" prop
+  , testProperty "simple_long" (prop . getLarge)
+  , testProperty "middle" propMiddle
+  , testProperty "middle_long" propMiddleLong
+  ]
+  where
+    f m = let n = fromIntegral m :: Double in
+      odd (truncate (exp (abs (sin n) * 10)) :: Integer)
+    propMiddle (NonNegative from) (NonNegative len) (NonNegative excess) =
+      prop (U.slice from len (U.generate (from + len + excess) (Bit . f)))
+    propMiddleLong (NonNegative x) (NonNegative y) (NonNegative z) =
+      propMiddle (NonNegative $ x * 31) (NonNegative $ y * 37) (NonNegative $ z * 29)
 
-prop_fromList_toList :: U.Vector Bit -> Bool
-prop_fromList_toList xs = U.fromList (U.toList xs) == xs
+prop_toList_fromList :: [Bit] -> Property
+prop_toList_fromList xs = U.toList (U.fromList xs) === xs
 
-prop_slice_def :: Int -> Int -> U.Vector Bit -> Bool
-prop_slice_def s n xs = sliceList s' n' (U.toList xs)
-  == U.toList (U.slice s' n' xs)
-  where (s', n') = trimSlice s n (U.length xs)
+prop_fromList_toList :: U.Vector Bit -> Property
+prop_fromList_toList xs = U.fromList (U.toList xs) === xs
+
+prop_slice_def :: Int -> Int -> U.Vector Bit -> Property
+prop_slice_def s n xs =
+  sliceList s' n' (U.toList xs) === U.toList (U.slice s' n' xs)
+  where
+    (s', n') = trimSlice s n (U.length xs)
 
 prop_cloneFromWords_def :: U.Vector Word -> Property
 prop_cloneFromWords_def ws =
   U.toList (castFromWords ws) === concatMap wordToBitList (U.toList ws)
 
-prop_cloneToWords_def :: U.Vector Bit -> Bool
-prop_cloneToWords_def xs = U.toList (cloneToWords xs) == loop (U.toList xs)
+prop_cloneToWords_def :: U.Vector Bit -> Property
+prop_cloneToWords_def xs = U.toList (cloneToWords xs) === loop (U.toList xs)
  where
   loop [] = []
   loop bs = case packBitsToWord bs of
@@ -85,8 +121,8 @@ prop_cloneFromWords8_def :: U.Vector Word8 -> Property
 prop_cloneFromWords8_def ws =
   U.toList (castFromWords8 ws) === concatMap wordToBitList (U.toList ws)
 
-prop_cloneToWords8_def :: U.Vector Bit -> Bool
-prop_cloneToWords8_def xs = U.toList (cloneToWords8 xs) == loop (U.toList xs)
+prop_cloneToWords8_def :: U.Vector Bit -> Property
+prop_cloneToWords8_def xs = U.toList (cloneToWords8 xs) === loop (U.toList xs)
  where
   loop [] = []
   loop bs = case packBitsToWord bs of
@@ -96,16 +132,28 @@ prop_castToWords8_def :: U.Vector Word8 -> Property
 prop_castToWords8_def ws =
   Just ws === castToWords8 (castFromWords8 ws)
 
-prop_reverse_def :: U.Vector Bit -> Bool
+prop_reverse_def :: U.Vector Bit -> Property
 prop_reverse_def xs =
-  reverse (U.toList xs) == U.toList (U.modify reverseInPlace xs)
+  reverse (U.toList xs) === U.toList (U.modify reverseInPlace xs)
 
-prop_countBits_def :: U.Vector Bit -> Bool
-prop_countBits_def xs = countBits xs == length (filter unBit (U.toList xs))
+prop_countBits_def :: U.Vector Bit -> Property
+prop_countBits_def xs = countBits xs === length (filter unBit (U.toList xs))
+
+case_countBits_1 :: Property
+case_countBits_1 = once $
+  countBits (U.drop 64 (U.replicate 128 (Bit False))) === 0
 
 prop_listBits_def :: U.Vector Bit -> Property
 prop_listBits_def xs =
   listBits xs === [ i | (i, x) <- zip [0 ..] (U.toList xs), unBit x ]
+
+case_listBits_1 :: Property
+case_listBits_1 = once $
+  listBits (U.drop 24 (U.replicate 64 (Bit False))) === []
+
+case_listBits_2 :: Property
+case_listBits_2 = once $
+  listBits (U.drop 24 (U.replicate 128 (Bit True))) === [0..103]
 
 and :: U.Vector Bit -> Bool
 and xs = case bitIndex (Bit False) xs of
@@ -123,8 +171,36 @@ or xs = case bitIndex (Bit True) xs of
 prop_or_def :: U.Vector Bit -> Property
 prop_or_def xs = or xs === any unBit (U.toList xs)
 
-prop_first_def :: Bit -> U.Vector Bit -> Bool
-prop_first_def b xs = bitIndex b xs == findIndex (b ==) (U.toList xs)
+case_bitIndex_1 :: Property
+case_bitIndex_1 = once $
+  bitIndex (Bit True) (U.generate 128 (Bit . (== 64))) === Just 64
+
+case_bitIndex_2 :: Property
+case_bitIndex_2 = once $
+  bitIndex (Bit False) (U.generate 128 (Bit . (/= 64))) === Just 64
+
+case_bitIndex_3 :: Property
+case_bitIndex_3 = once $
+  bitIndex (Bit True) (U.drop 63 (U.generate 128 (Bit . (== 64)))) === Just 1
+
+case_bitIndex_4 :: Property
+case_bitIndex_4 = once $
+  bitIndex (Bit False) (U.drop 63 (U.generate 128 (Bit . (/= 64)))) === Just 1
+
+case_bitIndex_5 :: Property
+case_bitIndex_5 = once $
+  bitIndex (Bit False) (U.drop 63 (U.replicate 65 (Bit True))) === Nothing
+
+case_bitIndex_6 :: Property
+case_bitIndex_6 = once $
+  bitIndex (Bit False) (U.drop 63 (U.generate 66 (Bit . (== 63)))) === Just 1
+
+case_bitIndex_7 :: Property
+case_bitIndex_7 = once $
+  bitIndex (Bit False) (U.drop 1023 (U.generate 1097 (Bit . (/= 1086)))) === Just 63
+
+prop_bitIndex_1 :: Bit -> U.Vector Bit -> Property
+prop_bitIndex_1 b xs = bitIndex b xs === findIndex (b ==) (U.toList xs)
 
 prop_nthBit_1 :: U.Vector Bit -> Property
 prop_nthBit_1 xs = bitIndex (Bit True) xs === nthBitIndex (Bit True) 1 xs
@@ -159,12 +235,33 @@ prop_nthBit_5 (Positive n) xs = count > 0 ==>
     count = countBits xs
     n' = n `mod` count + 1
 
-case_nthBit_1 :: IO ()
-case_nthBit_1 =
-  assertEqual "should be equal" Nothing
-    $ nthBitIndex (Bit True) 1
-    $ U.slice 61 4
-    $ U.replicate 100 (Bit False)
+case_nthBit_1 :: Property
+case_nthBit_1 = once $
+  nthBitIndex (Bit True) 1 (U.slice 61 4 (U.replicate 100 (Bit False))) === Nothing
+
+case_nthBit_2 :: Property
+case_nthBit_2 = once $
+  nthBitIndex (Bit False) 1 (U.slice 61 4 (U.replicate 100 (Bit True))) === Nothing
+
+case_nthBit_3 :: Property
+case_nthBit_3 = once $
+  nthBitIndex (Bit True) 1 (U.drop 63 (U.generate 128 (Bit . (== 64)))) === Just 1
+
+case_nthBit_4 :: Property
+case_nthBit_4 = once $
+  nthBitIndex (Bit False) 1 (U.drop 63 (U.generate 128 (Bit . (/= 64)))) === Just 1
+
+case_nthBit_5 :: Property
+case_nthBit_5 = once $
+  nthBitIndex (Bit False) 1 (U.drop 63 (U.replicate 65 (Bit True))) === Nothing
+
+case_nthBit_6 :: Property
+case_nthBit_6 = once $
+  nthBitIndex (Bit False) 1 (U.drop 63 (U.generate 66 (Bit . (== 63)))) === Just 1
+
+case_nthBit_7 :: Property
+case_nthBit_7 = once $
+  nthBitIndex (Bit False) 1 (U.drop 1023 (U.generate 1097 (Bit . (/= 1086)))) === Just 63
 
 prop_rotate :: Int -> U.Vector Bit -> Property
 prop_rotate n v = v === (v `rotate` n) `rotate` (-n)
