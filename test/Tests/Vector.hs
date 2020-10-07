@@ -5,10 +5,11 @@ module Tests.Vector
 import Support
 
 import Prelude hiding (and, or)
+import Control.Exception
 import Data.Bit
 import Data.Bits
-import Data.List hiding (and, or)
-import qualified Data.Vector.Unboxed as U hiding (reverse, and, or, any, all, findIndex)
+import Data.List (findIndex)
+import qualified Data.Vector.Unboxed as U
 import Data.Word
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -70,6 +71,7 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     , testProperty "matches sequence of bitIndex True"  prop_nthBit_3
     , testProperty "matches sequence of bitIndex False" prop_nthBit_4
     , testProperty "matches countBits"                  prop_nthBit_5
+    , testProperty "negative argument"                  prop_nthBit_6
     ]
   , testGroup "Bits instance"
     [ testProperty "rotate is reversible" prop_rotate
@@ -251,6 +253,13 @@ prop_nthBit_5 (Positive n) xs = count > 0 ==>
   where
     count = countBits xs
     n' = n `mod` count + 1
+
+prop_nthBit_6 :: NonNegative Int -> U.Vector Bit -> Property
+prop_nthBit_6 (NonNegative n) xs = ioProperty $ do
+  ret <- try (evaluate (nthBitIndex (Bit True) (-n) xs))
+  pure $ property $ case ret of
+    Left ErrorCallWithLocation{} -> True
+    _ -> False
 
 case_nthBit_1 :: Property
 case_nthBit_1 = once $

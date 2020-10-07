@@ -196,7 +196,7 @@ selectBitsInPlace is xs = loop 0 0
  where
   !n = min (U.length is) (MU.length xs)
   loop !i !ct
-    | i >= n = return ct
+    | i >= n = pure ct
     | otherwise = do
       x <- readWord xs i
       let !(nSet, x') = selectWord (masked (n - i) (indexWord is i)) x
@@ -212,7 +212,7 @@ excludeBitsInPlace is xs = loop 0 0
  where
   !n = min (U.length is) (MU.length xs)
   loop !i !ct
-    | i >= n = return ct
+    | i >= n = pure ct
     | otherwise = do
       x <- readWord xs i
       let !(nSet, x') =

@@ -233,9 +233,7 @@ instance MV.MVector U.MVector Bit where
 
   {-# INLINE basicUnsafeReplicate #-}
   basicUnsafeReplicate n x
-    | n < 0 =  error
-    $  "Data.Bit.basicUnsafeReplicate: negative length: "
-    ++ show n
+    | n < 0 =  error $  "Data.Bit.basicUnsafeReplicate: negative length: " ++ show n
     | otherwise = do
       arr <- newByteArray (wordsToBytes $ nWords n)
       setByteArray arr 0 (nWords n) (extendToWord x :: Word)
@@ -377,7 +375,7 @@ instance MV.MVector U.MVector Bit where
         x <- readWord src i
         writeWord dst i x
         do_copy (i + wordSize)
-      | otherwise = return ()
+      | otherwise = pure ()
 
   {-# INLINE basicUnsafeMove #-}
   basicUnsafeMove !dst !src@(BitMVec srcShift srcLen _)

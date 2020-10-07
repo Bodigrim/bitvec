@@ -3,6 +3,7 @@
 
 module Main where
 
+import Control.Exception
 import Data.Bit
 import Data.Proxy
 import Test.QuickCheck.Classes
@@ -44,4 +45,14 @@ lawsTests = adjustOption (const $ QuickCheckTests 100)
   , numLaws         (Proxy :: Proxy Bit)
 #endif
   , integralLaws    (Proxy :: Proxy Bit)
+  ] ++
+  [ testProperty "divideByZero" prop_bitDivideByZero
+  , testProperty "toRational"   prop_bitToRational
   ]
+
+prop_bitToRational :: Bit -> Property
+prop_bitToRational x = fromRational (toRational x) === x
+
+prop_bitDivideByZero :: Bit -> Property
+prop_bitDivideByZero x =
+  ioProperty ((=== Left DivideByZero) <$> try (evaluate (x / 0)))
