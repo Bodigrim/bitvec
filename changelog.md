@@ -1,6 +1,7 @@
 # 1.1.0.0
 
 * Fix a grave bug in `bitIndex`.
+* Remove `integer-gmp` flag.
 
 # 1.0.3.0
 
