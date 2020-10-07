@@ -24,7 +24,6 @@ module Data.Bit.InternalTS
   , writeWord
   , unsafeFlipBit
   , flipBit
-  , WithInternals(..)
   , modifyByteArray
   ) where
 
@@ -123,13 +122,6 @@ instance U.Unbox Bit
 data instance U.MVector s Bit = BitMVec !Int !Int !(MutableByteArray s)
 data instance U.Vector    Bit = BitVec  !Int !Int !ByteArray
 
-newtype WithInternals = WithInternals (U.Vector Bit)
-
-#if MIN_VERSION_primitive(0,6,3)
-instance Show WithInternals where
-  show (WithInternals v@(BitVec off len ba)) = show (off, len, ba, v)
-#endif
-
 readBit :: Int -> Word -> Bit
 readBit i w = Bit (w .&. (1 `unsafeShiftL` i) /= 0)
 {-# INLINE readBit #-}
@@ -178,9 +170,7 @@ readWord !(BitMVec off len' arr) !i' = do
         pure
           $   (loWord `unsafeShiftR` nMod)
           .|. (hiWord `unsafeShiftL` (wordSize - nMod))
-#if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE readWord :: U.MVector s Bit -> Int -> ST s Word #-}
-#endif
 {-# INLINE readWord #-}
 
 modifyByteArray
@@ -240,9 +230,7 @@ writeWord !(BitMVec off len' arr) !i' !x
     iMod   = modWordSize i
     iDiv   = divWordSize i
 
-#if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE writeWord :: U.MVector s Bit -> Int -> Word -> ST s () #-}
-#endif
 {-# INLINE writeWord #-}
 
 instance MV.MVector U.MVector Bit where

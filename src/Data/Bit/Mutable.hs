@@ -172,9 +172,7 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
             writeByteArray ys i (f x y)
             loop (i + 1) accNew
 
-#if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE zipInPlace :: (forall a. Bits a => a -> a -> a) -> Vector Bit -> MVector s Bit -> ST s () #-}
-#endif
 {-# INLINE zipInPlace #-}
 
 -- | Invert (flip) all bits in-place.
@@ -187,9 +185,7 @@ invertInPlace xs = do
   forM_ [0, wordSize .. n - 1] $ \i -> do
     x <- readWord xs i
     writeWord xs i (complement x)
-#if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALIZE invertInPlace :: U.MVector s Bit -> ST s () #-}
-#endif
 
 -- | Same as 'Data.Bit.selectBits', but deposit
 -- selected bits in-place. Returns a number of selected bits.
