@@ -41,13 +41,16 @@ import Data.Bit.PdepPext
 wordSize :: Int
 wordSize = finiteBitSize (0 :: Word)
 
-lgWordSize, wordSizeMask, wordSizeMaskC :: Int
+lgWordSize :: Int
 lgWordSize = case wordSize of
   32 -> 5
   64 -> 6
   _  -> error "lgWordSize: unknown architecture"
 
+wordSizeMask :: Int
 wordSizeMask = wordSize - 1
+
+wordSizeMaskC :: Int
 wordSizeMaskC = complement wordSizeMask
 
 divWordSize :: Bits a => a -> a

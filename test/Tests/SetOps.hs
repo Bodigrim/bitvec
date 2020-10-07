@@ -7,7 +7,7 @@ module Tests.SetOps (setOpTests) where
 module Tests.SetOpsTS (setOpTests) where
 #endif
 
-import Support ()
+import Support (twoTimesMore)
 
 import Control.Monad
 import Control.Monad.ST
@@ -21,7 +21,8 @@ import Test.Tasty.QuickCheck hiding ((.&.))
 setOpTests :: TestTree
 setOpTests = testGroup "Set operations"
   [ testProperty "generalize"               prop_generalize
-  , testProperty "zipBits"                  prop_zipBits
+  , twoTimesMore
+  $ testProperty "zipBits"                  prop_zipBits
   , testProperty "zipInPlace"               prop_zipInPlace
 
   , testProperty "union"                    prop_union_def
@@ -99,7 +100,7 @@ prop_zipInPlace fun xs ys =
 
 prop_invertBits :: U.Vector Bit -> Property
 prop_invertBits xs =
-  U.map complement xs === invertBits xs
+  U.map complement xs === complement xs
 
 prop_invertInPlace :: U.Vector Bit -> Property
 prop_invertInPlace xs =

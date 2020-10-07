@@ -24,12 +24,16 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     testProperty "cloneFromWords" prop_cloneFromWords_def
   , mkGroup      "cloneToWords"   prop_cloneToWords_def
   , tenTimesLess $
-    testProperty "castToWords"    prop_castToWords_def
+    testProperty "castToWords_1"   prop_castToWords_1
+  , tenTimesLess $
+    testProperty "castToWords_2"   prop_castToWords_2
   , tenTimesLess $
     testProperty "cloneFromWords8" prop_cloneFromWords8_def
   , mkGroup      "cloneToWords8"   prop_cloneToWords8_def
   , tenTimesLess $
-    testProperty "castToWords8"    prop_castToWords8_def
+    testProperty "castToWords8_1"  prop_castToWords8_1
+  , tenTimesLess $
+    testProperty "castToWords8_2"  prop_castToWords8_2
   , mkGroup "reverse"        prop_reverse_def
   , testGroup "countBits"
     [ testProperty "special case 1" case_countBits_1
@@ -72,6 +76,9 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     , testProperty "bit"                  prop_bit
     , testProperty "shiftL"               prop_shiftL
     , testProperty "shiftR"               prop_shiftR
+    , testProperty "zeroBits"             prop_zeroBits
+    , testProperty "bitSize"              prop_bitSize
+    , testProperty "isSigned"             prop_isSigned
     ]
   ]
 
@@ -113,9 +120,14 @@ prop_cloneToWords_def xs = U.toList (cloneToWords xs) === loop (U.toList xs)
   loop bs = case packBitsToWord bs of
     (w, bs') -> w : loop bs'
 
-prop_castToWords_def :: U.Vector Word -> Property
-prop_castToWords_def ws =
+prop_castToWords_1 :: U.Vector Word -> Property
+prop_castToWords_1 ws =
   Just ws === castToWords (castFromWords ws)
+
+prop_castToWords_2 :: U.Vector Bit -> Property
+prop_castToWords_2 xs = case castToWords xs of
+  Nothing -> property True
+  Just ws -> castFromWords ws === xs
 
 prop_cloneFromWords8_def :: U.Vector Word8 -> Property
 prop_cloneFromWords8_def ws =
@@ -128,9 +140,14 @@ prop_cloneToWords8_def xs = U.toList (cloneToWords8 xs) === loop (U.toList xs)
   loop bs = case packBitsToWord bs of
     (w, bs') -> w : loop bs'
 
-prop_castToWords8_def :: U.Vector Word8 -> Property
-prop_castToWords8_def ws =
+prop_castToWords8_1 :: U.Vector Word8 -> Property
+prop_castToWords8_1 ws =
   Just ws === castToWords8 (castFromWords8 ws)
+
+prop_castToWords8_2 :: U.Vector Bit -> Property
+prop_castToWords8_2 xs = case castToWords8 xs of
+  Nothing -> property True
+  Just ws -> castFromWords8 ws === xs
 
 prop_reverse_def :: U.Vector Bit -> Property
 prop_reverse_def xs =
@@ -266,8 +283,12 @@ case_nthBit_7 = once $
 prop_rotate :: Int -> U.Vector Bit -> Property
 prop_rotate n v = v === (v `rotate` n) `rotate` (-n)
 
-prop_bit :: NonNegative Int -> Property
-prop_bit (NonNegative n) = testBit v n .&&. popCount v === 1 .&&. U.length v == n + 1
+prop_bit :: Int -> Property
+prop_bit n
+  | n >= 0
+  = testBit v n .&&. popCount v === 1 .&&. U.length v === n + 1
+  | otherwise
+  = not (testBit v n) .&&. popCount v === 0 .&&. U.length v === 0
   where
     v :: U.Vector Bit
     v = bit n
@@ -281,3 +302,13 @@ prop_shiftR :: NonNegative Int -> U.Vector Bit -> Property
 prop_shiftR (NonNegative n) v = U.drop n v === U.drop n u .&&. popCount (U.take n u) === 0
   where
     u = (v `shiftR` n) `shiftL` n
+
+prop_zeroBits :: Property
+prop_zeroBits = once $
+  U.length (zeroBits :: U.Vector Bit) === 0
+
+prop_bitSize :: U.Vector Bit -> Property
+prop_bitSize v = bitSizeMaybe v === Nothing
+
+prop_isSigned :: U.Vector Bit -> Property
+prop_isSigned v = isSigned v === False

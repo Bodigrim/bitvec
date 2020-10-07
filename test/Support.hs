@@ -40,7 +40,14 @@ instance Function TS.Bit where
   function f = functionMap TS.unBit TS.Bit f
 
 instance (Arbitrary a, U.Unbox a) => Arbitrary (U.Vector a) where
-  arbitrary = (\v -> runST (N.run (v :: N.New U.Vector a) >>= U.freeze)) <$> arbitrary
+  arbitrary = frequency
+    [ (10, U.fromList <$> arbitrary)
+    , (2 , U.drop <$> arbitrary <*> arbitrary)
+    , (2 , U.take <$> arbitrary <*> arbitrary)
+    , (2 , slice <$> arbitrary <*> arbitrary <*> arbitrary)
+    ]
+   where
+    slice s n v = let (s', n') = trimSlice s n (U.length v) in U.slice s' n' v
   shrink v = let len = U.length v in
     [ U.take (len - s) v | s <- [1 .. len] ] ++
     [ U.drop s         v | s <- [1 .. len] ] ++
@@ -72,9 +79,9 @@ newFromList xs = N.create (V.thaw (V.fromList xs :: v a))
 instance (V.Vector v a, Arbitrary a) => Arbitrary (N.New v a) where
   arbitrary = frequency
     [ (10, newFromList <$> arbitrary)
-    , (1 , N.drop <$> arbitrary <*> arbitrary)
-    , (1 , N.take <$> arbitrary <*> arbitrary)
-    , (1 , slice <$> arbitrary <*> arbitrary <*> arbitrary)
+    , (2 , N.drop <$> arbitrary <*> arbitrary)
+    , (2 , N.take <$> arbitrary <*> arbitrary)
+    , (2 , slice <$> arbitrary <*> arbitrary <*> arbitrary)
     ]
    where
     slice s n = N.apply
@@ -144,6 +151,10 @@ withNonEmptyMVec f g = forAll arbitrary $ \xs ->
 tenTimesLess :: TestTree -> TestTree
 tenTimesLess = adjustOption $
   \(QuickCheckTests n) -> QuickCheckTests (max 100 (n `div` 10))
+
+twoTimesMore :: TestTree -> TestTree
+twoTimesMore = adjustOption $
+  \(QuickCheckTests n) -> QuickCheckTests (n * 2)
 
 lawsToTest :: Laws -> TestTree
 lawsToTest (Laws name props) =
