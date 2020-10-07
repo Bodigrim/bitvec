@@ -81,30 +81,17 @@ instance Num Bit where
   fromInteger = Bit . odd
 
 instance Real Bit where
-  toRational (Bit False) = 0
-  toRational (Bit True)  = 1
+  toRational = fromIntegral
 
 instance Integral Bit where
   quotRem _ (Bit False) = throw DivideByZero
   quotRem x (Bit True)  = (x, Bit False)
-  quot    _ (Bit False) = throw DivideByZero
-  quot    x (Bit True)  = x
-  rem     _ (Bit False) = throw DivideByZero
-  rem     _ (Bit True)  = Bit False
-
-  divMod = quotRem
-  div    = quot
-  mod    = rem
-
   toInteger (Bit False) = 0
   toInteger (Bit True)  = 1
 
 instance Fractional Bit where
-  fromRational x = fromInteger (numerator x) `quot` fromInteger (denominator x)
-  _ / Bit False     = throw DivideByZero
-  x / Bit True      = x
-  recip (Bit False) = throw DivideByZero
-  recip (Bit True)  = Bit True
+  fromRational x = fromInteger (numerator x) / fromInteger (denominator x)
+  (/) = quot
 
 instance Show Bit where
   showsPrec _ (Bit False) = showString "0"
@@ -297,11 +284,7 @@ instance MV.MVector U.MVector Bit where
       in  (# state', () #)
 #endif
 
-  {-# INLINE basicClear #-}
-  basicClear _ = pure ()
-
   {-# INLINE basicSet #-}
-  basicSet (BitMVec _ 0 _) _ = pure ()
   basicSet (BitMVec off len arr) (extendToWord -> x) | offBits == 0 =
     case modWordSize len of
       0    -> setByteArray arr offWords lWords (x :: Word)
@@ -331,7 +314,6 @@ instance MV.MVector U.MVector Bit where
     lWords   = nWords (offBits + len)
 
   {-# INLINE basicUnsafeCopy #-}
-  basicUnsafeCopy _ (BitMVec _ 0 _) = pure ()
   basicUnsafeCopy (BitMVec offDst lenDst dst) (BitMVec offSrc _ src)
     | offDstBits == 0, offSrcBits == 0 = case modWordSize lenDst of
       0 -> copyMutableByteArray dst
