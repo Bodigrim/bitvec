@@ -1,0 +1,7 @@
+constraint-set with-libgmp
+  constraints: bitvec +libgmp
+  tests: True
+  run-tests: True
+  benchmarks: True
+
+osx: 8.0.2 8.2.2 8.4.4 8.6.5 8.8.1 8.8.2 8.8.4 8.10.2
