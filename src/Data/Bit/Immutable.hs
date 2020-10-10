@@ -119,7 +119,8 @@ instance {-# OVERLAPPING #-} Bits (Vector Bit) where
 -- to an unboxed vector of bits.
 -- Cf. 'Data.Bit.castFromWordsM'.
 --
--- >>> castFromWords (Data.Vector.Unboxed.singleton 123)
+-- >>> :set -XOverloadedLists
+-- >>> castFromWords [123]
 -- [1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 castFromWords :: U.Vector Word -> U.Vector Bit
 castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
@@ -146,7 +147,8 @@ castToWords (BitVec s n ws)
 -- the last word will be zero-padded.
 -- Cf. 'Data.Bit.cloneToWordsM'.
 --
--- >>> cloneToWords (read "[1,1,0,1,1,1,1,0]")
+-- >>> :set -XOverloadedLists
+-- >>> cloneToWords [1,1,0,1,1,1,1]
 -- [123]
 cloneToWords :: U.Vector Bit -> U.Vector Word
 cloneToWords v = runST $ do
@@ -209,14 +211,15 @@ cloneToWords8 v = runST $ do
 -- 'zipBits' is up to 32x faster than
 -- 'Data.IntSet.union', 'Data.IntSet.intersection', etc.
 --
+-- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
--- >>> zipBits (.&.) (read "[1,1,0]") (read "[0,1,1]") -- intersection
+-- >>> zipBits (.&.) [1,1,0] [0,1,1] -- intersection
 -- [0,1,0]
--- >>> zipBits (.|.) (read "[1,1,0]") (read "[0,1,1]") -- union
+-- >>> zipBits (.|.) [1,1,0] [0,1,1] -- union
 -- [1,1,1]
--- >>> zipBits (\x y -> x .&. complement y) (read "[1,1,0]") (read "[0,1,1]") -- difference
+-- >>> zipBits (\x y -> x .&. complement y) [1,1,0] [0,1,1] -- difference
 -- [1,0,0]
--- >>> zipBits xor (read "[1,1,0]") (read "[0,1,1]") -- symmetric difference
+-- >>> zipBits xor [1,1,0] [0,1,1] -- symmetric difference
 -- [1,0,1]
 zipBits
   :: (forall a . Bits a => a -> a -> a)
@@ -266,8 +269,9 @@ zipBits f xs ys = runST $ do
 -- Similar to 'Data.Vector.Unboxed.map',
 -- but faster.
 --
+-- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
--- >>> mapBits complement (read "[0,1,1]")
+-- >>> mapBits complement [0,1,1]
 -- [1,0,0]
 mapBits
   :: (forall a . Bits a => a -> a)
@@ -282,7 +286,8 @@ mapBits f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
 
 -- | Invert (flip) all bits.
 --
--- >>> invertBits (read "[0,1,0,1,0]")
+-- >>> :set -XOverloadedLists
+-- >>> invertBits [0,1,0,1,0]
 -- [1,0,1,0,1]
 invertBits
   :: U.Vector Bit
@@ -306,7 +311,8 @@ invertBits xs = runST $ do
 -- the corresponding bit of the second argument
 -- to the result. Similar to the parallel deposit instruction (PDEP).
 --
--- >>> selectBits (read "[0,1,0,1,1]") (read "[1,1,0,0,1]")
+-- >>> :set -XOverloadedLists
+-- >>> selectBits [0,1,0,1,1] [1,1,0,0,1]
 -- [1,0,1]
 --
 -- Here is a reference (but slow) implementation:
@@ -323,7 +329,8 @@ selectBits is xs = runST $ do
 -- the corresponding bit of the second argument
 -- to the result.
 --
--- >>> excludeBits (read "[0,1,0,1,1]") (read "[1,1,0,0,1]")
+-- >>> :set -XOverloadedLists
+-- >>> excludeBits [0,1,0,1,1] [1,1,0,0,1]
 -- [1,0]
 --
 -- Here is a reference (but slow) implementation:
@@ -338,7 +345,8 @@ excludeBits is xs = runST $ do
 
 -- | Reverse the order of bits.
 --
--- >>> reverseBits (read "[1,1,0,1,0]")
+-- >>> :set -XOverloadedLists
+-- >>> reverseBits [1,1,0,1,0]
 -- [0,1,0,1,1]
 --
 -- Consider using @vector-rotcev@ package
@@ -371,18 +379,19 @@ clipHiBits (Bit False) k w = w .|. hiMask k
 -- with the specified value, if any.
 -- Similar to 'Data.Vector.Unboxed.elemIndex', but up to 64x faster.
 --
--- >>> bitIndex (Bit True) (read "[0,0,1,0,1]")
+-- >>> :set -XOverloadedLists
+-- >>> bitIndex 1 [0,0,1,0,1]
 -- Just 2
--- >>> bitIndex (Bit True) (read "[0,0,0,0,0]")
+-- >>> bitIndex 1 [0,0,0,0,0]
 -- Nothing
 --
 -- > bitIndex bit == nthBitIndex bit 1
 --
 -- One can also use it to reduce a vector with disjunction or conjunction:
 --
--- >>> import Data.Maybe
--- >>> isAnyBitSet   = isJust    . bitIndex (Bit True)
--- >>> areAllBitsSet = isNothing . bitIndex (Bit False)
+-- > import Data.Maybe
+-- > isAnyBitSet   = isJust    . bitIndex 1
+-- > areAllBitsSet = isNothing . bitIndex 0
 bitIndex :: Bit -> U.Vector Bit -> Maybe Int
 bitIndex b (BitVec off len arr)
   | len == 0 = Nothing
@@ -455,9 +464,10 @@ bitIndexInWords (Bit False) !off !len !arr = go off
 -- Here @n@ is 1-based and the index is 0-based.
 -- Non-positive @n@ results in an error.
 --
--- >>> nthBitIndex (Bit True) 2 (read "[0,1,0,1,1,1,0]")
+-- >>> :set -XOverloadedLists
+-- >>> nthBitIndex 1 2 [0,1,0,1,1,1,0] -- 2nd occurence of 1
 -- Just 3
--- >>> nthBitIndex (Bit True) 5 (read "[0,1,0,1,1,1,0]")
+-- >>> nthBitIndex 1 5 [0,1,0,1,1,1,0] -- 5th occurence of 1
 -- Nothing
 --
 -- One can use 'nthBitIndex' to implement
@@ -542,7 +552,8 @@ unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 
 -- | Return the number of set bits in a vector (population count, popcount).
 --
--- >>> countBits (read "[1,1,0,1,0,1]")
+-- >>> :set -XOverloadedLists
+-- >>> countBits [1,1,0,1,0,1]
 -- 4
 --
 -- One can combine 'countBits' with 'Data.Vector.Unboxed.take'
@@ -582,7 +593,8 @@ countBitsInWords = P.foldl' (\acc word -> popCount word + acc) 0
 
 -- | Return the indices of set bits in a vector.
 --
--- >>> listBits (read "[1,1,0,1,0,1]")
+-- >>> :set -XOverloadedLists
+-- >>> listBits [1,1,0,1,0,1]
 -- [0,1,3,5]
 listBits :: U.Vector Bit -> [Int]
 listBits (BitVec _ 0 _)                      = []

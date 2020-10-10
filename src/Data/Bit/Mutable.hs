@@ -94,15 +94,17 @@ cloneToWords8M v = do
 -- rewriting contents of the second argument.
 -- Cf. 'Data.Bit.zipBits'.
 --
+-- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
--- >>> modify (zipInPlace (.&.) (read "[1,1,0]")) (read "[0,1,1]")
+-- >>> Data.Vector.Unboxed.modify (zipInPlace (.&.) [1,1,0]) [0,1,1]
 -- [0,1,0]
 --
 -- __Warning__: if the immutable vector is shorter than the mutable one,
 -- it is a caller's responsibility to trim the result:
 --
+-- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
--- >>> modify (zipInPlace (.&.) (read "[1,1,0]")) (read "[0,1,1,1,1,1]")
+-- >>> Data.Vector.Unboxed.modify (zipInPlace (.&.) [1,1,0]) [0,1,1,1,1,1]
 -- [0,1,0,1,1,1] -- note trailing garbage
 zipInPlace
   :: forall m.
@@ -180,8 +182,9 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
 -- rewriting its contents.
 -- Cf. 'Data.Bit.mapBits'.
 --
+-- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
--- >>> modify (mapInPlace complement) (read "[0,1,1]")
+-- >>> Data.Vector.Unboxed.modify (mapInPlace complement) [0,1,1]
 -- [1,0,0]
 mapInPlace
   :: PrimMonad m
@@ -198,7 +201,8 @@ mapInPlace f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
 
 -- | Invert (flip) all bits in-place.
 --
--- >>> Data.Vector.Unboxed.modify invertInPlace (read "[0,1,0,1,0]")
+-- >>> :set -XOverloadedLists
+-- >>> Data.Vector.Unboxed.modify invertInPlace [0,1,0,1,0]
 -- [1,0,1,0,1]
 invertInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 invertInPlace xs = do
@@ -211,6 +215,13 @@ invertInPlace xs = do
 -- | Same as 'Data.Bit.selectBits', but deposit
 -- selected bits in-place. Returns a number of selected bits.
 -- It is caller's responsibility to trim the result to this number.
+--
+-- >>> :set -XOverloadedLists
+-- >>> import Control.Monad.ST (runST)
+-- >>> import qualified Data.Vector.Unboxed as U
+-- >>> runST $ do { vec <- U.unsafeThaw [1,1,0,0,1]; n <- selectBitsInPlace [0,1,0,1,1] vec; U.take n <$> U.unsafeFreeze vec }
+-- [1,0,1]
+--
 selectBitsInPlace
   :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 selectBitsInPlace is xs = loop 0 0
@@ -227,6 +238,13 @@ selectBitsInPlace is xs = loop 0 0
 -- | Same as 'Data.Bit.excludeBits', but deposit
 -- excluded bits in-place. Returns a number of excluded bits.
 -- It is caller's responsibility to trim the result to this number.
+--
+-- >>> :set -XOverloadedLists
+-- >>> import Control.Monad.ST (runST)
+-- >>> import qualified Data.Vector.Unboxed as U
+-- >>> runST $ do { vec <- U.unsafeThaw [1,1,0,0,1]; n <- excludeBitsInPlace [0,1,0,1,1] vec; U.take n <$> U.unsafeFreeze vec }
+-- [1,0]
+--
 excludeBitsInPlace
   :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 excludeBitsInPlace is xs = loop 0 0
@@ -243,7 +261,8 @@ excludeBitsInPlace is xs = loop 0 0
 
 -- | Reverse the order of bits in-place.
 --
--- >>> Data.Vector.Unboxed.modify reverseInPlace (read "[1,1,0,1,0]")
+-- >>> :set -XOverloadedLists
+-- >>> Data.Vector.Unboxed.modify reverseInPlace [1,1,0,1,0]
 -- [0,1,0,1,1]
 --
 -- Consider using @vector-rotcev@ package

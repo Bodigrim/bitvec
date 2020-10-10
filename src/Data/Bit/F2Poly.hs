@@ -69,11 +69,19 @@ newtype F2Poly = F2Poly {
   unF2Poly :: U.Vector Bit
   -- ^ Convert 'F2Poly' to a vector of coefficients
   -- (first element corresponds to a constant term).
+  --
+  -- >>> :set -XBinaryLiterals
+  -- >>> unF2Poly 0b1101
+  -- [1,0,1,1]
   }
   deriving (Eq, Ord, Typeable, Generic, NFData)
 
 -- | Make 'F2Poly' from a list of coefficients
 -- (first element corresponds to a constant term).
+--
+-- >>> :set -XOverloadedLists
+-- >>> toF2Poly [1,0,1,1,0,0]
+-- 0b1101
 toF2Poly :: U.Vector Bit -> F2Poly
 toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 

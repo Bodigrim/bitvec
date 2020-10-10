@@ -413,8 +413,9 @@ instance MV.MVector U.MVector Bit where
 -- either you modify it with 'id' (which is 'id' altogether)
 -- or with 'Data.Bits.complement' (which is 'unsafeFlipBit').
 --
--- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
--- [1,0,1]
+-- >>> :set -XOverloadedLists
+-- >>> Data.Vector.Unboxed.modify (`unsafeFlipBit` 2) [1,1,1,1]
+-- [1,1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit (BitMVec off _ arr) !i' = do
   let i  = off + i'
@@ -433,8 +434,9 @@ unsafeFlipBit (BitMVec off _ arr) !i' = do
 -- either you modify it with 'id' (which is 'id' altogether)
 -- or with 'Data.Bits.complement' (which is 'flipBit').
 --
--- >>> Data.Vector.Unboxed.modify (\v -> flipBit v 1) (read "[1,1,1]")
--- [1,0,1]
+-- >>> :set -XOverloadedLists
+-- >>> Data.Vector.Unboxed.modify (`flipBit` 2) [1,1,1,1]
+-- [1,1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
   BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $
