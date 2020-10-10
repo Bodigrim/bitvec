@@ -22,6 +22,7 @@ module Data.Bit.ImmutableTS
   , cloneToWords8
 
   , zipBits
+  , mapBits
   , invertBits
   , selectBits
   , excludeBits
@@ -260,6 +261,24 @@ zipBits f xs ys = runST $ do
     writeWord zs i (f (indexWord xs i) (indexWord ys i))
   U.unsafeFreeze zs
 {-# INLINE zipBits #-}
+
+-- | Map a vectors with the given function.
+-- Similar to 'Data.Vector.Unboxed.map',
+-- but faster.
+--
+-- >>> import Data.Bits
+-- >>> mapBits complement (read "[0,1,1]")
+-- [1,0,0]
+mapBits
+  :: (forall a . Bits a => a -> a)
+  -> U.Vector Bit
+  -> U.Vector Bit
+mapBits f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
+  (False, False) -> U.replicate (U.length xs) (Bit False)
+  (False, True)  -> xs
+  (True, False)  -> invertBits xs
+  (True, True)   -> U.replicate (U.length xs) (Bit True)
+{-# INLINE mapBits #-}
 
 -- | Invert (flip) all bits.
 --

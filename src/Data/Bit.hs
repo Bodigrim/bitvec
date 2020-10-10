@@ -37,6 +37,7 @@ module Data.Bit.ThreadSafe
 
   -- * Immutable operations
   , zipBits
+  , mapBits
   , invertBits
   , reverseBits
   , bitIndex
@@ -53,6 +54,7 @@ module Data.Bit.ThreadSafe
 
   -- * Mutable operations
   , zipInPlace
+  , mapInPlace
   , invertInPlace
   , reverseInPlace
   , selectBitsInPlace

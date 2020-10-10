@@ -20,10 +20,14 @@ import Test.Tasty.QuickCheck hiding ((.&.))
 
 setOpTests :: TestTree
 setOpTests = testGroup "Set operations"
-  [ testProperty "generalize"               prop_generalize
+  [ testProperty "generalize1"              prop_generalize1
+  , testProperty "generalize2"              prop_generalize2
   , twoTimesMore
   $ testProperty "zipBits"                  prop_zipBits
   , testProperty "zipInPlace"               prop_zipInPlace
+
+  , testProperty "mapBits"                  prop_mapBits
+  , testProperty "mapInPlace"               prop_mapInPlace
 
   , testProperty "union"                    prop_union_def
   , testProperty "intersection"             prop_intersection_def
@@ -65,8 +69,13 @@ mkGroup name prop = testGroup name
     propMiddleLong (NonNegative x) (NonNegative y) (NonNegative z) =
       propMiddle (NonNegative $ x * 31) (NonNegative $ y * 37) (NonNegative $ z * 29)
 
-prop_generalize :: Fun (Bit, Bit) Bit -> Bit -> Bit -> Property
-prop_generalize fun x y = curry (applyFun fun) x y === generalize (curry (applyFun fun)) x y
+prop_generalize1 :: Fun Bit Bit -> Bit -> Property
+prop_generalize1 fun x =
+  applyFun fun x === generalize1 (applyFun fun) x
+
+prop_generalize2 :: Fun (Bit, Bit) Bit -> Bit -> Bit -> Property
+prop_generalize2 fun x y =
+  curry (applyFun fun) x y === generalize2 (curry (applyFun fun)) x y
 
 prop_union_def :: U.Vector Bit -> U.Vector Bit -> Property
 prop_union_def xs ys =
@@ -88,15 +97,23 @@ prop_symDiff_def xs ys =
 
 prop_zipBits :: Fun (Bit, Bit) Bit -> U.Vector Bit -> U.Vector Bit -> Property
 prop_zipBits fun xs ys =
-  U.zipWith f xs ys === zipBits (generalize f) xs ys
+  U.zipWith f xs ys === zipBits (generalize2 f) xs ys
   where
     f = curry $ applyFun fun
 
 prop_zipInPlace :: Fun (Bit, Bit) Bit -> U.Vector Bit -> U.Vector Bit -> Property
 prop_zipInPlace fun xs ys =
-  U.zipWith f xs ys === U.take (min (U.length xs) (U.length ys)) (U.modify (zipInPlace (generalize f) xs) ys)
+  U.zipWith f xs ys === U.take (min (U.length xs) (U.length ys)) (U.modify (zipInPlace (generalize2 f) xs) ys)
   where
     f = curry $ applyFun fun
+
+prop_mapBits :: Fun Bit Bit -> U.Vector Bit -> Property
+prop_mapBits fun xs =
+  U.map (applyFun fun) xs === mapBits (generalize1 (applyFun fun)) xs
+
+prop_mapInPlace :: Fun Bit Bit -> U.Vector Bit -> Property
+prop_mapInPlace fun xs =
+  U.map (applyFun fun) xs === U.modify (mapInPlace (generalize1 (applyFun fun))) xs
 
 prop_invertBits :: U.Vector Bit -> Property
 prop_invertBits xs =
@@ -185,8 +202,15 @@ prop_countBits_def xs = countBits xs === U.length (selectBits xs xs)
 
 -------------------------------------------------------------------------------
 
-generalize :: (Bit -> Bit -> Bit) -> (forall a. Bits a => a -> a -> a)
-generalize f = case (f (Bit False) (Bit False), f (Bit False) (Bit True), f (Bit True) (Bit False), f (Bit True) (Bit True)) of
+generalize1 :: (Bit -> Bit) -> (forall a. Bits a => a -> a)
+generalize1 f = case (f (Bit False), f (Bit True)) of
+  (Bit False, Bit False) -> const zeroBits
+  (Bit False, Bit True)  -> id
+  (Bit True,  Bit False) -> complement
+  (Bit True,  Bit True)  -> const $ complement zeroBits
+
+generalize2 :: (Bit -> Bit -> Bit) -> (forall a. Bits a => a -> a -> a)
+generalize2 f = case (f (Bit False) (Bit False), f (Bit False) (Bit True), f (Bit True) (Bit False), f (Bit True) (Bit True)) of
   (Bit False, Bit False, Bit False, Bit False) -> \_ _ -> zeroBits
   (Bit False, Bit False, Bit False, Bit True)  -> \x y -> x .&. y
   (Bit False, Bit False, Bit True,  Bit False) -> \x y -> x .&. complement y

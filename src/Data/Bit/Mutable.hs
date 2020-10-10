@@ -17,6 +17,7 @@ module Data.Bit.MutableTS
   , cloneToWords8M
 
   , zipInPlace
+  , mapInPlace
 
   , invertInPlace
   , selectBitsInPlace
@@ -174,6 +175,26 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
 
 {-# SPECIALIZE zipInPlace :: (forall a. Bits a => a -> a -> a) -> Vector Bit -> MVector s Bit -> ST s () #-}
 {-# INLINE zipInPlace #-}
+
+-- | Apply a function to a mutable vector bitwise,
+-- rewriting its contents.
+-- Cf. 'Data.Bit.mapBits'.
+--
+-- >>> import Data.Bits
+-- >>> modify (mapInPlace complement) (read "[0,1,1]")
+-- [1,0,0]
+mapInPlace
+  :: PrimMonad m
+  => (forall a . Bits a => a -> a)
+  -> U.MVector (PrimState m) Bit
+  -> m ()
+mapInPlace f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
+  (False, False) -> MU.set xs (Bit False)
+  (False, True)  -> pure ()
+  (True, False)  -> invertInPlace xs
+  (True, True)   -> MU.set xs (Bit True)
+{-# SPECIALIZE mapInPlace :: (forall a. Bits a => a -> a) -> MVector s Bit -> ST s () #-}
+{-# INLINE mapInPlace #-}
 
 -- | Invert (flip) all bits in-place.
 --
