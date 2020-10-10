@@ -120,8 +120,10 @@ For example, consider three possible representations of a set of `Word16`:
 * As a 64k-long unboxed `Vector Bool`, implementing union as `zipWith (||)`.
 * As a 64k-long unboxed `Vector Bit`, implementing union as `zipBits (.|.)`.
 
-In our benchmarks (see `bench` folder) for not-too-sparse sets
-the union of `Vector Bit` evaluates 24x-36x faster than the union of `IntSet`
+When flag `libgmp` is enabled,
+according to our benchmarks (see `bench` folder)
+the union of `Vector Bit` evaluates 24x-36x faster
+than the union of not-too-sparse `IntSet`
 and stunningly outperforms `Vector Bool` 500x-1000x.
 
 ## Binary polynomials
@@ -145,18 +147,14 @@ from `Integer` to `F2Poly` and back.
 
 ## Package flags
 
-This package supports the following flags to facilitate dependency management.
-Disabling them does not diminish `bitvec`'s capabilities, but makes certain operations slower.
+* Flag `libgmp`, disabled by default.
 
-* Flag `libgmp`, enabled by default.
-
-  Link against [GMP](https://gmplib.org/) library and use it to for ultimate performance of
+  Link against [GMP](https://gmplib.org/) library for the ultimate performance of
   `zipBits`, `invertBits` and `countBits`. GMP is readily available on most machines
   ([`brew install gmp`](https://formulae.brew.sh/formula/gmp)
   or [`port install gmp`](https://ports.macports.org/port/gmp/summary) on macOS,
   [`pacman -S mingw-w64-x86_64-gmp`](https://packages.msys2.org/package/mingw-w64-x86_64-gmp) on MinGW),
-  but you may find useful to disable this flag working
-  with exotic setup.
+  so users are strongly encouraged to enable it whenever possible.
 
 ## Similar packages
 

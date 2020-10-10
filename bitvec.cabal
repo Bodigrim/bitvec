@@ -56,8 +56,11 @@ source-repository head
   location: git://github.com/Bodigrim/bitvec.git
 
 flag libgmp
-  description: Link against GMP library
-  default: True
+  description:
+    Link against GMP library for the ultimate performance of
+    `zipBits`, `invertBits` and `countBits`. Users are strongly encouraged
+    to enable this flag whenever possible.
+  default: False
 
 library
   exposed-modules:
