@@ -132,7 +132,7 @@ castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
 -- Use 'cloneToWords' otherwise.
 -- Cf. 'Data.Bit.castToWordsM'.
 --
--- prop> castToWords (castFromWords v) == Just v
+-- > castToWords (castFromWords v) == Just v
 castToWords :: U.Vector Bit -> Maybe (U.Vector Word)
 castToWords (BitVec s n ws)
   | aligned s, aligned n =
@@ -175,7 +175,7 @@ castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
 -- It succeeds if a vector of bits is aligned.
 -- Use 'Data.Bit.cloneToWords8' otherwise.
 --
--- prop> castToWords8 (castFromWords8 v) == Just v
+-- > castToWords8 (castFromWords8 v) == Just v
 castToWords8 :: U.Vector Bit -> Maybe (U.Vector Word8)
 castToWords8 (BitVec s n ws)
   | s .&. 7 == 0, n .&. 7 == 0 =
@@ -376,7 +376,7 @@ clipHiBits (Bit False) k w = w .|. hiMask k
 -- >>> bitIndex (Bit True) (read "[0,0,0,0,0]")
 -- Nothing
 --
--- prop> bitIndex bit == nthBitIndex bit 1
+-- > bitIndex bit == nthBitIndex bit 1
 --
 -- One can also use it to reduce a vector with disjunction or conjunction:
 --
