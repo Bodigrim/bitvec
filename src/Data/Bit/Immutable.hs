@@ -591,7 +591,7 @@ countBits (BitVec off len arr) = case modWordSize (off + len) of
 countBitsInWords :: P.Vector Word -> Int
 countBitsInWords = P.foldl' (\acc word -> popCount word + acc) 0
 
--- | Return the indices of set bits in a vector.
+-- | Return 0-based indices of set bits in a vector.
 --
 -- >>> :set -XOverloadedLists
 -- >>> listBits [1,1,0,1,0,1]
