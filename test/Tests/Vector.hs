@@ -35,6 +35,7 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     testProperty "castToWords8_1"  prop_castToWords8_1
   , tenTimesLess $
     testProperty "castToWords8_2"  prop_castToWords8_2
+  , testProperty "cloneToByteString" prop_cloneToByteString
   , mkGroup "reverse"        prop_reverse_def
   , testGroup "countBits"
     [ testProperty "special case 1" case_countBits_1
@@ -321,3 +322,8 @@ prop_bitSize v = bitSizeMaybe v === Nothing
 
 prop_isSigned :: U.Vector Bit -> Property
 prop_isSigned v = isSigned v === False
+
+prop_cloneToByteString :: U.Vector Bit -> Property
+prop_cloneToByteString v = cloneToByteString (cloneFromByteString bs) === bs
+  where
+    bs = cloneToByteString v

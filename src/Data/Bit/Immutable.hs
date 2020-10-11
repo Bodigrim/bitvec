@@ -21,6 +21,9 @@ module Data.Bit.ImmutableTS
   , castToWords8
   , cloneToWords8
 
+  , cloneFromByteString
+  , cloneToByteString
+
   , zipBits
   , mapBits
   , invertBits
@@ -49,8 +52,10 @@ import Data.Bit.MutableTS
 #endif
 import Data.Bit.PdepPext
 import Data.Bit.Utils
+import qualified Data.ByteString.Internal as BS
 import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
+import qualified Data.Vector.Storable as S
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Data.Word
@@ -159,14 +164,10 @@ cloneToWords v = runST $ do
 
 -- | Cast a unboxed vector of 'Word8'
 -- to an unboxed vector of bits.
--- This can be used in conjunction
--- with @bytestring-to-vector@ package
--- to convert from 'Data.ByteString.ByteString':
 --
--- >>> :set -XOverloadedStrings
--- >>> import Data.Vector.Storable.ByteString
--- >>> castFromWords8 (Data.Vector.convert (byteStringToVector "abc"))
--- [1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1,1,0]
+-- >>> :set -XOverloadedLists
+-- >>> castFromWords8 [123]
+-- [1,1,0,1,1,1,1,0]
 castFromWords8 :: U.Vector Word8 -> U.Vector Bit
 castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
   where
@@ -186,22 +187,47 @@ castToWords8 (BitVec s n ws)
 
 -- | Clone an unboxed vector of bits
 -- to a new unboxed vector of 'Word8'.
--- If the bits don't completely fill the words,
+-- If the bits don't completely fill the bytes,
 -- the last 'Word8' will be zero-padded.
--- This can be used in conjunction
--- with @bytestring-to-vector@ package
--- to convert to 'Data.ByteString.ByteString':
 --
 -- >>> :set -XOverloadedLists
--- >>> import Data.Vector.Storable.ByteString
--- >>> vectorToByteString (Data.Vector.convert (Data.Bit.cloneToWords8 [1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1]))
--- "ab#"
+-- >>> cloneToWords8 [1,1,0,1,1,1,1]
+-- [123]
 cloneToWords8 :: U.Vector Bit -> U.Vector Word8
 cloneToWords8 v = runST $ do
   v' <- U.unsafeThaw v
   w  <- cloneToWords8M v'
   U.unsafeFreeze w
 {-# INLINE cloneToWords8 #-}
+
+-- | Clone a 'BS.ByteString' to a new unboxed vector of bits.
+--
+-- >>> :set -XOverloadedStrings
+-- >>> cloneFromByteString "abc"
+-- [1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1,1,0]
+cloneFromByteString :: BS.ByteString -> U.Vector Bit
+cloneFromByteString
+  = castFromWords8
+  . U.convert
+  . uncurry3 S.unsafeFromForeignPtr
+  . BS.toForeignPtr
+
+-- | Clone an unboxed vector of bits to a new 'BS.ByteString'.
+-- If the bits don't completely fill the bytes,
+-- the last character will be zero-padded.
+--
+-- >>> :set -XOverloadedLists
+-- >>> cloneToByteString [1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1]
+-- "ab#"
+cloneToByteString :: U.Vector Bit -> BS.ByteString
+cloneToByteString
+  = uncurry3 BS.fromForeignPtr
+  . S.unsafeToForeignPtr
+  . U.convert
+  . cloneToWords8
+
+uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
+uncurry3 f (x, y, z) = f x y z
 
 -- | Zip two vectors with the given function.
 -- Similar to 'Data.Vector.Unboxed.zipWith',

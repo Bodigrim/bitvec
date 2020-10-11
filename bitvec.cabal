@@ -68,6 +68,7 @@ library
     Data.Bit.ThreadSafe
   build-depends:
     base >=4.9 && <5,
+    bytestring >=0.10,
     deepseq,
     ghc-prim,
     primitive >=0.5,
