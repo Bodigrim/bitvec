@@ -2,6 +2,10 @@
 
 * Fix a grave bug in `bitIndex`.
 * Remove `integer-gmp` flag.
+* Make `libgmp` flag disabled by default.
+  Users are strongly encouraged to enable it whenever possible.
+* Add `mapBits` and `mapInPlace` functions.
+* Add `cloneToByteString` and `cloneFromByteString` functions.
 
 # 1.0.3.0
 
