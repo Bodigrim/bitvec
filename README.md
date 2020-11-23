@@ -151,7 +151,8 @@ from `Integer` to `F2Poly` and back.
 
   Link against [GMP](https://gmplib.org/) library for the ultimate performance of
   `zipBits`, `invertBits` and `countBits`. GMP is readily available on most machines
-  ([`brew install gmp`](https://formulae.brew.sh/formula/gmp)
+  ([`apt-get install libgmp-dev`](https://packages.ubuntu.com/focal/libgmp-dev) on Ubuntu,
+  [`brew install gmp`](https://formulae.brew.sh/formula/gmp)
   or [`port install gmp`](https://ports.macports.org/port/gmp/summary) on macOS,
   [`pacman -S mingw-w64-x86_64-gmp`](https://packages.msys2.org/package/mingw-w64-x86_64-gmp) on MinGW),
   so users are strongly encouraged to enable it whenever possible.
