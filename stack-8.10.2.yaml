@@ -1,3 +1,15 @@
 resolver: nightly-2020-09-28
 packages:
 - .
+flags:
+  quickcheck-classes:
+    aeson: false
+    semigroupoids: false
+    semirings: false
+  bifunctors:
+    tagged: false
+    semigroups: false
+  comonad:
+    test-doctests: false
+    containers: false
+    distributive: false
