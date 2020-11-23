@@ -148,7 +148,7 @@ instance Real F2Poly where
 -- to 'Integer' encoding.
 instance Integral F2Poly where
 #ifdef MIN_VERSION_ghc_bignum
-  toInteger xs = IP (bitsToByteArray (unF2Poly xs))
+  toInteger xs = integerFromBigNat# (bitsToByteArray (unF2Poly xs))
 #else
   toInteger xs = bigNatToInteger (BN# (bitsToByteArray (unF2Poly xs)))
 #endif
