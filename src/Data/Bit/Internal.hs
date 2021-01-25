@@ -31,7 +31,6 @@ module Data.Bit.InternalTS
 
 import Control.DeepSeq
 import Control.Exception
-import Control.Monad
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Bits
@@ -119,8 +118,8 @@ extendToWord (Bit True ) = complement 0
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is padded with memory garbage.
 indexWord :: U.Vector Bit -> Int -> Word
-indexWord !(BitVec _ 0 _) _ = 0
-indexWord !(BitVec off len' arr) !i' = word
+indexWord (BitVec _ 0 _) _ = 0
+indexWord (BitVec off len' arr) !i' = word
  where
   len    = off + len'
   i      = off + i'
@@ -129,19 +128,19 @@ indexWord !(BitVec off len' arr) !i' = word
   loWord = indexByteArray arr loIx
   hiWord = indexByteArray arr (loIx + 1)
 
-  word   = if nMod == 0
-    then loWord
-    else if loIx == divWordSize (len - 1)
-      then (loWord `unsafeShiftR` nMod)
-      else
-        (loWord `unsafeShiftR` nMod)
-          .|. (hiWord `unsafeShiftL` (wordSize - nMod))
+  word
+    | nMod == 0
+    = loWord
+    | loIx == divWordSize (len - 1)
+    = loWord `unsafeShiftR` nMod
+    | otherwise
+    = (loWord `unsafeShiftR` nMod) .|. (hiWord `unsafeShiftL` (wordSize - nMod))
 {-# INLINE indexWord #-}
 
 -- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is padded with memory garbage.
 readWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m Word
-readWord !(BitMVec _ 0 _) _ = pure 0
-readWord !(BitMVec off len' arr) !i' = do
+readWord (BitMVec _ 0 _) _ = pure 0
+readWord (BitMVec off len' arr) !i' = do
   let len  = off + len'
       i    = off + i'
       nMod = modWordSize i
@@ -190,8 +189,8 @@ modifyByteArray (MutableByteArray mba) (I# ix) (W# msk) (W# new) = do
 
 -- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
 writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()
-writeWord !(BitMVec _ 0 _) _ _ = pure ()
-writeWord !(BitMVec off len' arr) !i' !x
+writeWord (BitMVec _ 0 _) _ _ = pure ()
+writeWord (BitMVec off len' arr) !i' !x
   | iMod == 0
   = if len >= i + wordSize
     then writeByteArray arr iDiv x
@@ -378,7 +377,7 @@ instance MV.MVector U.MVector Bit where
       | otherwise = pure ()
 
   {-# INLINE basicUnsafeMove #-}
-  basicUnsafeMove !dst !src@(BitMVec srcShift srcLen _)
+  basicUnsafeMove !dst src@(BitMVec srcShift srcLen _)
     | MV.basicOverlaps dst src = do
           -- Align shifts of src and srcCopy to speed up basicUnsafeCopy srcCopy src
       srcCopy <- MV.drop (modWordSize srcShift)
@@ -483,9 +482,8 @@ flipBit v i =
 #endif
 
 instance V.Vector U.Vector Bit where
-  basicUnsafeFreeze (BitMVec s n v) =
-    liftM (BitVec s n) (unsafeFreezeByteArray v)
-  basicUnsafeThaw (BitVec s n v) = liftM (BitMVec s n) (unsafeThawByteArray v)
+  basicUnsafeFreeze (BitMVec s n v) = BitVec s n <$> unsafeFreezeByteArray v
+  basicUnsafeThaw (BitVec s n v) = BitMVec s n <$> unsafeThawByteArray v
   basicLength (BitVec _ n _) = n
 
   basicUnsafeIndexM (BitVec off _ arr) !i' = do

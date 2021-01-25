@@ -4,7 +4,6 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 
@@ -134,10 +133,10 @@ instance Num F2Poly where
 instance Enum F2Poly where
   fromEnum = fromIntegral
 #ifdef MIN_VERSION_ghc_bignum
-  toEnum !(I# i#) = F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
+  toEnum (I# i#) = F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
                            $ ByteArray (bigNatFromWord# (int2Word# i#))
 #else
-  toEnum !(I# i#) = F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
+  toEnum (I# i#) = F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
                            $ fromBigNat $ wordToBigNat (int2Word# i#)
 #endif
 
