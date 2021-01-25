@@ -1,8 +1,5 @@
-{-# LANGUAGE CPP              #-}
 {-# LANGUAGE MagicHash        #-}
 {-# LANGUAGE UnliftedFFITypes #-}
-
-#if UseLibGmp
 
 module Data.Bit.Gmp
   ( mpnCom
@@ -102,9 +99,3 @@ mpnXnorN :: MutableByteArray s -> ByteArray -> ByteArray -> Int -> ST s ()
 mpnXnorN (MutableByteArray res#) (ByteArray arg1#) (ByteArray arg2#) (I# limbs#) =
   unsafeIOToST (mpn_xnor_n res# arg1# arg2# limbs#)
 {-# INLINE mpnXnorN #-}
-
-#else
-
-module Data.Bit.Gmp where
-
-#endif
