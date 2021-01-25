@@ -61,14 +61,12 @@ import qualified Data.Vector.Unboxed.Mutable as MU
 import Data.Word
 import Unsafe.Coerce
 
-#include "MachDeps.h"
-
-#if WORD_SIZE_IN_BITS == 64
-#define GMP_LIMB_SHIFT 3
-#elif WORD_SIZE_IN_BITS == 32
-#define GMP_LIMB_SHIFT 2
-#else
-#error unsupported WORD_SIZE_IN_BITS config
+#if UseLibGmp
+gmpLimbShift :: Int
+gmpLimbShift = case wordSize of
+  32 -> 2
+  64 -> 3
+  _  -> error "gmpLimbShift: unknown architecture"
 #endif
 
 instance {-# OVERLAPPING #-} Bits (Vector Bit) where
@@ -261,7 +259,7 @@ zipBits _ _ (BitVec _ 0 _) = U.empty
 zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2) = runST $ do
     let l = l1 `min` l2
         w = nWords l
-        b = w `shiftL` GMP_LIMB_SHIFT
+        b = w `shiftL` gmpLimbShift
     brr <- newByteArray b
     let ff = unBit $ f (Bit False) (Bit False)
         ft = unBit $ f (Bit False) (Bit True)
@@ -328,7 +326,7 @@ invertBits (BitVec _ 0 _) = U.empty
 #if UseLibGmp
 invertBits (BitVec 0 l arg) = runST $ do
   let w = nWords l
-  brr <- newByteArray (w `shiftL` GMP_LIMB_SHIFT)
+  brr <- newByteArray (w `shiftL` gmpLimbShift)
   mpnCom brr arg w
   BitVec 0 l <$> unsafeFreezeByteArray brr
 #endif

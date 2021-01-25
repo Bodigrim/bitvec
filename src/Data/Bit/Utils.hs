@@ -25,8 +25,6 @@ module Data.Bit.Utils
   , toPrimVector
   ) where
 
-#include "MachDeps.h"
-
 import Data.Bits
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
@@ -104,11 +102,20 @@ meld b lo hi = (lo .&. m) .|. (hi .&. complement m) where m = mask b
 {-# INLINE meld #-}
 
 #if __GLASGOW_HASKELL__ >= 810
+
 reverseWord :: Word -> Word
 reverseWord (W# w#) = W# (bitReverse# w#)
-#elif WORD_SIZE_IN_BITS == 64
+
+#else
+
 reverseWord :: Word -> Word
-reverseWord x0 = x6
+reverseWord = case wordSize of
+  32 -> reverseWord32
+  64 -> reverseWord64
+  _  -> error "reverseWord: unknown architecture"
+
+reverseWord64 :: Word -> Word
+reverseWord64 x0 = x6
  where
   x1 = ((x0 .&. 0x5555555555555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1)
   x2 = ((x1 .&. 0x3333333333333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2)
@@ -116,17 +123,16 @@ reverseWord x0 = x6
   x4 = ((x3 .&. 0x00FF00FF00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00FF00FF00) `shiftR`  8)
   x5 = ((x4 .&. 0x0000FFFF0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000FFFF0000) `shiftR` 16)
   x6 = ((x5 .&. 0x00000000FFFFFFFF) `shiftL` 32) .|. ((x5 .&. 0xFFFFFFFF00000000) `shiftR` 32)
-#elif WORD_SIZE_IN_BITS == 32
-reverseWord :: Word -> Word
-reverseWord x0 = x5
+
+reverseWord32 :: Word -> Word
+reverseWord32 x0 = x5
  where
   x1 = ((x0 .&. 0x55555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAA) `shiftR`  1)
   x2 = ((x1 .&. 0x33333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCC) `shiftR`  2)
   x3 = ((x2 .&. 0x0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0) `shiftR`  4)
   x4 = ((x3 .&. 0x00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00) `shiftR`  8)
   x5 = ((x4 .&. 0x0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000) `shiftR` 16)
-#else
-#error unsupported WORD_SIZE_IN_BITS config
+
 #endif
 
 reversePartialWord :: Int -> Word -> Word
@@ -143,18 +149,22 @@ selectWord :: Word -> Word -> (Int, Word)
 selectWord msk src = (popCount msk, pext src msk)
 {-# INLINE selectWord #-}
 
-#if WORD_SIZE_IN_BITS == 64
-
 -- | Insert 0 between each consecutive bits of an input.
 -- xyzw --> (x0y0, z0w0)
 sparseBits :: Word -> (Word, Word)
-sparseBits w = (x, y)
-  where
-    x = sparseBitsInternal (w .&. loMask 32)
-    y = sparseBitsInternal (w `shiftR` 32)
+sparseBits = case wordSize of
+  32 -> sparseBits32
+  64 -> sparseBits64
+  _  -> error "sparseBits: unknown architecture"
 
-sparseBitsInternal :: Word -> Word
-sparseBitsInternal x = x4
+sparseBits64 :: Word -> (Word, Word)
+sparseBits64 w = (x, y)
+  where
+    x = sparseBitsInternal64 (w .&. loMask 32)
+    y = sparseBitsInternal64 (w `shiftR` 32)
+
+sparseBitsInternal64 :: Word -> Word
+sparseBitsInternal64 x = x4
   where
     t  = (x  `xor` (x  `shiftR` 16)) .&. 0x00000000ffff0000
     x0 = x  `xor` (t  `xor` (t  `shiftL` 16));
@@ -168,18 +178,14 @@ sparseBitsInternal x = x4
     t3 = (x3 `xor` (x3 `shiftR` 1)) .&. 0x2222222222222222;
     x4 = x3 `xor` (t3 `xor` (t3 `shiftL` 1));
 
-#elif WORD_SIZE_IN_BITS == 32
-
--- | Insert 0 between each consecutive bits of an input.
--- xyzw --> (x0y0, z0w0)
-sparseBits :: Word -> (Word, Word)
-sparseBits w = (x, y)
+sparseBits32 :: Word -> (Word, Word)
+sparseBits32 w = (x, y)
   where
-    x = sparseBitsInternal (w .&. loMask 16)
-    y = sparseBitsInternal (w `shiftR` 16)
+    x = sparseBitsInternal32 (w .&. loMask 16)
+    y = sparseBitsInternal32 (w `shiftR` 16)
 
-sparseBitsInternal :: Word -> Word
-sparseBitsInternal x0 = x4
+sparseBitsInternal32 :: Word -> Word
+sparseBitsInternal32 x0 = x4
   where
     t0 = (x0 `xor` (x0 `shiftR` 8)) .&. 0x0000ff00;
     x1 = x0 `xor` (t0 `xor` (t0 `shiftL` 8));
@@ -189,10 +195,6 @@ sparseBitsInternal x0 = x4
     x3 = x2 `xor` (t2 `xor` (t2 `shiftL` 2));
     t3 = (x3 `xor` (x3 `shiftR` 1)) .&. 0x22222222;
     x4 = x3 `xor` (t3 `xor` (t3 `shiftL` 1));
-
-#else
-#error unsupported WORD_SIZE_IN_BITS config
-#endif
 
 loMask :: Int -> Word
 loMask n = 1 `unsafeShiftL` n - 1
