@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 #ifndef BITVEC_THREADSAFE
 -- |
@@ -22,6 +23,8 @@ module Data.Bit
 module Data.Bit.ThreadSafe
 #endif
   ( Bit(..)
+  , U.Vector(BitVec)
+  , U.MVector(BitMVec)
 
   , unsafeFlipBit
   , flipBit
@@ -71,6 +74,7 @@ module Data.Bit.ThreadSafe
   ) where
 
 import Prelude hiding (and, or)
+import qualified Data.Vector.Unboxed as U
 
 #ifndef BITVEC_THREADSAFE
 import Data.Bit.F2Poly
