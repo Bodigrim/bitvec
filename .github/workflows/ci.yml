@@ -39,7 +39,7 @@ jobs:
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: 'latest'
-    - uses: actions/cache@v2
+    - uses: actions/cache@v2.1.4
       name: Cache cabal stuff
       with:
         path: |
