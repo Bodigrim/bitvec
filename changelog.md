@@ -1,3 +1,7 @@
+# 1.1.1.0
+
+* Export `BitVec` and `BitMVec` constructors.
+
 # 1.1.0.0
 
 * Fix a grave bug in `bitIndex`.
