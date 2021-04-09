@@ -16,16 +16,19 @@ import Data.Bit
 import Data.Bit.ThreadSafe
 #endif
 import Data.Bits
-import Data.Proxy
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as MG
 import qualified Data.Vector.Generic.New as N
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as M
-import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
+
+#ifdef MIN_VERSION_quickcheck_classes
+import Data.Proxy
+import Test.QuickCheck.Classes
+#endif
 
 mvectorTests :: TestTree
 mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
@@ -43,7 +46,9 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     , tenTimesLess $
       testProperty "castToWords_2"  prop_castToWords_2
     ]
+#ifdef MIN_VERSION_quickcheck_classes
   , lawsToTest $ muvectorLaws (Proxy :: Proxy Bit)
+#endif
   , testCase "basicInitialize 1" case_write_init_read1
   , testCase "basicInitialize 2" case_write_init_read2
   , testCase "basicInitialize 3" case_write_init_read3

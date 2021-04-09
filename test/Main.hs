@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP       #-}
 {-# LANGUAGE MagicHash #-}
 
 module Main where
@@ -6,7 +5,7 @@ module Main where
 import Control.Exception
 import Data.Bit
 import Data.Proxy
-import Test.QuickCheck.Classes
+import Test.QuickCheck.Classes.Base
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
@@ -41,9 +40,7 @@ lawsTests = adjustOption (const $ QuickCheckTests 100)
   , boundedEnumLaws (Proxy :: Proxy Bit)
   , showLaws        (Proxy :: Proxy Bit)
   , showReadLaws    (Proxy :: Proxy Bit)
-#if MIN_VERSION_quickcheck_classes(0,6,3)
   , numLaws         (Proxy :: Proxy Bit)
-#endif
   , integralLaws    (Proxy :: Proxy Bit)
   ] ++
   [ testProperty "divideByZero" prop_bitDivideByZero

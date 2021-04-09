@@ -109,6 +109,7 @@ test-suite bitvec-tests
     base,
     bitvec,
     primitive >=0.5,
+    quickcheck-classes-base,
     quickcheck-classes >=0.6.1,
     vector >=0.11,
     tasty,
