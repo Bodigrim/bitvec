@@ -16,7 +16,7 @@ import GHC.Num.Integer
 #else
 import GHC.Integer.Logarithms
 #endif
-import Test.QuickCheck.Classes
+import Test.QuickCheck.Classes.Base
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
@@ -38,10 +38,8 @@ f2polyTests = testGroup "F2Poly"
     \n -> let x = toEnum n in toEnum (fromEnum x) === (x :: F2Poly)
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
-#if MIN_VERSION_quickcheck_classes(0,6,3)
   , lawsToTest $
     numLaws (Proxy :: Proxy F2Poly)
-#endif
   , lawsToTest $
     integralLaws (Proxy :: Proxy F2Poly)
   , testProperty "fromNegative" prop_f2polyFromNegative

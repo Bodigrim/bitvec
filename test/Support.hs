@@ -15,7 +15,7 @@ import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.New as N
 import qualified Data.Vector.Unboxed as U
-import Test.QuickCheck.Classes
+import Test.QuickCheck.Classes.Base
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
