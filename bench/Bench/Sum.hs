@@ -5,7 +5,7 @@ module Bench.Sum
 import Data.Bit
 import qualified Data.Bit.ThreadSafe as TS
 import Data.Bits
-import Data.List
+import Data.Foldable
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Gauge.Main

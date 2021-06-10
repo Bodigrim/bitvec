@@ -90,7 +90,7 @@ library
   if flag(libgmp)
     other-modules:
       Data.Bit.Gmp
-  ghc-options: -O2 -Wall
+  ghc-options: -O2 -Wall -Wcompat
   include-dirs: src
 
   if impl(ghc <9.0)
@@ -126,7 +126,7 @@ test-suite bitvec-tests
     Tests.SetOps
     Tests.SetOpsTS
     Tests.Vector
-  ghc-options: -Wall -threaded -rtsopts
+  ghc-options: -Wall -threaded -rtsopts -Wcompat
   include-dirs: test
 
   if impl(ghc <9.0)
@@ -162,7 +162,7 @@ benchmark bitvec-bench
     Bench.Reverse
     Bench.Sum
     Bench.Union
-  ghc-options: -O2 -Wall
+  ghc-options: -O2 -Wall -Wcompat
 
   if impl(ghc <9.0)
     build-depends: integer-gmp

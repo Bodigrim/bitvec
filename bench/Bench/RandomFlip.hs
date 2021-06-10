@@ -7,8 +7,8 @@ import Control.Monad.ST
 import Data.Bit
 import qualified Data.Bit.ThreadSafe as TS
 import Data.Bits
+import Data.Foldable
 import qualified Data.IntSet as IS
-import Data.List
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Gauge.Main
 import System.Random
