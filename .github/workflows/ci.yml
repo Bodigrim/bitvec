@@ -6,25 +6,6 @@ on:
   pull_request: {}
 
 jobs:
-  build-freebsd:
-    # https://github.com/vmactions/freebsd-vm#under-the-hood.
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      id: build-FreeBSD
-      uses: vmactions/freebsd-vm@v0.0.9
-      with:
-        usesh: true
-        prepare: pkg install -y ghc hs-cabal-install autoconf git
-        run: |
-          cabal update
-          cabal test -flibgmp
-          cabal test
-          cabal bench --benchmark-option=-l
-          cabal haddock
-          cabal sdist
-
   build:
     runs-on: ${{ matrix.os }}
     strategy:
