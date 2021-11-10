@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE RankNTypes          #-}
@@ -15,9 +16,12 @@ import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.New as N
 import qualified Data.Vector.Unboxed as U
-import Test.QuickCheck.Classes.Base
 import Test.Tasty
 import Test.Tasty.QuickCheck
+
+#ifdef MIN_VERSION_quickcheck_classes_base
+import Test.QuickCheck.Classes.Base
+#endif
 
 instance Arbitrary Bit where
   arbitrary = Bit <$> arbitrary
@@ -156,6 +160,8 @@ twoTimesMore :: TestTree -> TestTree
 twoTimesMore = adjustOption $
   \(QuickCheckTests n) -> QuickCheckTests (n * 2)
 
+#ifdef MIN_VERSION_quickcheck_classes_base
 lawsToTest :: Laws -> TestTree
 lawsToTest (Laws name props) =
   testGroup name $ map (uncurry testProperty) props
+#endif

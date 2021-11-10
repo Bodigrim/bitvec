@@ -8,7 +8,6 @@ module Tests.F2Poly
 import Control.Exception
 import Data.Bit
 import Data.Bits
-import Data.Proxy
 import Data.Ratio
 import GHC.Exts
 #ifdef MIN_VERSION_ghc_bignum
@@ -16,9 +15,13 @@ import GHC.Num.Integer
 #else
 import GHC.Integer.Logarithms
 #endif
-import Test.QuickCheck.Classes.Base
 import Test.Tasty
 import Test.Tasty.QuickCheck
+
+#ifdef MIN_VERSION_quickcheck_classes_base
+import Data.Proxy
+import Test.QuickCheck.Classes.Base
+#endif
 
 import Support
 
@@ -36,12 +39,14 @@ f2polyTests = testGroup "F2Poly"
   , testProperty "GCD"                 prop_f2polyGCD
   , testProperty "Enum" $
     \n -> let x = toEnum n in toEnum (fromEnum x) === (x :: F2Poly)
+#ifdef MIN_VERSION_quickcheck_classes_base
   , tenTimesLess $ lawsToTest $
     showLaws (Proxy :: Proxy F2Poly)
   , lawsToTest $
     numLaws (Proxy :: Proxy F2Poly)
   , lawsToTest $
     integralLaws (Proxy :: Proxy F2Poly)
+#endif
   , testProperty "fromNegative" prop_f2polyFromNegative
   , testProperty "divideByZero" prop_f2polyDivideByZero
   , testProperty "toRational" prop_f2polyToRational
