@@ -1,9 +1,0 @@
-packages: bitvec.cabal
-tests: True
-benchmarks: True
-
-constraints:
-  quickcheck-classes -aeson -semigroupoids -semirings,
-  bifunctors -tagged -semigroups,
-  comonad -test-doctests -containers -distributive,
-  optparse-applicative -process
