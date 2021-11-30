@@ -87,9 +87,6 @@ library
     Data.Bit.MutableTS
     Data.Bit.PdepPext
     Data.Bit.Utils
-  if flag(libgmp)
-    other-modules:
-      Data.Bit.Gmp
   ghc-options: -O2 -Wall -Wcompat
   include-dirs: src
 

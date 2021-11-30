@@ -1,3 +1,7 @@
+# 1.1.2.0
+
+* Fix Cabal 3.7+ incompatibility.
+
 # 1.1.1.0
 
 * Export `BitVec` and `BitMVec` constructors.
