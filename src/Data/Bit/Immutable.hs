@@ -84,6 +84,27 @@ instance {-# OVERLAPPING #-} Bits (Vector Bit) where
     | n < 0 || n >= U.length v = False
     | otherwise = unBit (U.unsafeIndex v n)
 
+  setBit v n
+    | n < 0 || n >= U.length v = v
+    | otherwise = runST $ do
+      u <- U.thaw v
+      MU.unsafeWrite u n (Bit True)
+      U.unsafeFreeze u
+
+  clearBit v n
+    | n < 0 || n >= U.length v = v
+    | otherwise = runST $ do
+      u <- U.thaw v
+      MU.unsafeWrite u n (Bit False)
+      U.unsafeFreeze u
+
+  complementBit v n
+    | n < 0 || n >= U.length v = v
+    | otherwise = runST $ do
+      u <- U.thaw v
+      unsafeFlipBit u n
+      U.unsafeFreeze u
+
   bit n
     | n < 0 = U.empty
     | otherwise = runST $ do

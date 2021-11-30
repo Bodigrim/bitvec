@@ -12,7 +12,7 @@ import Data.List (findIndex)
 import qualified Data.Vector.Unboxed as U
 import Data.Word
 import Test.Tasty
-import Test.Tasty.QuickCheck
+import Test.Tasty.QuickCheck (Property, NonNegative(..), Positive(..), testProperty, Large(..), (===), property, once, (==>), ioProperty, (.&&.))
 
 vectorTests :: TestTree
 vectorTests = testGroup "Data.Vector.Unboxed.Bit"
@@ -82,6 +82,9 @@ vectorTests = testGroup "Data.Vector.Unboxed.Bit"
     , testProperty "zeroBits"             prop_zeroBits
     , testProperty "bitSize"              prop_bitSize
     , testProperty "isSigned"             prop_isSigned
+    , testProperty "setBit"               prop_setBit
+    , testProperty "clearBit"             prop_clearBit
+    , testProperty "complementBit"        prop_complementBit
     ]
   ]
 
@@ -322,6 +325,15 @@ prop_bitSize v = bitSizeMaybe v === Nothing
 
 prop_isSigned :: U.Vector Bit -> Property
 prop_isSigned v = isSigned v === False
+
+prop_setBit :: Int -> U.Vector Bit -> Property
+prop_setBit n v = v `setBit` n === U.imap ((.|.) . Bit . (== n)) v
+
+prop_clearBit :: Int -> U.Vector Bit -> Property
+prop_clearBit n v = v `clearBit` n === U.imap ((.&.) . Bit . (/= n)) v
+
+prop_complementBit :: Int -> U.Vector Bit -> Property
+prop_complementBit n v = v `complementBit` n === U.imap (xor . Bit . (== n)) v
 
 prop_cloneToByteString :: U.Vector Bit -> Property
 prop_cloneToByteString v = cloneToByteString (cloneFromByteString bs) === bs
