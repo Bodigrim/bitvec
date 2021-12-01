@@ -36,3 +36,27 @@ jobs:
         cabal bench --benchmark-option=-l
         cabal haddock
         cabal sdist
+
+  emulated:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: ['s390x', 'ppc64le']
+    steps:
+    - uses: actions/checkout@v2
+    - uses: uraimo/run-on-arch-action@v2.1.1
+      timeout-minutes: 60
+      with:
+        arch: ${{ matrix.arch }}
+        distro: ubuntu20.04
+        githubToken: ${{ github.token }}
+        install: |
+          apt-get update -y
+          apt-get install -y ghc libghc-vector-dev libghc-tasty-quickcheck-dev libghc-tasty-hunit-dev
+        run: |
+          ghc --version
+          echo "#define BOUNDS_CHECK(f) (\_ _ _ -> id)" > src/vector.h
+          ghc --make -Isrc:test -isrc:test -o Tests test/Main.hs +RTS -s
+          ./Tests +RTS -s
