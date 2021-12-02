@@ -7,8 +7,8 @@ import qualified Data.Bit.ThreadSafe as TS
 import Data.Bits
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
-import Gauge.Main
 import System.Random
+import Test.Tasty.Bench
 
 randomBools :: [Bool]
 randomBools = map (> (0 :: Int)) $ randoms $ mkStdGen 42

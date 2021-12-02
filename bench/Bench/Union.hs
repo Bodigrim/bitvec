@@ -8,8 +8,8 @@ import Data.Bits
 import qualified Data.IntSet as IS
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
-import Gauge.Main
 import System.Random
+import Test.Tasty.Bench
 
 randomBools :: [Bool]
 randomBools

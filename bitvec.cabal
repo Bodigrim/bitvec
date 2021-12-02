@@ -137,11 +137,8 @@ benchmark bitvec-bench
     bitvec,
     containers,
     random,
+    tasty-bench,
     vector
-  build-depends:
-    tasty-bench
-  mixins:
-    tasty-bench (Test.Tasty.Bench as Gauge.Main)
   type: exitcode-stdio-1.0
   main-is: Bench.hs
   default-language: Haskell2010

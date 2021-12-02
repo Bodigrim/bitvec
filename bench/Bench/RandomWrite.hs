@@ -10,8 +10,8 @@ import Data.Bits
 import Data.Foldable
 import qualified Data.IntSet as IS
 import qualified Data.Vector.Unboxed.Mutable as MU
-import Gauge.Main
 import System.Random
+import Test.Tasty.Bench
 
 randomWrites :: [(Int, Bool)]
 randomWrites

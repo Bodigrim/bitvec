@@ -1,6 +1,6 @@
 module Main where
 
-import Gauge.Main
+import Test.Tasty.Bench
 
 import Bench.BitIndex
 import Bench.GCD
