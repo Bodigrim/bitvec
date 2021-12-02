@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Tests.Vector
   ( vectorTests
   ) where
@@ -9,10 +11,14 @@ import Control.Exception
 import Data.Bit
 import Data.Bits
 import Data.List (findIndex)
+import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import Data.Word
 import Test.Tasty
-import Test.Tasty.QuickCheck (Property, NonNegative(..), Positive(..), testProperty, Large(..), (===), property, once, (==>), ioProperty, (.&&.))
+import Test.Tasty.QuickCheck (Property, NonNegative(..), Positive(..), testProperty, Large(..), (===), property, once, (==>), ioProperty, (.&&.), counterexample)
+import Unsafe.Coerce
+
+#include "MachDeps.h"
 
 vectorTests :: TestTree
 vectorTests = testGroup "Data.Vector.Unboxed.Bit"
@@ -136,19 +142,31 @@ prop_castToWords_2 xs = case castToWords xs of
   Just ws -> castFromWords ws === xs
 
 prop_cloneFromWords8_def :: U.Vector Word8 -> Property
-prop_cloneFromWords8_def ws =
-  U.toList (castFromWords8 ws) === concatMap wordToBitList (U.toList ws)
+prop_cloneFromWords8_def ws
+  = counterexample ("offset = " ++ show off ++ " len = " ++ show len)
+  $ U.toList (castFromWords8 ws) === concatMap wordToBitList (U.toList ws)
+  where
+    P.Vector off len _ = unsafeCoerce ws
 
 prop_cloneToWords8_def :: U.Vector Bit -> Property
-prop_cloneToWords8_def xs = U.toList (cloneToWords8 xs) === loop (U.toList xs)
- where
-  loop [] = []
-  loop bs = case packBitsToWord bs of
-    (w, bs') -> w : loop bs'
+prop_cloneToWords8_def xs@(BitVec off len _)
+  = counterexample ("offset = " ++ show off ++ " len = " ++ show len)
+  $ U.toList (cloneToWords8 xs) === loop (U.toList xs)
+  where
+    loop [] = []
+    loop bs = case packBitsToWord bs of
+      (w, bs') -> w : loop bs'
 
 prop_castToWords8_1 :: U.Vector Word8 -> Property
-prop_castToWords8_1 ws =
-  Just ws === castToWords8 (castFromWords8 ws)
+#ifdef WORDS_BIGENDIAN
+prop_castToWords8_1 ws = Nothing === castToWords8 (castFromWords8 ws)
+#else
+prop_castToWords8_1 ws
+  = counterexample ("offset = " ++ show off ++ " len = " ++ show len)
+  $ Just ws === castToWords8 (castFromWords8 ws)
+  where
+    P.Vector off len _ = unsafeCoerce ws
+#endif
 
 prop_castToWords8_2 :: U.Vector Bit -> Property
 prop_castToWords8_2 xs = case castToWords8 xs of
@@ -336,6 +354,8 @@ prop_complementBit :: Int -> U.Vector Bit -> Property
 prop_complementBit n v = v `complementBit` n === U.imap (xor . Bit . (== n)) v
 
 prop_cloneToByteString :: U.Vector Bit -> Property
-prop_cloneToByteString v = cloneToByteString (cloneFromByteString bs) === bs
+prop_cloneToByteString v@(BitVec off len _)
+  = counterexample ("offset = " ++ show off ++ " len = " ++ show len)
+  $ cloneToByteString (cloneFromByteString bs) === bs
   where
     bs = cloneToByteString v

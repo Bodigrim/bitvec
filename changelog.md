@@ -1,6 +1,7 @@
 # 1.1.2.0
 
 * Fix `setBit`, `clearBit`, `complementBit` to preserve vector's length.
+* Fix various issues on big-endian architectures.
 * Fix Cabal 3.7+ incompatibility.
 
 # 1.1.1.0

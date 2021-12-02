@@ -2,8 +2,10 @@
 
 {-# LANGUAGE BangPatterns         #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE MagicHash            #-}
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TupleSections        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -37,6 +39,8 @@ module Data.Bit.ImmutableTS
   , listBits
   ) where
 
+#include "MachDeps.h"
+
 import Control.Monad
 import Control.Monad.ST
 import Data.Bits
@@ -60,6 +64,10 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Data.Word
 import Unsafe.Coerce
+
+#ifdef WORDS_BIGENDIAN
+import GHC.Exts
+#endif
 
 #if UseLibGmp
 gmpLimbShift :: Int
@@ -184,13 +192,31 @@ cloneToWords v = runST $ do
 -- | Cast a unboxed vector of 'Word8'
 -- to an unboxed vector of bits.
 --
+-- On big-endian architectures 'castFromWords8'
+-- resorts to copying instead of aliasing underlying arrays.
+--
 -- >>> :set -XOverloadedLists
 -- >>> castFromWords8 [123]
 -- [1,1,0,1,1,1,1,0]
 castFromWords8 :: U.Vector Word8 -> U.Vector Bit
 castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
   where
+#ifdef WORDS_BIGENDIAN
+    P.Vector off' len arr' = unsafeCoerce ws
+    off = 0
+    arr = runST $ do
+      let lenWords = nWords $ len `shiftL` 3
+          len' = wordsToBytes lenWords
+      marr <- newByteArray len'
+      copyByteArray marr 0 arr' off' len
+      fillByteArray marr len (len' - len) 0
+      forM_ [0..lenWords - 1] $ \i -> do
+        W# w <- readByteArray marr i
+        writeByteArray marr i (W# (byteSwap# w))
+      unsafeFreezeByteArray marr
+#else
     P.Vector off len arr = unsafeCoerce ws
+#endif
 
 -- | Try to cast an unboxed vector of bits
 -- to an unboxed vector of 'Word8'.
@@ -199,10 +225,14 @@ castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
 --
 -- > castToWords8 (castFromWords8 v) == Just v
 castToWords8 :: U.Vector Bit -> Maybe (U.Vector Word8)
+#ifdef WORDS_BIGENDIAN
+castToWords8 = const Nothing
+#else
 castToWords8 (BitVec s n ws)
-  | s .&. 7 == 0, n .&. 7 == 0 =
-    Just $ unsafeCoerce $ P.Vector (s `shiftR` 3) (n `shiftR` 3) ws
+  | s .&. 7 == 0, n .&. 7 == 0
+  = Just $ unsafeCoerce $ P.Vector (s `shiftR` 3) (n `shiftR` 3) ws
   | otherwise = Nothing
+#endif
 
 -- | Clone an unboxed vector of bits
 -- to a new unboxed vector of 'Word8'.

@@ -2,6 +2,7 @@
 
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -26,6 +27,8 @@ module Data.Bit.MutableTS
   , reverseInPlace
   ) where
 
+#include "MachDeps.h"
+
 import Control.Monad
 import Control.Monad.Primitive
 import Control.Monad.ST
@@ -41,6 +44,10 @@ import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Data.Word
+
+#ifdef WORDS_BIGENDIAN
+import GHC.Exts
+#endif
 
 -- | Cast a vector of words to a vector of bits.
 -- Cf. 'Data.Bit.castFromWords'.
@@ -83,11 +90,20 @@ cloneToWords8M
   -> m (MVector (PrimState m) Word8)
 cloneToWords8M v = do
   let lenBits  = MU.length v
-      lenWords = (lenBits + 7) `shiftR` 3
-  w@(BitMVec _ _ arr) <- MU.unsafeNew (lenWords `shiftL` 3)
-  MU.unsafeCopy (MU.slice 0 lenBits w) v
-  MU.set (MU.slice lenBits (lenWords `shiftL` 3 - lenBits) w) (Bit False)
-  pure $ MU.MV_Word8 $ P.MVector 0 lenWords arr
+      -- Take care about big-endian architectures: allocate full words!
+      actualLenBytes = (lenBits + 7) `shiftR` 3
+      roundedLenBytes = wordsToBytes (nWords lenBits)
+  ws@(BitMVec _ _ arr) <- MU.unsafeNew (roundedLenBytes `shiftL` 3)
+  MU.unsafeCopy (MU.slice 0 lenBits ws) v
+  MU.set (MU.slice lenBits (roundedLenBytes `shiftL` 3 - lenBits) ws) (Bit False)
+
+#ifdef WORDS_BIGENDIAN
+  forM_ [0..nWords lenBits - 1] $ \i -> do
+    W# w <- readByteArray arr i
+    writeByteArray arr i (W# (byteSwap# w))
+#endif
+
+  pure $ MU.MV_Word8 $ P.MVector 0 actualLenBytes arr
 {-# INLINE cloneToWords8M #-}
 
 -- | Zip two vectors with the given function.
