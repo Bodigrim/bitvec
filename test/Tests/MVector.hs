@@ -47,7 +47,7 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
       testProperty "castToWords_2"  prop_castToWords_2
     ]
 #ifdef MIN_VERSION_quickcheck_classes
-  , lawsToTest $ muvectorLaws (Proxy :: Proxy Bit)
+  , lawsToTest' $ muvectorLaws (Proxy :: Proxy Bit)
 #endif
   , testCase "basicInitialize 1" case_write_init_read1
   , testCase "basicInitialize 2" case_write_init_read2

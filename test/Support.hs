@@ -22,6 +22,9 @@ import Test.Tasty.QuickCheck
 #ifdef MIN_VERSION_quickcheck_classes_base
 import Test.QuickCheck.Classes.Base
 #endif
+#ifdef MIN_VERSION_quickcheck_classes
+import qualified Test.QuickCheck.Classes as QCC
+#endif
 
 instance Arbitrary Bit where
   arbitrary = Bit <$> arbitrary
@@ -163,5 +166,11 @@ twoTimesMore = adjustOption $
 #ifdef MIN_VERSION_quickcheck_classes_base
 lawsToTest :: Laws -> TestTree
 lawsToTest (Laws name props) =
+  testGroup name $ map (uncurry testProperty) props
+#endif
+
+#ifdef MIN_VERSION_quickcheck_classes
+lawsToTest' :: QCC.Laws -> TestTree
+lawsToTest' (QCC.Laws name props) =
   testGroup name $ map (uncurry testProperty) props
 #endif
