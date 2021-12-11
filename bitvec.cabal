@@ -1,10 +1,10 @@
 name: bitvec
-version: 1.1.1.0
+version: 1.1.2.0
 cabal-version: >=1.10
 build-type: Simple
 license: BSD3
 license-file: LICENSE
-copyright: 2019-2020 Andrew Lelechenko, 2012-2016 James Cook
+copyright: 2019-2021 Andrew Lelechenko, 2012-2016 James Cook
 maintainer: Andrew Lelechenko <andrew.lelechenko@gmail.com>
 homepage: https://github.com/Bodigrim/bitvec
 synopsis: Space-efficient bit vectors
@@ -46,7 +46,7 @@ category: Data, Bit Vectors
 author: Andrew Lelechenko <andrew.lelechenko@gmail.com>,
         James Cook <mokus@deepbondi.net>
 
-tested-with: GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.1 GHC ==8.8.2 GHC ==8.8.4 GHC ==8.10.4 GHC ==9.0.1
+tested-with: GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.1 GHC ==8.8.2 GHC ==8.8.4 GHC ==8.10.7 GHC ==9.0.1 GHC ==9.2.1
 extra-source-files:
   changelog.md
   README.md
@@ -61,6 +61,7 @@ flag libgmp
     `zipBits`, `invertBits` and `countBits`. Users are strongly encouraged
     to enable this flag whenever possible.
   default: False
+  manual: True
 
 library
   exposed-modules:
@@ -70,7 +71,6 @@ library
     base >=4.9 && <5,
     bytestring >=0.10,
     deepseq,
-    ghc-prim,
     primitive >=0.5,
     vector >=0.11
   default-language: Haskell2010
