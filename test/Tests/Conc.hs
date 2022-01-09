@@ -10,13 +10,13 @@ import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 concTests :: TestTree
 concTests = testGroup "Concurrency"
-  [ testCase "invertInPlace"  case_conc_invert
-  , testCase "reverseInPlace" case_conc_reverse
-  , testCase "zipInPlace"     case_conc_zip
+  [ testProperty "invertInPlace"  case_conc_invert
+  , testProperty "reverseInPlace" case_conc_reverse
+  , testProperty "zipInPlace"     case_conc_zip
   ]
 
 runConcurrently :: IO () -> IO () -> IO ()
@@ -28,8 +28,8 @@ runConcurrently action1 action2 = do
   action2
   takeMVar m
 
-case_conc_invert :: IO ()
-case_conc_invert = replicateM_ 1000 $ do
+case_conc_invert :: Property
+case_conc_invert = ioProperty $ replicateM_ 1000 $ do
   let len  = 64
       len' = 37
   vec <- M.replicate len (Bit True)
@@ -38,10 +38,10 @@ case_conc_invert = replicateM_ 1000 $ do
     (replicateM_ 1000 $ invertInPlace (M.take len' vec))
     (replicateM_ 1000 $ invertInPlace (M.drop len' vec))
   wec <- V.unsafeFreeze vec
-  assertEqual "should be equal" ref wec
+  pure $ ref === wec
 
-case_conc_reverse :: IO ()
-case_conc_reverse = replicateM_ 1000 $ do
+case_conc_reverse :: Property
+case_conc_reverse = ioProperty $ replicateM_ 1000 $ do
   let len  = 128
       len' = 66
   vec <- M.new len
@@ -51,10 +51,10 @@ case_conc_reverse = replicateM_ 1000 $ do
     (replicateM_ 1000 $ reverseInPlace (M.take len' vec))
     (replicateM_ 1000 $ reverseInPlace (M.drop len' vec))
   wec <- V.unsafeFreeze vec
-  assertEqual "should be equal" ref wec
+  pure $ ref === wec
 
-case_conc_zip :: IO ()
-case_conc_zip = replicateM_ 1000 $ do
+case_conc_zip :: Property
+case_conc_zip = ioProperty $ replicateM_ 1000 $ do
   let len  = 128
       len' = 37
   vec <- M.replicate len (Bit True)
@@ -63,4 +63,4 @@ case_conc_zip = replicateM_ 1000 $ do
     (replicateM_ 1001 $ zipInPlace (const complement) ref (M.take len' vec))
     (replicateM_ 1001 $ zipInPlace (const complement) ref (M.drop len' vec))
   wec <- V.unsafeFreeze vec
-  assertEqual "should be equal" ref wec
+  pure $ ref === wec

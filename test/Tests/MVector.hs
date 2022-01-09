@@ -22,7 +22,6 @@ import qualified Data.Vector.Generic.New as N
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as M
 import Test.Tasty
-import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 #ifdef MIN_VERSION_quickcheck_classes
@@ -49,23 +48,23 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
 #ifdef MIN_VERSION_quickcheck_classes
   , lawsToTest' $ muvectorLaws (Proxy :: Proxy Bit)
 #endif
-  , testCase "basicInitialize 1" case_write_init_read1
-  , testCase "basicInitialize 2" case_write_init_read2
-  , testCase "basicInitialize 3" case_write_init_read3
-  , testCase "basicInitialize 4" case_write_init_read4
-  , testCase "basicSet 1"        case_write_set_read1
-  , testCase "basicSet 2"        case_write_set_read2
-  , testCase "basicSet 3"        case_write_set_read3
-  , testCase "basicSet 4"        case_write_set_read4
-  , testCase "basicSet 5"        case_set_read1
-  , testCase "basicSet 6"        case_set_read2
-  , testCase "basicSet 7"        case_set_read3
-  , testCase "basicSet 8"        case_set_read4
-  , testCase "basicUnsafeCopy1"  case_write_copy_read1
-  , testCase "basicUnsafeCopy2"  case_write_copy_read2
-  , testCase "basicUnsafeCopy3"  case_write_copy_read3
-  , testCase "basicUnsafeCopy4"  case_write_copy_read4
-  , testCase "basicUnsafeCopy5"  case_write_copy_read5
+  , testProperty "basicInitialize 1" case_write_init_read1
+  , testProperty "basicInitialize 2" case_write_init_read2
+  , testProperty "basicInitialize 3" case_write_init_read3
+  , testProperty "basicInitialize 4" case_write_init_read4
+  , testProperty "basicSet 1"        case_write_set_read1
+  , testProperty "basicSet 2"        case_write_set_read2
+  , testProperty "basicSet 3"        case_write_set_read3
+  , testProperty "basicSet 4"        case_write_set_read4
+  , testProperty "basicSet 5"        case_set_read1
+  , testProperty "basicSet 6"        case_set_read2
+  , testProperty "basicSet 7"        case_set_read3
+  , testProperty "basicSet 8"        case_set_read4
+  , testProperty "basicUnsafeCopy1"  case_write_copy_read1
+  , testProperty "basicUnsafeCopy2"  case_write_copy_read2
+  , testProperty "basicUnsafeCopy3"  case_write_copy_read3
+  , testProperty "basicUnsafeCopy4"  case_write_copy_read4
+  , testProperty "basicUnsafeCopy5"  case_write_copy_read5
   , tenTimesLess $
     testProperty "flipBit" prop_flipBit
   , testProperty "new negative"       prop_new_neg
@@ -79,128 +78,128 @@ prop_flipBit xs (NonNegative k) = U.length xs > 0 ==> ys === ys'
     ys  = U.modify (\v -> M.modify v complement k') xs
     ys' = U.modify (\v -> flipBit v k') xs
 
-case_write_init_read1 :: IO ()
-case_write_init_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_init_read1 :: Property
+case_write_init_read1 = (=== Bit True) $ runST $ do
   arr <- M.new 2
   M.write arr 0 (Bit True)
   MG.basicInitialize (M.slice 1 1 arr)
   M.read arr 0
 
-case_write_init_read2 :: IO ()
-case_write_init_read2 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_init_read2 :: Property
+case_write_init_read2 = (=== Bit True) $ runST $ do
   arr <- M.new 2
   M.write arr 1 (Bit True)
   MG.basicInitialize (M.slice 0 1 arr)
   M.read arr 1
 
-case_write_init_read3 :: IO ()
+case_write_init_read3 :: Property
 case_write_init_read3 =
-  assertEqual "should be equal" (Bit True, Bit True) $ runST $ do
+  (=== (Bit True, Bit True)) $ runST $ do
     arr <- M.new 2
     M.write arr 0 (Bit True)
     M.write arr 1 (Bit True)
     MG.basicInitialize (M.slice 1 0 arr)
     (,) <$> M.read arr 0 <*> M.read arr 1
 
-case_write_init_read4 :: IO ()
+case_write_init_read4 :: Property
 case_write_init_read4 =
-  assertEqual "should be equal" (Bit True, Bit True) $ runST $ do
+  (=== (Bit True, Bit True)) $ runST $ do
     arr <- M.new 3
     M.write arr 0 (Bit True)
     M.write arr 2 (Bit True)
     MG.basicInitialize (M.slice 1 1 arr)
     (,) <$> M.read arr 0 <*> M.read arr 2
 
-case_write_set_read1 :: IO ()
-case_write_set_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_set_read1 :: Property
+case_write_set_read1 = (=== Bit True) $ runST $ do
   arr <- M.new 2
   M.write arr 0 (Bit True)
   MG.basicSet (M.slice 1 1 arr) (Bit False)
   M.read arr 0
 
-case_write_set_read2 :: IO ()
-case_write_set_read2 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_set_read2 :: Property
+case_write_set_read2 = (=== Bit True) $ runST $ do
   arr <- M.new 2
   M.write arr 1 (Bit True)
   MG.basicSet (M.slice 0 1 arr) (Bit False)
   M.read arr 1
 
-case_write_set_read3 :: IO ()
+case_write_set_read3 :: Property
 case_write_set_read3 =
-  assertEqual "should be equal" (Bit True, Bit True) $ runST $ do
+  (=== (Bit True, Bit True)) $ runST $ do
     arr <- M.new 2
     M.write arr 0 (Bit True)
     M.write arr 1 (Bit True)
     MG.basicSet (M.slice 1 0 arr) (Bit False)
     (,) <$> M.read arr 0 <*> M.read arr 1
 
-case_write_set_read4 :: IO ()
+case_write_set_read4 :: Property
 case_write_set_read4 =
-  assertEqual "should be equal" (Bit True, Bit True) $ runST $ do
+  (=== (Bit True, Bit True)) $ runST $ do
     arr <- M.new 3
     M.write arr 0 (Bit True)
     M.write arr 2 (Bit True)
     MG.basicSet (M.slice 1 1 arr) (Bit False)
     (,) <$> M.read arr 0 <*> M.read arr 2
 
-case_set_read1 :: IO ()
-case_set_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_set_read1 :: Property
+case_set_read1 = (=== Bit True) $ runST $ do
   arr <- M.new 1
   MG.basicSet arr (Bit True)
   M.read arr 0
 
-case_set_read2 :: IO ()
-case_set_read2 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_set_read2 :: Property
+case_set_read2 = (=== Bit True) $ runST $ do
   arr <- M.new 2
   MG.basicSet (M.slice 1 1 arr) (Bit True)
   M.read arr 1
 
-case_set_read3 :: IO ()
-case_set_read3 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_set_read3 :: Property
+case_set_read3 = (=== Bit True) $ runST $ do
   arr <- M.new 192
   MG.basicSet (M.slice 71 121 arr) (Bit True)
   M.read arr 145
 
-case_set_read4 :: IO ()
-case_set_read4 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_set_read4 :: Property
+case_set_read4 = (=== Bit True) $ runST $ do
   arr <- M.slice 27 38 <$> M.new 65
   MG.basicSet arr (Bit True)
   M.read arr 21
 
-case_write_copy_read1 :: IO ()
-case_write_copy_read1 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_copy_read1 :: Property
+case_write_copy_read1 = (=== Bit True) $ runST $ do
   src <- M.slice 37 28 <$> M.new 65
   M.write src 27 (Bit True)
   dst <- M.slice 37 28 <$> M.new 65
   M.copy dst src
   M.read dst 27
 
-case_write_copy_read2 :: IO ()
-case_write_copy_read2 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_copy_read2 :: Property
+case_write_copy_read2 = (=== Bit True) $ runST $ do
   src <- M.slice 32 33 <$> M.new 65
   M.write src 0 (Bit True)
   dst <- M.slice 32 33 <$> M.new 65
   M.copy dst src
   M.read dst 0
 
-case_write_copy_read3 :: IO ()
-case_write_copy_read3 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_copy_read3 :: Property
+case_write_copy_read3 = (=== Bit True) $ runST $ do
   src <- M.slice 1 1 <$> M.new 2
   M.write src 0 (Bit True)
   dst <- M.slice 1 1 <$> M.new 2
   M.copy dst src
   M.read dst 0
 
-case_write_copy_read4 :: IO ()
-case_write_copy_read4 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_copy_read4 :: Property
+case_write_copy_read4 = (=== Bit True) $ runST $ do
   src <- M.slice 12 52 <$> M.new 64
   M.write src 22 (Bit True)
   dst <- M.slice 12 52 <$> M.new 64
   M.copy dst src
   M.read dst 22
 
-case_write_copy_read5 :: IO ()
-case_write_copy_read5 = assertEqual "should be equal" (Bit True) $ runST $ do
+case_write_copy_read5 :: Property
+case_write_copy_read5 = (=== Bit True) $ runST $ do
   src <- M.slice 48 80 <$> M.new 128
   M.write src 46 (Bit True)
   dst <- M.slice 48 80 <$> M.new 128
