@@ -26,3 +26,4 @@ dist
 
 cabal.sandbox.config
 .cabal-sandbox
+dist-newstyle/

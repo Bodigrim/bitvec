@@ -41,6 +41,7 @@ import Data.Typeable
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as MV
 import qualified Data.Vector.Unboxed as U
+import Data.Vector.Internal.Check
 import GHC.Generics
 
 #ifdef BITVEC_THREADSAFE
@@ -438,7 +439,7 @@ unsafeFlipBit (BitMVec off _ arr) !i' = do
 -- [1,1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
-  BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $
+  checkIndex Bounds i (MV.length v) $
     unsafeFlipBit v i
 {-# INLINE flipBit #-}
 
@@ -476,7 +477,7 @@ unsafeFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
 -- [1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
-  BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit v i
+  checkIndex Bounds i (MV.length v) $ unsafeFlipBit v i
 {-# INLINE flipBit #-}
 
 #endif
