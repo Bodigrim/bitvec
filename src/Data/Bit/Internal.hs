@@ -27,7 +27,11 @@ module Data.Bit.InternalTS
   , modifyByteArray
   ) where
 
+#if MIN_VERSION_vector(0,13,0)
+import Data.Vector.Internal.Check (checkIndex, Checks(..))
+#else
 #include "vector.h"
+#endif
 
 import Control.DeepSeq
 import Control.Exception
@@ -416,14 +420,24 @@ instance MV.MVector U.MVector Bit where
 -- >>> Data.Vector.Unboxed.modify (`unsafeFlipBit` 2) [1,1,1,1]
 -- [1,1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-unsafeFlipBit (BitMVec off _ arr) !i' = do
+unsafeFlipBit v i =
+#if MIN_VERSION_vector(0,13,0)
+  checkIndex Unsafe
+#else
+  UNSAFE_CHECK(checkIndex) "flipBit"
+#endif
+    i (MV.length v) $ basicFlipBit v i
+{-# INLINE unsafeFlipBit #-}
+
+basicFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
+basicFlipBit (BitMVec off _ arr) !i' = do
   let i  = off + i'
       j  = divWordSize i
       k  = modWordSize i
       kk = 1 `unsafeShiftL` k :: Word
   word <- readByteArray arr j
   writeByteArray arr j (word `xor` kk)
-{-# INLINE unsafeFlipBit #-}
+{-# INLINE basicFlipBit #-}
 
 -- | Flip the bit at the given position.
 -- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
@@ -438,8 +452,13 @@ unsafeFlipBit (BitMVec off _ arr) !i' = do
 -- [1,1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
-  BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $
-    unsafeFlipBit v i
+#if MIN_VERSION_vector(0,13,0)
+  checkIndex Bounds
+#else
+  BOUNDS_CHECK(checkIndex) "flipBit"
+#endif
+    i (MV.length v) $
+      unsafeFlipBit v i
 {-# INLINE flipBit #-}
 
 #else
@@ -456,13 +475,23 @@ flipBit v i =
 -- >>> Data.Vector.Unboxed.modify (\v -> unsafeFlipBit v 1) (read "[1,1,1]")
 -- [1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
-unsafeFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
+unsafeFlipBit v i =
+#if MIN_VERSION_vector(0,13,0)
+  checkIndex Unsafe
+#else
+  UNSAFE_CHECK(checkIndex) "flipBit"
+#endif
+    i (MV.length v) $ basicFlipBit v i
+{-# INLINE unsafeFlipBit #-}
+
+basicFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
+basicFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
   let i       = off + i'
       !(I# j) = divWordSize i
       !(I# k) = 1 `unsafeShiftL` modWordSize i
   primitive $ \state ->
     let !(# state', _ #) = fetchXorIntArray# mba j k state in (# state', () #)
-{-# INLINE unsafeFlipBit #-}
+{-# INLINE basicFlipBit #-}
 
 -- | Flip the bit at the given position.
 -- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
@@ -476,7 +505,12 @@ unsafeFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
 -- [1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
-  BOUNDS_CHECK(checkIndex) "flipBit" i (MV.length v) $ unsafeFlipBit v i
+#if MIN_VERSION_vector(0,13,0)
+  checkIndex Bounds
+#else
+  BOUNDS_CHECK(checkIndex) "flipBit"
+#endif
+    i (MV.length v) $ basicFlipBit v i
 {-# INLINE flipBit #-}
 
 #endif
