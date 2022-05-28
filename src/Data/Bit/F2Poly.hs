@@ -53,20 +53,20 @@ import GHC.Integer.Logarithms
 #endif
 
 -- | Binary polynomials of one variable, backed
--- by an unboxed 'Data.Vector.Unboxed.Vector' 'Bit'.
+-- by an unboxed @'Data.Vector.Unboxed.Vector' 'Bit'@.
 --
 -- Polynomials are stored normalized, without leading zero coefficients.
 --
--- 'Ord' instance does not make much sense mathematically,
+-- The 'Ord' instance does not make much sense mathematically,
 -- it is defined only for the sake of 'Data.Set.Set', 'Data.Map.Map', etc.
 --
 -- >>> :set -XBinaryLiterals
--- >>> -- (1 + x) (1 + x + x^2) = 1 + x^3 (mod 2)
+-- >>> -- (1 + x) * (1 + x + x^2) = 1 + x^3 (mod 2)
 -- >>> 0b11 * 0b111 :: F2Poly
 -- 0b1001
 newtype F2Poly = F2Poly {
   unF2Poly :: U.Vector Bit
-  -- ^ Convert 'F2Poly' to a vector of coefficients
+  -- ^ Convert an 'F2Poly' to a vector of coefficients
   -- (first element corresponds to a constant term).
   --
   -- >>> :set -XBinaryLiterals
@@ -75,7 +75,7 @@ newtype F2Poly = F2Poly {
   }
   deriving (Eq, Ord, Typeable, Generic, NFData)
 
--- | Make 'F2Poly' from a list of coefficients
+-- | Make an 'F2Poly' from a list of coefficients
 -- (first element corresponds to a constant term).
 --
 -- >>> :set -XOverloadedLists
@@ -84,7 +84,7 @@ newtype F2Poly = F2Poly {
 toF2Poly :: U.Vector Bit -> F2Poly
 toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 
--- -- | Valid 'F2Poly' has offset 0 and no trailing garbage.
+-- -- | A valid 'F2Poly' has offset 0 and no trailing garbage.
 -- _isValid :: F2Poly -> Bool
 -- _isValid (F2Poly (BitVec o l arr)) = o == 0 && l == l'
 --   where
@@ -92,7 +92,7 @@ toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 
 -- | Addition and multiplication are evaluated modulo 2.
 --
--- 'abs' = 'id' and 'signum' = 'const' 1.
+-- @'abs' = 'id'@ and @'signum' = 'const' 1@.
 --
 -- 'fromInteger' converts a binary polynomial, encoded as 'Integer',
 -- to 'F2Poly' encoding.
@@ -144,7 +144,7 @@ instance Real F2Poly where
   toRational = fromIntegral
 
 -- | 'toInteger' converts a binary polynomial, encoded as 'F2Poly',
--- to 'Integer' encoding.
+-- to an 'Integer' encoding.
 instance Integral F2Poly where
 #ifdef MIN_VERSION_ghc_bignum
   toInteger xs = integerFromBigNat# (bitsToByteArray (unF2Poly xs))
@@ -320,7 +320,7 @@ toBigNat (ByteArray arr) = BN# arr
 
 -- | Execute the extended Euclidean algorithm.
 -- For polynomials @a@ and @b@, compute their unique greatest common divisor @g@
--- and the unique coefficient polynomial @s@ satisfying @as + bt = g@.
+-- and the unique coefficient polynomial @s@ satisfying @a * s + b * t = g@.
 --
 -- >>> :set -XBinaryLiterals
 -- >>> gcdExt 0b101 0b0101

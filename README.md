@@ -1,13 +1,13 @@
-# bitvec [![Hackage](http://img.shields.io/hackage/v/bitvec.svg)](https://hackage.haskell.org/package/bitvec) [![Stackage LTS](http://stackage.org/package/bitvec/badge/lts)](http://stackage.org/lts/package/bitvec) [![Stackage Nightly](http://stackage.org/package/bitvec/badge/nightly)](http://stackage.org/nightly/package/bitvec)
+# bitvec [![Hackage](https://img.shields.io/hackage/v/bitvec.svg)](https://hackage.haskell.org/package/bitvec) [![Stackage LTS](https://www.stackage.org/package/bitvec/badge/lts)](https://www.stackage.org/lts/package/bitvec) [![Stackage Nightly](https://www.stackage.org/package/bitvec/badge/nightly)](https://www.stackage.org/nightly/package/bitvec)
 
 A newtype over `Bool` with a better `Vector` instance: 8x less memory, up to 1000x faster.
 
 The [`vector`](https://hackage.haskell.org/package/vector)
-package represents unboxed arrays of `Bool`
+package represents unboxed arrays of `Bool`s
 spending 1 byte (8 bits) per boolean.
 This library provides a newtype wrapper `Bit` and a custom instance
-of unboxed `Vector`, which packs bits densely,
-achieving __8x less memory footprint.__
+of an unboxed `Vector`, which packs bits densely,
+achieving an __8x smaller memory footprint.__
 The performance stays mostly the same;
 the most significant degradation happens for random writes
 (up to 10% slower).
@@ -18,7 +18,7 @@ On the other hand, for certain bulk bit operations
 
 * `Data.Bit` is faster, but writes and flips are thread-unsafe.
   This is because naive updates are not atomic:
-  read the whole word from memory,
+  they read the whole word from memory,
   then modify a bit, then write the whole word back.
 * `Data.Bit.ThreadSafe` is slower (up to 20%),
   but writes and flips are thread-safe.
@@ -73,7 +73,7 @@ eratosthenes = runST $ do
   U.unsafeFreeze sieve
 ```
 
-`Bit`-based implementation requires 8x less memory to store
+The `Bit`-based implementation requires 8x less memory to store
 the vector. For large sizes it allows to crunch more data in RAM
 without swapping. For smaller arrays it helps to fit into
 CPU caches.
@@ -84,8 +84,8 @@ CPU caches.
 ```
 
 There are several high-level helpers, digesting bits in bulk,
-which makes them up to 64x faster than respective counterparts
-for `Vector Bool`. One can query population count (popcount)
+which makes them up to 64x faster than the respective counterparts
+for `Vector Bool`. One can query the population count (popcount)
 of a vector (giving us [the prime-counting function](https://en.wikipedia.org/wiki/Prime-counting_function)):
 
 ```haskell
@@ -110,7 +110,7 @@ for using the thread-safe interface.
 
 ## Sets
 
-Bit vectors can be used as a blazingly fast representation of sets
+Bit vectors can be used as a blazingly fast representation of sets,
 as long as their elements are `Enum`eratable and sufficiently dense,
 leaving `IntSet` far behind.
 
@@ -120,24 +120,24 @@ For example, consider three possible representations of a set of `Word16`:
 * As a 64k-long unboxed `Vector Bool`, implementing union as `zipWith (||)`.
 * As a 64k-long unboxed `Vector Bit`, implementing union as `zipBits (.|.)`.
 
-When flag `libgmp` is enabled,
-according to our benchmarks (see `bench` folder)
+When the `libgmp` flag is enabled,
+according to our benchmarks (see `bench` folder),
 the union of `Vector Bit` evaluates 24x-36x faster
-than the union of not-too-sparse `IntSet`
-and stunningly outperforms `Vector Bool` 500x-1000x.
+than the union of not-too-sparse `IntSet`s
+and stunningly outperforms `Vector Bool` by 500x-1000x.
 
 ## Binary polynomials
 
 Binary polynomials are polynomials with coefficients modulo 2.
 Their applications include coding theory and cryptography.
-While one can successfully implement them with `poly` package,
+While one can successfully implement them with the [`poly`](https://hackage.haskell.org/package/poly) package,
 operating on `UPoly Bit`,
 this package provides even faster arithmetic routines
-exposed via `F2Poly` data type and its instances.
+exposed via the `F2Poly` data type and its instances.
 
 ```haskell
 > :set -XBinaryLiterals
-> -- (1 + x) (1 + x + x^2) = 1 + x^3 (mod 2)
+> -- (1 + x) * (1 + x + x^2) = 1 + x^3 (mod 2)
 > 0b11 * 0b111 :: F2Poly
 F2Poly {unF2Poly = [1,0,0,1]}
 ```
@@ -149,7 +149,7 @@ from `Integer` to `F2Poly` and back.
 
 * Flag `libgmp`, disabled by default.
 
-  Link against [GMP](https://gmplib.org/) library for the ultimate performance of
+  Link against the [GMP](https://gmplib.org/) library for the ultimate performance of
   `zipBits`, `invertBits` and `countBits`. GMP is readily available on most machines
   ([`apt-get install libgmp-dev`](https://packages.ubuntu.com/focal/libgmp-dev) on Ubuntu,
   [`brew install gmp`](https://formulae.brew.sh/formula/gmp)

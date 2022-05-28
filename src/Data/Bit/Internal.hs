@@ -53,27 +53,27 @@ import GHC.Exts
 
 #ifndef BITVEC_THREADSAFE
 -- | A newtype wrapper with a custom instance
--- of "Data.Vector.Unboxed", which packs booleans
+-- for "Data.Vector.Unboxed", which packs booleans
 -- as efficient as possible (8 values per byte).
--- Vectors of `Bit` use 8x less memory
--- than vectors of 'Bool' (which stores one value per byte).
+-- Unboxed vectors of `Bit` use 8x less memory
+-- than unboxed vectors of 'Bool' (which store one value per byte),
 -- but random writes are up to 10% slower.
 newtype Bit = Bit { unBit :: Bool }
   deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable, Generic, NFData)
 #else
 -- | A newtype wrapper with a custom instance
--- of "Data.Vector.Unboxed", which packs booleans
+-- for "Data.Vector.Unboxed", which packs booleans
 -- as efficient as possible (8 values per byte).
--- Vectors of `Bit` use 8x less memory
--- than vectors of 'Bool' (which stores one value per byte).
+-- Unboxed vectors of `Bit` use 8x less memory
+-- than unboxed vectors of 'Bool' (which store one value per byte),
 -- but random writes are up to 20% slower.
 newtype Bit = Bit { unBit :: Bool }
   deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable, Generic, NFData)
 #endif
 
 -- | There is only one lawful 'Num' instance possible
--- with '+' = 'xor' and
--- 'fromInteger' = 'Bit' . 'odd'.
+-- with @'+' = 'xor'@ and
+-- @'fromInteger' = 'Bit' . 'odd'@.
 instance Num Bit where
   Bit a * Bit b = Bit (a && b)
   Bit a + Bit b = Bit (a /= b)
@@ -120,7 +120,7 @@ extendToWord :: Bit -> Word
 extendToWord (Bit False) = 0
 extendToWord (Bit True ) = complement 0
 
--- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is padded with memory garbage.
+-- | Read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is padded with memory garbage.
 indexWord :: U.Vector Bit -> Int -> Word
 indexWord (BitVec _ 0 _) _ = 0
 indexWord (BitVec off len' arr) !i' = word
@@ -141,7 +141,7 @@ indexWord (BitVec off len' arr) !i' = word
     = (loWord `unsafeShiftR` nMod) .|. (hiWord `unsafeShiftL` (wordSize - nMod))
 {-# INLINE indexWord #-}
 
--- | read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is padded with memory garbage.
+-- | Read a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the result is padded with memory garbage.
 readWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m Word
 readWord (BitMVec _ 0 _) _ = pure 0
 readWord (BitMVec off len' arr) !i' = do
@@ -191,7 +191,7 @@ modifyByteArray (MutableByteArray mba) (I# ix) (W# msk) (W# new) = do
 
 #endif
 
--- | write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
+-- | Write a word at the given bit offset in little-endian order (i.e., the LSB will correspond to the bit at the given address, the 2's bit will correspond to the address + 1, etc.).  If the offset is such that the word extends past the end of the vector, the word is truncated and as many low-order bits as possible are written.
 writeWord :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> Word -> m ()
 writeWord (BitMVec _ 0 _) _ _ = pure ()
 writeWord (BitMVec off len' arr) !i' !x
@@ -408,8 +408,8 @@ instance MV.MVector U.MVector Bit where
 #ifndef BITVEC_THREADSAFE
 
 -- | Flip the bit at the given position.
--- No bounds checks are performed.
--- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
+-- No bound checks are performed.
+-- Equivalent to @'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement'@,
 -- but up to 2x faster.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
@@ -440,7 +440,7 @@ basicFlipBit (BitMVec off _ arr) !i' = do
 {-# INLINE basicFlipBit #-}
 
 -- | Flip the bit at the given position.
--- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
+-- Equivalent to @'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement'@,
 -- but up to 2x faster.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
@@ -464,8 +464,8 @@ flipBit v i =
 #else
 
 -- | Flip the bit at the given position.
--- No bounds checks are performed.
--- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
+-- No bound checks are performed.
+-- Equivalent to @'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement'@,
 -- but up to 33% faster and atomic.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
@@ -494,7 +494,7 @@ basicFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
 {-# INLINE basicFlipBit #-}
 
 -- | Flip the bit at the given position.
--- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
+-- Equivalent to @'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement'@,
 -- but up to 33% faster and atomic.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
