@@ -101,7 +101,7 @@ instance Num F2Poly where
   (-) = coerce xorBits
   negate = id
   abs    = id
-  signum = const (F2Poly (U.singleton (Bit True)))
+  signum = const (F2Poly $ castFromWords (U.singleton 1)) -- const 1
   (*) = coerce ((dropWhileEnd .) . karatsuba)
 #ifdef MIN_VERSION_ghc_bignum
   fromInteger !n = case n of
@@ -328,7 +328,7 @@ toBigNat (ByteArray arr) = BN# arr
 -- >>> gcdExt 0b11 0b111
 -- (0b1,0b10)
 gcdExt :: F2Poly -> F2Poly -> (F2Poly, F2Poly)
-gcdExt = go (F2Poly (U.singleton (Bit True))) (F2Poly U.empty) -- go 1 0
+gcdExt = go (F2Poly $ castFromWords (U.singleton 1)) (F2Poly U.empty) -- go 1 0
   where
     go s s' r r'
       | r' == 0   = (r, s)
