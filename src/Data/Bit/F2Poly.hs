@@ -53,7 +53,7 @@ import GHC.Integer.Logarithms
 #endif
 
 -- | Binary polynomials of one variable, backed
--- by an unboxed @'Data.Vector.Unboxed.Vector' 'Bit'@.
+-- by an unboxed 'Data.Vector.Unboxed.Vector' 'Bit'.
 --
 -- Polynomials are stored normalized, without leading zero coefficients.
 --
@@ -92,7 +92,7 @@ toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 
 -- | Addition and multiplication are evaluated modulo 2.
 --
--- @'abs' = 'id'@ and @'signum' = 'const' 1@.
+-- 'abs' = 'id' and 'signum' = 'const' 1.
 --
 -- 'fromInteger' converts a binary polynomial, encoded as 'Integer',
 -- to 'F2Poly' encoding.
@@ -320,7 +320,7 @@ toBigNat (ByteArray arr) = BN# arr
 
 -- | Execute the extended Euclidean algorithm.
 -- For polynomials @a@ and @b@, compute their unique greatest common divisor @g@
--- and the unique coefficient polynomial @s@ satisfying @a * s + b * t = g@.
+-- and the unique coefficient polynomial @s@ satisfying \( a \cdot s + b \cdot t = g \).
 --
 -- >>> :set -XBinaryLiterals
 -- >>> gcdExt 0b101 0b0101

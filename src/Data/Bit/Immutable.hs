@@ -192,8 +192,8 @@ cloneToWords v = runST $ do
 -- | Cast an unboxed vector of 'Word8'
 -- to an unboxed vector of bits.
 --
--- On big-endian architectures 'castFromWords8', this
--- resorts to copying instead of aliasing underlying arrays.
+-- On big-endian architectures 'castFromWords8'
+-- resorts to copying instead of aliasing the underlying array.
 --
 -- >>> :set -XOverloadedLists
 -- >>> castFromWords8 [123]

@@ -17,6 +17,7 @@ Icon?
 # Haskell #
 ###########
 
+dist
 dist-newstyle
 *.o
 *.hi
