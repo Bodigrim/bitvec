@@ -56,7 +56,7 @@ castFromWordsM (MU.MV_Word (P.MVector off len ws)) =
   BitMVec (mulWordSize off) (mulWordSize len) ws
 
 -- | Try to cast a vector of bits to a vector of words.
--- It succeeds if a vector of bits is aligned.
+-- It succeeds if the vector of bits is aligned.
 -- Use 'cloneToWordsM' otherwise.
 -- Cf. 'Data.Bit.castToWords'.
 castToWordsM :: MVector s Bit -> Maybe (MVector s Word)
@@ -106,8 +106,8 @@ cloneToWords8M v = do
   pure $ MU.MV_Word8 $ P.MVector 0 actualLenBytes arr
 {-# INLINE cloneToWords8M #-}
 
--- | Zip two vectors with the given function.
--- rewriting contents of the second argument.
+-- | Zip two vectors with the given function,
+-- rewriting the contents of the second argument.
 -- Cf. 'Data.Bit.zipBits'.
 --
 -- >>> :set -XOverloadedLists
@@ -116,7 +116,7 @@ cloneToWords8M v = do
 -- [0,1,0]
 --
 -- __Warning__: if the immutable vector is shorter than the mutable one,
--- it is a caller's responsibility to trim the result:
+-- it is the caller's responsibility to trim the result:
 --
 -- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
@@ -229,8 +229,8 @@ invertInPlace xs = do
 {-# SPECIALIZE invertInPlace :: U.MVector s Bit -> ST s () #-}
 
 -- | Same as 'Data.Bit.selectBits', but deposit
--- selected bits in-place. Returns a number of selected bits.
--- It is caller's responsibility to trim the result to this number.
+-- selected bits in-place. Returns the number of selected bits.
+-- It is the caller's responsibility to trim the result to this number.
 --
 -- >>> :set -XOverloadedLists
 -- >>> import Control.Monad.ST (runST)
@@ -252,8 +252,8 @@ selectBitsInPlace is xs = loop 0 0
       loop (i + wordSize) (ct + nSet)
 
 -- | Same as 'Data.Bit.excludeBits', but deposit
--- excluded bits in-place. Returns a number of excluded bits.
--- It is caller's responsibility to trim the result to this number.
+-- excluded bits in-place. Returns the number of excluded bits.
+-- It is the caller's responsibility to trim the result to this number.
 --
 -- >>> :set -XOverloadedLists
 -- >>> import Control.Monad.ST (runST)
@@ -281,7 +281,7 @@ excludeBitsInPlace is xs = loop 0 0
 -- >>> Data.Vector.Unboxed.modify reverseInPlace [1,1,0,1,0]
 -- [0,1,0,1,1]
 --
--- Consider using @vector-rotcev@ package
+-- Consider using the [vector-rotcev](https://hackage.haskell.org/package/vector-rotcev) package
 -- to reverse vectors in O(1) time.
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 reverseInPlace xs

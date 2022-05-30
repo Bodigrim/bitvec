@@ -18,6 +18,7 @@ Icon?
 ###########
 
 dist
+dist-newstyle
 *.o
 *.hi
 *.chi

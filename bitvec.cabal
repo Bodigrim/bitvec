@@ -12,11 +12,11 @@ description:
   A newtype over 'Bool' with a better 'Vector' instance: 8x less memory, up to 1000x faster.
   .
   The <https://hackage.haskell.org/package/vector vector>
-  package represents unboxed arrays of 'Bool'
+  package represents unboxed arrays of 'Bool's
   spending 1 byte (8 bits) per boolean.
   This library provides a newtype wrapper 'Bit' and a custom instance
-  of unboxed 'Vector', which packs bits densely,
-  achieving __8x less memory footprint.__
+  of an unboxed 'Vector', which packs bits densely,
+  achieving an __8x smaller memory footprint.__
   The performance stays mostly the same;
   the most significant degradation happens for random writes
   (up to 10% slower).
@@ -27,7 +27,7 @@ description:
   .
   * "Data.Bit" is faster, but writes and flips are thread-unsafe.
     This is because naive updates are not atomic:
-    read the whole word from memory,
+    they read the whole word from memory,
     then modify a bit, then write the whole word back.
   * "Data.Bit.ThreadSafe" is slower (up to 20%),
     but writes and flips are thread-safe.
@@ -57,7 +57,7 @@ source-repository head
 
 flag libgmp
   description:
-    Link against GMP library for the ultimate performance of
+    Link against the GMP library for the ultimate performance of
     `zipBits`, `invertBits` and `countBits`. Users are strongly encouraged
     to enable this flag whenever possible.
   default: False

@@ -161,7 +161,7 @@ castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
 
 -- | Try to cast an unboxed vector of bits
 -- to an unboxed vector of words.
--- It succeeds if a vector of bits is aligned.
+-- It succeeds if the vector of bits is aligned.
 -- Use 'cloneToWords' otherwise.
 -- Cf. 'Data.Bit.castToWordsM'.
 --
@@ -189,11 +189,11 @@ cloneToWords v = runST $ do
   U.unsafeFreeze w
 {-# INLINE cloneToWords #-}
 
--- | Cast a unboxed vector of 'Word8'
+-- | Cast an unboxed vector of 'Word8'
 -- to an unboxed vector of bits.
 --
 -- On big-endian architectures 'castFromWords8'
--- resorts to copying instead of aliasing underlying arrays.
+-- resorts to copying instead of aliasing the underlying array.
 --
 -- >>> :set -XOverloadedLists
 -- >>> castFromWords8 [123]
@@ -220,7 +220,7 @@ castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
 
 -- | Try to cast an unboxed vector of bits
 -- to an unboxed vector of 'Word8'.
--- It succeeds if a vector of bits is aligned.
+-- It succeeds if the vector of bits is aligned.
 -- Use 'Data.Bit.cloneToWords8' otherwise.
 --
 -- > castToWords8 (castFromWords8 v) == Just v
@@ -286,8 +286,8 @@ uncurry3 f (x, y, z) = f x y z
 -- 'zipBits' is up to 32x faster than
 -- 'Data.IntSet.union', 'Data.IntSet.intersection', etc.
 --
--- Users are strongly encouraged to enable
--- flag @libgmp@ for the ultimate performance of 'zipBits'.
+-- Users are strongly encouraged to enable the
+-- @libgmp@ flag for the ultimate performance of 'zipBits'.
 --
 -- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
@@ -364,8 +364,8 @@ mapBits f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
 
 -- | Invert (flip) all bits.
 --
--- Users are strongly encouraged to enable
--- flag @libgmp@ for the ultimate performance of 'invertBits'.
+-- Users are strongly encouraged to enable the
+-- @libgmp@ flag for the ultimate performance of 'invertBits'.
 --
 -- >>> :set -XOverloadedLists
 -- >>> invertBits [0,1,0,1,0]
@@ -399,7 +399,7 @@ invertBits xs = runST $ do
 -- Here is a reference (but slow) implementation:
 --
 -- > import qualified Data.Vector.Unboxed as U
--- > selectBits mask ws == U.map snd (U.filter (unBit . fst) (U.zip mask ws))
+-- > selectBits mask ws = U.map snd (U.filter (unBit . fst) (U.zip mask ws))
 selectBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 selectBits is xs = runST $ do
   xs1 <- U.thaw xs
@@ -417,7 +417,7 @@ selectBits is xs = runST $ do
 -- Here is a reference (but slow) implementation:
 --
 -- > import qualified Data.Vector.Unboxed as U
--- > excludeBits mask ws == U.map snd (U.filter (not . unBit . fst) (U.zip mask ws))
+-- > excludeBits mask ws = U.map snd (U.filter (not . unBit . fst) (U.zip mask ws))
 excludeBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 excludeBits is xs = runST $ do
   xs1 <- U.thaw xs
@@ -430,7 +430,7 @@ excludeBits is xs = runST $ do
 -- >>> reverseBits [1,1,0,1,0]
 -- [0,1,0,1,1]
 --
--- Consider using @vector-rotcev@ package
+-- Consider using the [vector-rotcev](https://hackage.haskell.org/package/vector-rotcev) package
 -- to reverse vectors in O(1) time.
 reverseBits :: U.Vector Bit -> U.Vector Bit
 reverseBits xs = runST $ do
@@ -633,8 +633,8 @@ unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 
 -- | Return the number of set bits in a vector (population count, popcount).
 --
--- Users are strongly encouraged to enable
--- flag @libgmp@ for the ultimate performance of 'countBits'.
+-- Users are strongly encouraged to enable the
+-- @libgmp@ flag for the ultimate performance of 'countBits'.
 --
 -- >>> :set -XOverloadedLists
 -- >>> countBits [1,1,0,1,0,1]

@@ -35,10 +35,11 @@ import Unsafe.Coerce
 
 import Data.Bit.PdepPext
 
--- |The number of bits in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
+-- | The number of bits in a 'Word'.  A handy constant to have around when defining 'Word'-based bulk operations on bit vectors.
 wordSize :: Int
 wordSize = finiteBitSize (0 :: Word)
 
+-- | The base 2 logarithm of 'wordSize'.
 lgWordSize :: Int
 lgWordSize = case wordSize of
   32 -> 5
