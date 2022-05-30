@@ -72,8 +72,8 @@ newtype Bit = Bit { unBit :: Bool }
 #endif
 
 -- | There is only one lawful 'Num' instance possible
--- with @'+' = 'xor'@ and
--- @'fromInteger' = 'Bit' . 'odd'@.
+-- with '+' = 'xor' and
+-- 'fromInteger' = 'Bit' . 'odd'.
 instance Num Bit where
   Bit a * Bit b = Bit (a && b)
   Bit a + Bit b = Bit (a /= b)
@@ -409,7 +409,7 @@ instance MV.MVector U.MVector Bit where
 
 -- | Flip the bit at the given position.
 -- No bound checks are performed.
--- Equivalent to @'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement'@,
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
 -- but up to 2x faster.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
@@ -440,7 +440,7 @@ basicFlipBit (BitMVec off _ arr) !i' = do
 {-# INLINE basicFlipBit #-}
 
 -- | Flip the bit at the given position.
--- Equivalent to @'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement'@,
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
 -- but up to 2x faster.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
@@ -465,7 +465,7 @@ flipBit v i =
 
 -- | Flip the bit at the given position.
 -- No bound checks are performed.
--- Equivalent to @'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement'@,
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.unsafeModify' 'Data.Bits.complement',
 -- but up to 33% faster and atomic.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.unsafeModify' bit vectors:
@@ -494,7 +494,7 @@ basicFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
 {-# INLINE basicFlipBit #-}
 
 -- | Flip the bit at the given position.
--- Equivalent to @'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement'@,
+-- Equivalent to 'flip' 'Data.Vector.Unboxed.Mutable.modify' 'Data.Bits.complement',
 -- but up to 33% faster and atomic.
 --
 -- In general there is no reason to 'Data.Vector.Unboxed.Mutable.modify' bit vectors:
