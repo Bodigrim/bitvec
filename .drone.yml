@@ -10,7 +10,7 @@ steps:
     - getconf LONG_BIT # check bitness
     - cabal --version
     - cabal update
-    - cabal new-test --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids'
+    - cabal new-test --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids' --constraint 'tasty -clock'
 ---
 kind: pipeline
 name: arm64-ghc8.10
@@ -21,8 +21,10 @@ steps:
   commands:
     - uname -a # check platform
     - getconf LONG_BIT # check bitness
+    - apt-get update
+    - apt-get install -y libnuma-dev
     - cabal update
-    - cabal new-test --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids'
+    - cabal new-test --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids' --constraint 'tasty -clock'
 ---
 kind: pipeline
 name: arm64-ghc9.0
@@ -34,7 +36,7 @@ steps:
     - uname -a # check platform
     - getconf LONG_BIT # check bitness
     - cabal update
-    - cabal new-test --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids'
+    - cabal new-test --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids' --constraint 'tasty -clock'
 ---
 kind: pipeline
 name: arm64-ghc9.2
@@ -46,7 +48,7 @@ steps:
     - uname -a # check platform
     - getconf LONG_BIT # check bitness
     - cabal update
-    - cabal new-test --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids'
+    - cabal new-test --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids' --constraint 'tasty -clock'
 ---
 kind: pipeline
 name: i386
@@ -62,5 +64,5 @@ steps:
     - apt-get install -y ghc cabal-install
     - cabal --version # 1.24
     - cabal update
-    - cabal install --dependencies-only --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids'
+    - cabal install --dependencies-only --enable-tests --constraint 'quickcheck-classes -aeson -semirings -semigroupoids' --constraint 'tasty -clock'
     - cabal test
