@@ -84,6 +84,22 @@ newtype F2Poly = F2Poly {
 toF2Poly :: U.Vector Bit -> F2Poly
 toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 
+zero :: F2Poly
+zero = F2Poly $ BitVec 0 0 $
+#ifdef MIN_VERSION_ghc_bignum
+  ByteArray (unBigNat bigNatZero)
+#else
+  fromBigNat zeroBigNat
+#endif
+
+one :: F2Poly
+one = F2Poly $ BitVec 0 1 $
+#ifdef MIN_VERSION_ghc_bignum
+  ByteArray (unBigNat bigNatOne)
+#else
+  fromBigNat oneBigNat
+#endif
+
 -- -- | A valid 'F2Poly' has offset 0 and no trailing garbage.
 -- _isValid :: F2Poly -> Bool
 -- _isValid (F2Poly (BitVec o l arr)) = o == 0 && l == l'
@@ -101,7 +117,7 @@ instance Num F2Poly where
   (-) = coerce xorBits
   negate = id
   abs    = id
-  signum = const (F2Poly $ castFromWords (U.singleton 1)) -- const 1
+  signum = const one
   (*) = coerce ((dropWhileEnd .) . karatsuba)
 #ifdef MIN_VERSION_ghc_bignum
   fromInteger !n = case n of
@@ -328,7 +344,7 @@ toBigNat (ByteArray arr) = BN# arr
 -- >>> gcdExt 0b11 0b111
 -- (0b1,0b10)
 gcdExt :: F2Poly -> F2Poly -> (F2Poly, F2Poly)
-gcdExt = go (F2Poly $ castFromWords (U.singleton 1)) (F2Poly U.empty) -- go 1 0
+gcdExt = go one zero
   where
     go s s' r r'
       | r' == 0   = (r, s)
