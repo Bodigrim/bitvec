@@ -50,6 +50,7 @@ f2polyTests = testGroup "F2Poly"
   , testProperty "fromNegative" prop_f2polyFromNegative
   , testProperty "divideByZero" prop_f2polyDivideByZero
   , testProperty "toRational" prop_f2polyToRational
+  , testProperty "signum" $ \x -> x + signum x === (x + 1 :: F2Poly)
   ]
 
 prop_f2polyAdd :: F2Poly -> F2Poly -> Property

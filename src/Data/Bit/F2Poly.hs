@@ -306,7 +306,7 @@ dropWhileEnd xs = U.unsafeSlice 0 (go (U.length xs)) xs
 bitsToByteArray :: U.Vector Bit -> ByteArray#
 bitsToByteArray xs = arr
   where
-    ys = if U.null xs then U.singleton 0 else cloneToWords xs
+    ys = if U.null xs then U.singleton (0 :: Word) else cloneToWords xs
     !(P.Vector _ _ (ByteArray arr)) = toPrimVector ys
 
 #ifdef MIN_VERSION_ghc_bignum
