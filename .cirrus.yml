@@ -4,6 +4,8 @@ freebsd_instance:
 task:
   install_script: pkg install -y ghc hs-cabal-install git
   script:
+    - ghc --version
+    - cabal --version
     - cabal update
-    - cabal test -flibgmp --test-show-details=direct
+    - cabal test -flibgmp --test-show-details=direct --enable-tests
     - cabal test --test-show-details=direct
