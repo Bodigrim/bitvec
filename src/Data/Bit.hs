@@ -4,7 +4,7 @@
 #ifndef BITVEC_THREADSAFE
 -- |
 -- Module:      Data.Bit
--- Copyright:   (c) 2019-2020 Andrew Lelechenko, 2012-2016 James Cook
+-- Copyright:   (c) 2019-2022 Andrew Lelechenko, 2012-2016 James Cook
 -- Licence:     BSD3
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
@@ -14,7 +14,7 @@ module Data.Bit
 #else
 -- |
 -- Module:      Data.Bit.ThreadSafe
--- Copyright:   (c) 2019-2020 Andrew Lelechenko, 2012-2016 James Cook
+-- Copyright:   (c) 2019-2022 Andrew Lelechenko, 2012-2016 James Cook
 -- Licence:     BSD3
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --

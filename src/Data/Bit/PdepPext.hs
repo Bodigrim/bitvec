@@ -1,6 +1,6 @@
 -- |
 -- Module:      Data.Bit.PdepPext
--- Copyright:   (c) 2020 Andrew Lelechenko
+-- Copyright:   (c) 2022 Andrew Lelechenko
 -- Licence:     BSD3
 --
 -- | Parallel bit deposit and extract instructions.

@@ -4,7 +4,7 @@ cabal-version: >=1.10
 build-type: Simple
 license: BSD3
 license-file: LICENSE
-copyright: 2019-2021 Andrew Lelechenko, 2012-2016 James Cook
+copyright: 2019-2022 Andrew Lelechenko, 2012-2016 James Cook
 maintainer: Andrew Lelechenko <andrew.lelechenko@gmail.com>
 homepage: https://github.com/Bodigrim/bitvec
 synopsis: Space-efficient bit vectors
