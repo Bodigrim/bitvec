@@ -36,9 +36,11 @@ jobs:
         cabal test -flibgmp
         cabal test
         cabal bench --benchmark-option=-l
-        cabal haddock
         cabal sdist
         cabal check
+    - name: Haddock
+      if: ${{ matrix.ghc != '8.0' }}
+      run: cabal haddock
 
   emulated:
     needs: build
