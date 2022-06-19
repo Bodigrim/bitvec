@@ -64,6 +64,8 @@ import GHC.Integer.Logarithms
 -- >>> -- (1 + x) * (1 + x + x^2) = 1 + x^3 (mod 2)
 -- >>> 0b11 * 0b111 :: F2Poly
 -- 0b1001
+--
+-- @since 1.0.1.0
 newtype F2Poly = F2Poly {
   unF2Poly :: U.Vector Bit
   -- ^ Convert an 'F2Poly' to a vector of coefficients
@@ -72,6 +74,8 @@ newtype F2Poly = F2Poly {
   -- >>> :set -XBinaryLiterals
   -- >>> unF2Poly 0b1101
   -- [1,0,1,1]
+  --
+  -- @since 1.0.1.0
   }
   deriving (Eq, Ord, Typeable, Generic, NFData)
 
@@ -81,6 +85,8 @@ newtype F2Poly = F2Poly {
 -- >>> :set -XOverloadedLists
 -- >>> toF2Poly [1,0,1,1,0,0]
 -- 0b1101
+--
+-- @since 1.0.1.0
 toF2Poly :: U.Vector Bit -> F2Poly
 toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 
@@ -343,6 +349,8 @@ toBigNat (ByteArray arr) = BN# arr
 -- (0b101,0b0)
 -- >>> gcdExt 0b11 0b111
 -- (0b1,0b10)
+--
+-- @since 1.0.2.0
 gcdExt :: F2Poly -> F2Poly -> (F2Poly, F2Poly)
 gcdExt = go one zero
   where

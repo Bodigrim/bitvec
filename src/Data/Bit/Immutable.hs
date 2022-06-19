@@ -154,6 +154,8 @@ instance {-# OVERLAPPING #-} Bits (Vector Bit) where
 -- >>> :set -XOverloadedLists
 -- >>> castFromWords [123]
 -- [1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+--
+-- @since 1.0.0.0
 castFromWords :: U.Vector Word -> U.Vector Bit
 castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
   where
@@ -166,6 +168,8 @@ castFromWords ws = BitVec (mulWordSize off) (mulWordSize len) arr
 -- Cf. 'Data.Bit.castToWordsM'.
 --
 -- > castToWords (castFromWords v) == Just v
+--
+-- @since 1.0.0.0
 castToWords :: U.Vector Bit -> Maybe (U.Vector Word)
 castToWords (BitVec s n ws)
   | aligned s, aligned n =
@@ -182,6 +186,8 @@ castToWords (BitVec s n ws)
 -- >>> :set -XOverloadedLists
 -- >>> cloneToWords [1,1,0,1,1,1,1]
 -- [123]
+--
+-- @since 1.0.0.0
 cloneToWords :: U.Vector Bit -> U.Vector Word
 cloneToWords v = runST $ do
   v' <- U.unsafeThaw v
@@ -198,6 +204,8 @@ cloneToWords v = runST $ do
 -- >>> :set -XOverloadedLists
 -- >>> castFromWords8 [123]
 -- [1,1,0,1,1,1,1,0]
+--
+-- @since 1.0.3.0
 castFromWords8 :: U.Vector Word8 -> U.Vector Bit
 castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
   where
@@ -224,6 +232,8 @@ castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
 -- Use 'Data.Bit.cloneToWords8' otherwise.
 --
 -- > castToWords8 (castFromWords8 v) == Just v
+--
+-- @since 1.0.3.0
 castToWords8 :: U.Vector Bit -> Maybe (U.Vector Word8)
 #ifdef WORDS_BIGENDIAN
 castToWords8 = const Nothing
@@ -242,6 +252,8 @@ castToWords8 (BitVec s n ws)
 -- >>> :set -XOverloadedLists
 -- >>> cloneToWords8 [1,1,0,1,1,1,1]
 -- [123]
+--
+-- @since 1.0.3.0
 cloneToWords8 :: U.Vector Bit -> U.Vector Word8
 cloneToWords8 v = runST $ do
   v' <- U.unsafeThaw v
@@ -254,6 +266,8 @@ cloneToWords8 v = runST $ do
 -- >>> :set -XOverloadedStrings
 -- >>> cloneFromByteString "abc"
 -- [1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1,1,0]
+--
+-- @since 1.1.0.0
 cloneFromByteString :: BS.ByteString -> U.Vector Bit
 cloneFromByteString
   = castFromWords8
@@ -268,6 +282,8 @@ cloneFromByteString
 -- >>> :set -XOverloadedLists
 -- >>> cloneToByteString [1,0,0,0,0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1]
 -- "ab#"
+--
+-- @since 1.1.0.0
 cloneToByteString :: U.Vector Bit -> BS.ByteString
 cloneToByteString
   = uncurry3 BS.fromForeignPtr
@@ -299,6 +315,8 @@ uncurry3 f (x, y, z) = f x y z
 -- [1,0,0]
 -- >>> zipBits xor [1,1,0] [0,1,1] -- symmetric difference
 -- [1,0,1]
+--
+-- @since 1.0.0.0
 zipBits
   :: (forall a . Bits a => a -> a -> a)
   -> U.Vector Bit
@@ -351,6 +369,8 @@ zipBits f xs ys = runST $ do
 -- >>> import Data.Bits
 -- >>> mapBits complement [0,1,1]
 -- [1,0,0]
+--
+-- @since 1.1.0.0
 mapBits
   :: (forall a . Bits a => a -> a)
   -> U.Vector Bit
@@ -370,6 +390,8 @@ mapBits f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
 -- >>> :set -XOverloadedLists
 -- >>> invertBits [0,1,0,1,0]
 -- [1,0,1,0,1]
+--
+-- @since 1.0.1.0
 invertBits
   :: U.Vector Bit
   -> U.Vector Bit
@@ -400,6 +422,8 @@ invertBits xs = runST $ do
 --
 -- > import qualified Data.Vector.Unboxed as U
 -- > selectBits mask ws = U.map snd (U.filter (unBit . fst) (U.zip mask ws))
+--
+-- @since 0.1
 selectBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 selectBits is xs = runST $ do
   xs1 <- U.thaw xs
@@ -418,6 +442,8 @@ selectBits is xs = runST $ do
 --
 -- > import qualified Data.Vector.Unboxed as U
 -- > excludeBits mask ws = U.map snd (U.filter (not . unBit . fst) (U.zip mask ws))
+--
+-- @since 0.1
 excludeBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 excludeBits is xs = runST $ do
   xs1 <- U.thaw xs
@@ -432,6 +458,8 @@ excludeBits is xs = runST $ do
 --
 -- Consider using the [vector-rotcev](https://hackage.haskell.org/package/vector-rotcev) package
 -- to reverse vectors in O(1) time.
+--
+-- @since 1.0.1.0
 reverseBits :: U.Vector Bit -> U.Vector Bit
 reverseBits xs = runST $ do
   let n    = U.length xs
@@ -473,6 +501,8 @@ clipHiBits (Bit False) k w = w .|. hiMask k
 -- > import Data.Maybe
 -- > isAnyBitSet   = isJust    . bitIndex 1
 -- > areAllBitsSet = isNothing . bitIndex 0
+--
+-- @since 1.0.0.0
 bitIndex :: Bit -> U.Vector Bit -> Maybe Int
 bitIndex b (BitVec off len arr)
   | len == 0 = Nothing
@@ -554,6 +584,8 @@ bitIndexInWords (Bit False) !off !len !arr = go off
 -- One can use 'nthBitIndex' to implement
 -- to implement @select{0,1}@ queries
 -- for <https://en.wikipedia.org/wiki/Succinct_data_structure succinct dictionaries>.
+--
+-- @since 1.0.0.0
 nthBitIndex :: Bit -> Int -> U.Vector Bit -> Maybe Int
 nthBitIndex _ k _ | k <= 0 = error "nthBitIndex: n must be positive"
 nthBitIndex b k (BitVec off len arr)
@@ -643,6 +675,8 @@ unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 -- One can combine 'countBits' with 'Data.Vector.Unboxed.take'
 -- to implement @rank{0,1}@ queries
 -- for <https://en.wikipedia.org/wiki/Succinct_data_structure succinct dictionaries>.
+--
+-- @since 0.1
 countBits :: U.Vector Bit -> Int
 countBits (BitVec _ 0 _)                      = 0
 #if UseLibGmp
@@ -680,6 +714,8 @@ countBitsInWords = P.foldl' (\acc word -> popCount word + acc) 0
 -- >>> :set -XOverloadedLists
 -- >>> listBits [1,1,0,1,0,1]
 -- [0,1,3,5]
+--
+-- @since 0.1
 listBits :: U.Vector Bit -> [Int]
 listBits (BitVec _ 0 _)                      = []
 listBits (BitVec off len arr) | offBits == 0 = case modWordSize len of

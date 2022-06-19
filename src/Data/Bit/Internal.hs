@@ -58,8 +58,17 @@ import GHC.Exts
 -- Unboxed vectors of `Bit` use 8x less memory
 -- than unboxed vectors of 'Bool' (which store one value per byte),
 -- but random writes are up to 10% slower.
-newtype Bit = Bit { unBit :: Bool }
-  deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable, Generic, NFData)
+--
+-- @since 0.1
+newtype Bit = Bit {
+  unBit :: Bool -- ^ @since 0.2.0.0
+  } deriving
+  (Bounded, Enum, Eq, Ord
+  , FiniteBits -- ^ @since 0.2.0.0
+  , Bits, Typeable
+  , Generic    -- ^ @since 1.0.1.0
+  , NFData     -- ^ @since 1.0.1.0
+  )
 #else
 -- | A newtype wrapper with a custom instance
 -- for "Data.Vector.Unboxed", which packs booleans
@@ -67,13 +76,22 @@ newtype Bit = Bit { unBit :: Bool }
 -- Unboxed vectors of `Bit` use 8x less memory
 -- than unboxed vectors of 'Bool' (which store one value per byte),
 -- but random writes are up to 20% slower.
-newtype Bit = Bit { unBit :: Bool }
-  deriving (Bounded, Enum, Eq, Ord, FiniteBits, Bits, Typeable, Generic, NFData)
+newtype Bit = Bit {
+  unBit :: Bool -- ^ @since 0.2.0.0
+  } deriving
+  (Bounded, Enum, Eq, Ord
+  , FiniteBits -- ^ @since 0.2.0.0
+  , Bits, Typeable
+  , Generic    -- ^ @since 1.0.1.0
+  , NFData     -- ^ @since 1.0.1.0
+  )
 #endif
 
 -- | There is only one lawful 'Num' instance possible
 -- with '+' = 'xor' and
 -- 'fromInteger' = 'Bit' . 'odd'.
+--
+-- @since 1.0.1.0
 instance Num Bit where
   Bit a * Bit b = Bit (a && b)
   Bit a + Bit b = Bit (a /= b)
@@ -83,15 +101,18 @@ instance Num Bit where
   signum = id
   fromInteger = Bit . odd
 
+-- | @since 1.0.1.0
 instance Real Bit where
   toRational = fromIntegral
 
+-- | @since 1.0.1.0
 instance Integral Bit where
   quotRem _ (Bit False) = throw DivideByZero
   quotRem x (Bit True)  = (x, Bit False)
   toInteger (Bit False) = 0
   toInteger (Bit True)  = 1
 
+-- | @since 1.0.1.0
 instance Fractional Bit where
   fromRational x = fromInteger (numerator x) / fromInteger (denominator x)
   (/) = quot
@@ -419,6 +440,8 @@ instance MV.MVector U.MVector Bit where
 -- >>> :set -XOverloadedLists
 -- >>> Data.Vector.Unboxed.modify (`unsafeFlipBit` 2) [1,1,1,1]
 -- [1,1,0,1]
+--
+-- @since 1.0.0.0
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit v i =
 #if MIN_VERSION_vector(0,13,0)
@@ -450,6 +473,8 @@ basicFlipBit (BitMVec off _ arr) !i' = do
 -- >>> :set -XOverloadedLists
 -- >>> Data.Vector.Unboxed.modify (`flipBit` 2) [1,1,1,1]
 -- [1,1,0,1]
+--
+-- @since 1.0.0.0
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
 #if MIN_VERSION_vector(0,13,0)

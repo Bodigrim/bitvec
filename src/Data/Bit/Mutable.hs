@@ -51,6 +51,8 @@ import GHC.Exts
 
 -- | Cast a vector of words to a vector of bits.
 -- Cf. 'Data.Bit.castFromWords'.
+--
+-- @since 1.0.0.0
 castFromWordsM :: MVector s Word -> MVector s Bit
 castFromWordsM (MU.MV_Word (P.MVector off len ws)) =
   BitMVec (mulWordSize off) (mulWordSize len) ws
@@ -59,6 +61,8 @@ castFromWordsM (MU.MV_Word (P.MVector off len ws)) =
 -- It succeeds if the vector of bits is aligned.
 -- Use 'cloneToWordsM' otherwise.
 -- Cf. 'Data.Bit.castToWords'.
+--
+-- @since 1.0.0.0
 castToWordsM :: MVector s Bit -> Maybe (MVector s Word)
 castToWordsM (BitMVec s n ws)
   | aligned s, aligned n
@@ -68,6 +72,8 @@ castToWordsM (BitMVec s n ws)
 -- | Clone a vector of bits to a new unboxed vector of words.
 -- If the bits don't completely fill the words, the last word will be zero-padded.
 -- Cf. 'Data.Bit.cloneToWords'.
+--
+-- @since 1.0.0.0
 cloneToWordsM
   :: PrimMonad m
   => MVector (PrimState m) Bit
@@ -122,6 +128,8 @@ cloneToWords8M v = do
 -- >>> import Data.Bits
 -- >>> Data.Vector.Unboxed.modify (zipInPlace (.&.) [1,1,0]) [0,1,1,1,1,1]
 -- [0,1,0,1,1,1] -- note trailing garbage
+--
+-- @since 1.0.0.0
 zipInPlace
   :: forall m.
      PrimMonad m
@@ -202,6 +210,8 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
 -- >>> import Data.Bits
 -- >>> Data.Vector.Unboxed.modify (mapInPlace complement) [0,1,1]
 -- [1,0,0]
+--
+-- @since 1.1.0.0
 mapInPlace
   :: PrimMonad m
   => (forall a . Bits a => a -> a)
@@ -220,6 +230,8 @@ mapInPlace f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
 -- >>> :set -XOverloadedLists
 -- >>> Data.Vector.Unboxed.modify invertInPlace [0,1,0,1,0]
 -- [1,0,1,0,1]
+--
+-- @since 0.1
 invertInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 invertInPlace xs = do
   let n = MU.length xs
@@ -238,6 +250,7 @@ invertInPlace xs = do
 -- >>> runST $ do { vec <- U.unsafeThaw [1,1,0,0,1]; n <- selectBitsInPlace [0,1,0,1,1] vec; U.take n <$> U.unsafeFreeze vec }
 -- [1,0,1]
 --
+-- @since 0.1
 selectBitsInPlace
   :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 selectBitsInPlace is xs = loop 0 0
@@ -261,6 +274,7 @@ selectBitsInPlace is xs = loop 0 0
 -- >>> runST $ do { vec <- U.unsafeThaw [1,1,0,0,1]; n <- excludeBitsInPlace [0,1,0,1,1] vec; U.take n <$> U.unsafeFreeze vec }
 -- [1,0]
 --
+-- @since 0.1
 excludeBitsInPlace
   :: PrimMonad m => U.Vector Bit -> U.MVector (PrimState m) Bit -> m Int
 excludeBitsInPlace is xs = loop 0 0
@@ -283,6 +297,8 @@ excludeBitsInPlace is xs = loop 0 0
 --
 -- Consider using the [vector-rotcev](https://hackage.haskell.org/package/vector-rotcev) package
 -- to reverse vectors in O(1) time.
+--
+-- @since 0.1
 reverseInPlace :: PrimMonad m => U.MVector (PrimState m) Bit -> m ()
 reverseInPlace xs
   | len == 0  = pure ()
