@@ -78,7 +78,6 @@ library
   other-modules:
     Data.Bit.F2Poly
     Data.Bit.F2PolyTS
-    Data.Bit.Gmp
     Data.Bit.Immutable
     Data.Bit.ImmutableTS
     Data.Bit.Internal
@@ -98,6 +97,8 @@ library
   if flag(libgmp)
     extra-libraries: gmp
     cpp-options: -DUseLibGmp
+    other-modules:
+      Data.Bit.Gmp
 
 test-suite bitvec-tests
   type: exitcode-stdio-1.0
