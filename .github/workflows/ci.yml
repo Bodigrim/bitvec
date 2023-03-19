@@ -5,6 +5,10 @@ on:
       - master
   pull_request: {}
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -12,15 +16,15 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        ghc: ['9.6.1', '9.4.1', '9.2', '9.0', '8.10', '8.8.4', '8.8.2', '8.8.1', '8.6', '8.4', '8.2', '8.0']
+        ghc: ['9.6', '9.4', '9.2', '9.0', '8.10', '8.8.4', '8.8.2', '8.8.1', '8.6', '8.4', '8.2', '8.0']
     steps:
-    - uses: actions/checkout@v2
-    - uses: haskell/actions/setup@v1
+    - uses: actions/checkout@v3
+    - uses: haskell/actions/setup@v2
       id: setup-haskell-cabal
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: 'latest'
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       name: Cache cabal stuff
       with:
         path: |
@@ -33,14 +37,35 @@ jobs:
       run: |
         echo packages:. > cabal.project
         echo tests:True >> cabal.project
-        cabal test -flibgmp
-        cabal test
+        echo "constraints:quickcheck-classes -semigroupoids -aeson -semirings" >> cabal.project
+        cabal test -flibgmp --test-show-details=direct
+        cabal test --test-show-details=direct
         cabal bench --benchmark-option=-l
         cabal sdist
         cabal check
     - name: Haddock
-      if: ${{ matrix.ghc != '8.0' }}
+      if: ${{ matrix.ghc != '8.0' && matrix.ghc != '8.2' && matrix.ghc != '8.4' }}
       run: cabal haddock
+
+  i386:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: i386/ubuntu:bionic
+    steps:
+    - name: Install
+      run: |
+        apt-get update -y
+        apt-get install -y autoconf build-essential zlib1g-dev libgmp-dev curl libncurses5 libtinfo5 libncurses5-dev libtinfo-dev
+        curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 sh
+    - uses: actions/checkout@v1
+    - name: Test
+      run: |
+        source ~/.ghcup/env
+        cabal --version
+        cabal update
+        cabal test -flibgmp --test-show-details=direct
+        cabal test --test-show-details=direct
 
   emulated:
     needs: build
@@ -48,14 +73,14 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        arch: ['s390x', 'ppc64le']
+        arch: ['s390x', 'ppc64le', 'armv7', 'aarch64']
     steps:
-    - uses: actions/checkout@v2
-    - uses: uraimo/run-on-arch-action@v2.1.1
+    - uses: actions/checkout@v3
+    - uses: uraimo/run-on-arch-action@v2
       timeout-minutes: 60
       with:
         arch: ${{ matrix.arch }}
-        distro: ubuntu20.04
+        distro: ubuntu22.04
         githubToken: ${{ github.token }}
         install: |
           apt-get update -y
@@ -66,3 +91,30 @@ jobs:
           echo "#define UNSAFE_CHECK(f) (\_ _ _ -> id)" >> src/vector.h
           ghc --make -Isrc:test -isrc:test -o Tests test/Main.hs +RTS -s
           ./Tests +RTS -s
+
+  bounds-checking:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: haskell/actions/setup@v2
+      id: setup-haskell-cabal
+      with:
+        ghc-version: 'latest'
+    - name: Update cabal package database
+      run: cabal update
+    - uses: actions/cache@v2
+      name: Cache cabal stuff
+      with:
+        path: |
+          ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          dist-newstyle
+        key: ${{ runner.os }}-latest
+    - name: Test
+      run: |
+        echo packages:. > cabal.project
+        echo tests:True >> cabal.project
+        echo "constraints:quickcheck-classes -semigroupoids -aeson -semirings" >> cabal.project
+        echo "constraints:vector +unsafechecks +internalchecks" >> cabal.project
+        cabal test -flibgmp --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts'
+        cabal test --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts'
