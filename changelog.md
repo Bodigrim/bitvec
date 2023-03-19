@@ -1,3 +1,8 @@
+# 1.1.4.0
+
+* Include `Data.Bit.Gmp` only if `libgmp` flag is set.
+* Tweak inlining pragmas to inline less aggressively.
+
 # 1.1.3.0
 
 * Fix malformed `signum` for `F2Poly`.
