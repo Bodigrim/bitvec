@@ -69,8 +69,8 @@ library
     Data.Bit.ThreadSafe
   build-depends:
     base >=4.9 && <5,
-    bytestring >=0.10,
-    deepseq,
+    bytestring >=0.10 && <0.12,
+    deepseq <1.5,
     primitive >=0.5,
     vector >=0.11 && <0.14
   default-language: Haskell2010
@@ -106,12 +106,12 @@ test-suite bitvec-tests
   build-depends:
     base,
     bitvec,
-    primitive >=0.5,
-    quickcheck-classes-base,
-    quickcheck-classes >=0.6.1,
+    primitive >=0.5 && <0.9,
+    quickcheck-classes-base <0.7,
+    quickcheck-classes >=0.6.1 && <0.7,
     vector >=0.11,
-    tasty,
-    tasty-quickcheck
+    tasty <1.5,
+    tasty-quickcheck <0.11
   default-language: Haskell2010
   hs-source-dirs: test
   other-modules:
@@ -127,7 +127,7 @@ test-suite bitvec-tests
   include-dirs: test
 
   if impl(ghc <9.0)
-    build-depends: integer-gmp
+    build-depends: integer-gmp <1.2
   else
     build-depends: ghc-bignum
 
@@ -135,9 +135,9 @@ benchmark bitvec-bench
   build-depends:
     base,
     bitvec,
-    containers,
-    random,
-    tasty-bench,
+    containers < 0.7,
+    random <1.3,
+    tasty-bench <0.4,
     vector
   type: exitcode-stdio-1.0
   main-is: Bench.hs
