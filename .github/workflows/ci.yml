@@ -38,11 +38,14 @@ jobs:
         echo packages:. > cabal.project
         echo tests:True >> cabal.project
         echo "constraints:quickcheck-classes -semigroupoids -aeson -semirings" >> cabal.project
-        cabal test -flibgmp --test-show-details=direct
         cabal test --test-show-details=direct
         cabal bench --benchmark-option=-l
         cabal sdist
         cabal check
+    - name: Build with GMP
+      if: ${{ matrix.os != 'windows-latest' }}
+      run: |
+        cabal test -flibgmp --test-show-details=direct
     - name: Haddock
       if: ${{ matrix.ghc != '8.0' && matrix.ghc != '8.2' && matrix.ghc != '8.4' }}
       run: cabal haddock
