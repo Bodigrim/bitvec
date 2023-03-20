@@ -23,7 +23,7 @@ randomWrites
 benchRandomWrite :: Int -> Benchmark
 benchRandomWrite k = bgroup (show (1 `shiftL` k :: Int))
   [ bench "Bit"    $ nf randomWriteBit    k
-  , bench "Bit.TS" $ nf randomWriteBitTS  k
+  , bench "BitTS"  $ nf randomWriteBitTS  k
   , bench "Vector" $ nf randomWriteVector k
   , bench "IntSet" $ nf randomWriteIntSet k
   ]

@@ -44,9 +44,9 @@ randomInteger2 k = toInteger $ toF2Poly $ randomVec2 Bit k
 
 benchRemainder :: Int -> Benchmark
 benchRemainder k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit/remainder"     $ nf (\x -> rem (toF2Poly $ randomVec Bit k) x) (toF2Poly $ randomVec2 Bit k)
-  , bench "Bit.TS/remainder"  $ nf (\x -> rem (TS.toF2Poly $ randomVec TS.Bit k) x) (TS.toF2Poly $ randomVec2 TS.Bit k)
-  , bench "Integer/remainder" $ nf (\x -> binRem (randomInteger k) x) (randomInteger2 k)
+  [ bench "Bit"     $ nf (\x -> rem (toF2Poly $ randomVec Bit k) x) (toF2Poly $ randomVec2 Bit k)
+  , bench "BitTS"   $ nf (\x -> rem (TS.toF2Poly $ randomVec TS.Bit k) x) (TS.toF2Poly $ randomVec2 TS.Bit k)
+  , bench "Integer" $ nf (\x -> binRem (randomInteger k) x) (randomInteger2 k)
   ]
 
 binRem :: Integer -> Integer -> Integer

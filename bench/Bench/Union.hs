@@ -40,25 +40,17 @@ randomSet2 k = IS.fromAscList (map fst (filter snd (zip [0..] (take n $ drop n r
 
 benchUnion :: Int -> Benchmark
 benchUnion k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit/zipBits"    $ nf (\x -> unionBit    (randomVec Bit k) x)    (randomVec2 Bit k)
-  , bench "Bit/zipWith"    $ nf (\x -> unionBit'   (randomVec Bit k) x)    (randomVec2 Bit k)
-  , bench "Bit.TS/zipBits" $ nf (\x -> unionBitTS  (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
-  , bench "Bit.TS/zipWith" $ nf (\x -> unionBitTS' (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
-  , bench "Vector"         $ nf (\x -> unionVector (randomVec id k) x)     (randomVec2 id k)
-  , bench "IntSet"         $ nf (unionIntSet (randomSet k))                (randomSet2 k)
+  [ bench "Bit"    $ nf (\x -> unionBit    (randomVec Bit k) x)    (randomVec2 Bit k)
+  , bench "BitTS"  $ nf (\x -> unionBitTS  (randomVec TS.Bit k) x) (randomVec2 TS.Bit k)
+  , bench "Vector" $ nf (\x -> unionVector (randomVec id k) x)     (randomVec2 id k)
+  , bench "IntSet" $ nf (unionIntSet (randomSet k))                (randomSet2 k)
   ]
 
 unionBit :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
 unionBit = zipBits (.|.)
 
-unionBit' :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
-unionBit' = U.zipWith (\(Bit x) (Bit y) -> Bit (x || y))
-
 unionBitTS :: U.Vector TS.Bit -> U.Vector TS.Bit -> U.Vector TS.Bit
 unionBitTS = TS.zipBits (.|.)
-
-unionBitTS' :: U.Vector TS.Bit -> U.Vector TS.Bit -> U.Vector TS.Bit
-unionBitTS' = U.zipWith (\(TS.Bit x) (TS.Bit y) -> TS.Bit (x || y))
 
 unionVector :: U.Vector Bool -> U.Vector Bool -> U.Vector Bool
 unionVector = U.zipWith (||)

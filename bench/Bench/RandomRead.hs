@@ -30,7 +30,7 @@ randomReads
 benchRandomRead :: Int -> Benchmark
 benchRandomRead k = bgroup (show (1 `shiftL` k :: Int))
   [ bench "Bit"    $ nf randomReadBit    k
-  , bench "Bit.TS" $ nf randomReadBitTS  k
+  , bench "BitTS"  $ nf randomReadBitTS  k
   , bench "Vector" $ nf randomReadVector k
   -- , bench "IntSet" $ nf randomReadIntSet k
   ]

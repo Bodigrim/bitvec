@@ -25,6 +25,6 @@ randomVec' f k = U.fromList $ map f $ take n $ drop n randomBools
 
 benchGCD :: Int -> Benchmark
 benchGCD k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit/gcdExt"    $ nf (uncurry    gcdExt) (   toF2Poly $ randomVec    Bit k,    toF2Poly $ randomVec'    Bit k)
-  , bench "Bit.TS/gcdExt" $ nf (uncurry TS.gcdExt) (TS.toF2Poly $ randomVec TS.Bit k, TS.toF2Poly $ randomVec' TS.Bit k)
+  [ bench "Bit"   $ nf (uncurry    gcdExt) (   toF2Poly $ randomVec    Bit k,    toF2Poly $ randomVec'    Bit k)
+  , bench "BitTS" $ nf (uncurry TS.gcdExt) (TS.toF2Poly $ randomVec TS.Bit k, TS.toF2Poly $ randomVec' TS.Bit k)
   ]
