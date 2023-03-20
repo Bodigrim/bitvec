@@ -13,10 +13,10 @@ import Data.Bits
 import Data.List (findIndex)
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Base as UB
 import Data.Word
 import Test.Tasty
 import Test.Tasty.QuickCheck (Property, NonNegative(..), Positive(..), testProperty, Large(..), (===), property, once, (==>), ioProperty, (.&&.), counterexample)
-import Unsafe.Coerce
 
 #include "MachDeps.h"
 
@@ -146,7 +146,7 @@ prop_cloneFromWords8_def ws
   = counterexample ("offset = " ++ show off ++ " len = " ++ show len)
   $ U.toList (castFromWords8 ws) === concatMap wordToBitList (U.toList ws)
   where
-    P.Vector off len _ = unsafeCoerce ws
+    UB.V_Word8 (P.Vector off len _) = ws
 
 prop_cloneToWords8_def :: U.Vector Bit -> Property
 prop_cloneToWords8_def xs@(BitVec off len _)
@@ -165,7 +165,7 @@ prop_castToWords8_1 ws
   = counterexample ("offset = " ++ show off ++ " len = " ++ show len)
   $ Just ws === castToWords8 (castFromWords8 ws)
   where
-    P.Vector off len _ = unsafeCoerce ws
+    UB.V_Word8 (P.Vector off len _) = ws
 #endif
 
 prop_castToWords8_2 :: U.Vector Bit -> Property

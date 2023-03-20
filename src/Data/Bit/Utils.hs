@@ -28,10 +28,10 @@ module Data.Bit.Utils
 import Data.Bits
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Base as UB
 #if __GLASGOW_HASKELL__ >= 810
 import GHC.Exts
 #endif
-import Unsafe.Coerce
 
 import Data.Bit.PdepPext
 
@@ -206,9 +206,9 @@ hiMask n = complement (1 `unsafeShiftL` n - 1)
 {-# INLINE hiMask #-}
 
 fromPrimVector :: P.Vector Word -> U.Vector Word
-fromPrimVector = unsafeCoerce
+fromPrimVector = UB.V_Word
 {-# INLINE fromPrimVector #-}
 
 toPrimVector :: U.Vector Word -> P.Vector Word
-toPrimVector = unsafeCoerce
+toPrimVector (UB.V_Word ws) = ws
 {-# INLINE toPrimVector #-}

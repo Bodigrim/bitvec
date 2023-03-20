@@ -61,9 +61,9 @@ import Data.Primitive.ByteArray
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Storable as S
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Base as UB
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Data.Word
-import Unsafe.Coerce
 
 #ifdef WORDS_BIGENDIAN
 import GHC.Exts
@@ -210,7 +210,7 @@ castFromWords8 :: U.Vector Word8 -> U.Vector Bit
 castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
   where
 #ifdef WORDS_BIGENDIAN
-    P.Vector off' len arr' = unsafeCoerce ws
+    UB.V_Word8 (P.Vector off' len arr') = ws
     off = 0
     arr = runST $ do
       let lenWords = nWords $ len `shiftL` 3
@@ -223,7 +223,7 @@ castFromWords8 ws = BitVec (off `shiftL` 3) (len `shiftL` 3) arr
         writeByteArray marr i (W# (byteSwap# w))
       unsafeFreezeByteArray marr
 #else
-    P.Vector off len arr = unsafeCoerce ws
+    UB.V_Word8 (P.Vector off len arr) = ws
 #endif
 
 -- | Try to cast an unboxed vector of bits
@@ -240,7 +240,7 @@ castToWords8 = const Nothing
 #else
 castToWords8 (BitVec s n ws)
   | s .&. 7 == 0, n .&. 7 == 0
-  = Just $ unsafeCoerce $ P.Vector (s `shiftR` 3) (n `shiftR` 3) ws
+  = Just $ UB.V_Word8 $ P.Vector (s `shiftR` 3) (n `shiftR` 3) ws
   | otherwise = Nothing
 #endif
 
