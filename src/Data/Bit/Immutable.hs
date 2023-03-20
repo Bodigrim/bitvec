@@ -193,7 +193,7 @@ cloneToWords v = runST $ do
   v' <- U.unsafeThaw v
   w  <- cloneToWordsM v'
   U.unsafeFreeze w
-{-# INLINE cloneToWords #-}
+{-# INLINABLE cloneToWords #-}
 
 -- | Cast an unboxed vector of 'Word8'
 -- to an unboxed vector of bits.
@@ -259,7 +259,7 @@ cloneToWords8 v = runST $ do
   v' <- U.unsafeThaw v
   w  <- cloneToWords8M v'
   U.unsafeFreeze w
-{-# INLINE cloneToWords8 #-}
+{-# INLINABLE cloneToWords8 #-}
 
 -- | Clone a 'BS.ByteString' to a new unboxed vector of bits.
 --
@@ -359,7 +359,7 @@ zipBits f xs ys = runST $ do
   forM_ [0, wordSize .. n - 1] $ \i ->
     writeWord zs i (f (indexWord xs i) (indexWord ys i))
   U.unsafeFreeze zs
-{-# INLINE zipBits #-}
+{-# INLINABLE zipBits #-}
 
 -- | Map a vectors with the given function.
 -- Similar to 'Data.Vector.Unboxed.map',
@@ -375,11 +375,11 @@ mapBits
   :: (forall a . Bits a => a -> a)
   -> U.Vector Bit
   -> U.Vector Bit
-mapBits f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
-  (False, False) -> U.replicate (U.length xs) (Bit False)
-  (False, True)  -> xs
-  (True, False)  -> invertBits xs
-  (True, True)   -> U.replicate (U.length xs) (Bit True)
+mapBits f = case (unBit (f (Bit False)), unBit (f (Bit True))) of
+  (False, False) -> (`U.replicate` Bit False) . U.length
+  (False, True)  -> id
+  (True, False)  -> invertBits
+  (True, True)   -> (`U.replicate` Bit True) . U.length
 {-# INLINE mapBits #-}
 
 -- | Invert (flip) all bits.

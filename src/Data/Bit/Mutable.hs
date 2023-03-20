@@ -85,7 +85,7 @@ cloneToWordsM v = do
   MU.unsafeCopy (MU.slice 0 lenBits w) v
   MU.set (MU.slice lenBits (mulWordSize lenWords - lenBits) w) (Bit False)
   pure $ MU.MV_Word $ P.MVector 0 lenWords arr
-{-# INLINE cloneToWordsM #-}
+{-# INLINABLE cloneToWordsM #-}
 
 -- | Clone a vector of bits to a new unboxed vector of 'Word8'.
 -- If the bits don't completely fill the words, the last 'Word8' will be zero-padded.
@@ -110,7 +110,7 @@ cloneToWords8M v = do
 #endif
 
   pure $ MU.MV_Word8 $ P.MVector 0 actualLenBytes arr
-{-# INLINE cloneToWords8M #-}
+{-# INLINABLE cloneToWords8M #-}
 
 -- | Zip two vectors with the given function,
 -- rewriting the contents of the second argument.
@@ -200,7 +200,7 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
             loop (i + 1) accNew
 
 {-# SPECIALIZE zipInPlace :: (forall a. Bits a => a -> a -> a) -> Vector Bit -> MVector s Bit -> ST s () #-}
-{-# INLINE zipInPlace #-}
+{-# INLINABLE zipInPlace #-}
 
 -- | Apply a function to a mutable vector bitwise,
 -- rewriting its contents.
@@ -217,11 +217,11 @@ mapInPlace
   => (forall a . Bits a => a -> a)
   -> U.MVector (PrimState m) Bit
   -> m ()
-mapInPlace f xs = case (unBit (f (Bit False)), unBit (f (Bit True))) of
-  (False, False) -> MU.set xs (Bit False)
-  (False, True)  -> pure ()
-  (True, False)  -> invertInPlace xs
-  (True, True)   -> MU.set xs (Bit True)
+mapInPlace f = case (unBit (f (Bit False)), unBit (f (Bit True))) of
+  (False, False) -> (`MU.set` Bit False)
+  (False, True)  -> const $ pure ()
+  (True, False)  -> invertInPlace
+  (True, True)   -> (`MU.set` Bit True)
 {-# SPECIALIZE mapInPlace :: (forall a. Bits a => a -> a) -> MVector s Bit -> ST s () #-}
 {-# INLINE mapInPlace #-}
 
