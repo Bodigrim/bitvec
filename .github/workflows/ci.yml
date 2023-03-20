@@ -119,5 +119,7 @@ jobs:
         echo tests:True >> cabal.project
         echo "constraints:quickcheck-classes -semigroupoids -aeson -semirings" >> cabal.project
         echo "constraints:vector +unsafechecks +internalchecks" >> cabal.project
-        cabal test -flibgmp --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts'
-        cabal test --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts'
+        # Some tests are filtered out because of
+        # https://gitlab.haskell.org/ghc/ghc/-/issues/23132
+        cabal run tests -flibgmp --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
+        cabal run tests --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
