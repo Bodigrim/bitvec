@@ -57,7 +57,7 @@ import GHC.Exts
 -- as efficient as possible (8 values per byte).
 -- Unboxed vectors of `Bit` use 8x less memory
 -- than unboxed vectors of 'Bool' (which store one value per byte),
--- but random writes are up to 10% slower.
+-- but random writes are slightly slower.
 --
 -- @since 0.1
 newtype Bit = Bit {
@@ -75,7 +75,9 @@ newtype Bit = Bit {
 -- as efficient as possible (8 values per byte).
 -- Unboxed vectors of `Bit` use 8x less memory
 -- than unboxed vectors of 'Bool' (which store one value per byte),
--- but random writes are up to 20% slower.
+-- but random writes are slightly slower.
+--
+-- @since 1.0.0.0
 newtype Bit = Bit {
   unBit :: Bool -- ^ @since 0.2.0.0
   } deriving

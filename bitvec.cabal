@@ -29,7 +29,7 @@ description:
     This is because naive updates are not atomic:
     they read the whole word from memory,
     then modify a bit, then write the whole word back.
-  * "Data.Bit.ThreadSafe" is slower (up to 20%),
+  * "Data.Bit.ThreadSafe" is slower (usually 10-20%),
     but writes and flips are thread-safe.
   .
   === Similar packages

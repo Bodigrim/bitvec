@@ -20,7 +20,7 @@ On the other hand, for certain bulk bit operations
   This is because naive updates are not atomic:
   they read the whole word from memory,
   then modify a bit, then write the whole word back.
-* `Data.Bit.ThreadSafe` is slower (up to 20%),
+* `Data.Bit.ThreadSafe` is slower (usually 10-20%),
   but writes and flips are thread-safe.
 
 ## Quick start
@@ -105,7 +105,7 @@ One may notice that the order of the inner traversal by `i`
 does not matter and get tempted to run it in several parallel threads.
 In this case it is vital to switch from `Data.Bit` to `Data.Bit.ThreadSafe`,
 because the former is thread-unsafe with regards to writes.
-There is a moderate performance penalty (up to 20%)
+There is a moderate performance penalty (usually 10-20%)
 for using the thread-safe interface.
 
 ## Sets

@@ -9,7 +9,10 @@
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 -- This module exposes an interface with thread-unsafe writes and flips.
--- Consider using "Data.Bit.ThreadSafe", which is thread-safe, but slower (up to 20%).
+-- Consider using "Data.Bit.ThreadSafe", which is thread-safe, but slower
+-- (usually 10-20%, up to 50% for short vectors).
+--
+-- @since 0.1
 module Data.Bit
 #else
 -- |
@@ -19,7 +22,10 @@ module Data.Bit
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 -- This module exposes an interface with thread-safe writes and flips.
--- Consider using "Data.Bit", which is faster (up to 20%), but thread-unsafe.
+-- Consider using "Data.Bit", which is faster
+-- (usually 10-20%, up to 50% for short vectors), but thread-unsafe.
+--
+-- @since 1.0
 module Data.Bit.ThreadSafe
 #endif
   ( Bit(..)

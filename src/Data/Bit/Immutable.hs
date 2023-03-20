@@ -412,7 +412,8 @@ invertBits xs = runST $ do
 
 -- | For each set bit of the first argument, deposit
 -- the corresponding bit of the second argument
--- to the result. Similar to the parallel deposit instruction (PDEP).
+-- to the result. Similar to the
+-- [parallel bit deposit instruction (PDEP)](https://en.wikipedia.org/wiki/X86_Bit_manipulation_instruction_set#Parallel_bit_deposit_and_extract).
 --
 -- >>> :set -XOverloadedLists
 -- >>> selectBits [0,1,0,1,1] [1,1,0,0,1]
