@@ -46,6 +46,8 @@ import Control.Monad.ST
 import Data.Bits
 #if UseLibGmp
 import Data.Bit.Gmp
+#elif UseSIMD
+import Data.Bit.SIMD
 #endif
 #ifndef BITVEC_THREADSAFE
 import Data.Bit.Internal
@@ -69,12 +71,12 @@ import Data.Word
 import GHC.Exts
 #endif
 
-#if UseLibGmp
-gmpLimbShift :: Int
-gmpLimbShift = case wordSize of
+#if UseLibGmp || UseSIMD
+limbShift :: Int
+limbShift = case wordSize of
   32 -> 2
   64 -> 3
-  _  -> error "gmpLimbShift: unknown architecture"
+  _  -> error "limbShift: unknown architecture"
 #endif
 
 instance {-# OVERLAPPING #-} Bits (Vector Bit) where
@@ -328,7 +330,7 @@ zipBits _ _ (BitVec _ 0 _) = U.empty
 zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2) = runST $ do
     let l = l1 `min` l2
         w = nWords l
-        b = w `shiftL` gmpLimbShift
+        b = w `shiftL` limbShift
     brr <- newByteArray b
     let ff = unBit $ f (Bit False) (Bit False)
         ft = unBit $ f (Bit False) (Bit True)
@@ -350,6 +352,34 @@ zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2) = runST $ do
       (True,  True,  False, False) -> mpnCom   brr arg1      w
       (True,  True,  False, True)  -> mpnIornN brr arg2 arg1 w
       (True,  True,  True,  False) -> mpnNandN brr arg1 arg2 w
+      (True,  True,  True,  True)  -> setByteArray brr 0 w (complement zeroBits :: Word)
+    BitVec 0 l <$> unsafeFreezeByteArray brr
+#elif UseSIMD
+zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2) = runST $ do
+    let l = l1 `min` l2
+        w = nWords l
+        b = w `shiftL` limbShift
+    brr <- newByteArray b
+    let ff = unBit $ f (Bit False) (Bit False)
+        ft = unBit $ f (Bit False) (Bit True)
+        tf = unBit $ f (Bit True)  (Bit False)
+        tt = unBit $ f (Bit True)  (Bit True)
+    case (ff, ft, tf, tt) of
+      (False, False, False, False) -> setByteArray brr 0 w (zeroBits :: Word)
+      (False, False, False, True)  -> ompAnd  brr arg1 arg2 w
+      (False, False, True,  False) -> ompAndn brr arg1 arg2 w
+      (False, False, True,  True)  -> copyByteArray brr 0 arg1 0 b
+      (False, True,  False, False) -> ompAndn brr arg2 arg1 w
+      (False, True,  False, True)  -> copyByteArray brr 0 arg2 0 b
+      (False, True,  True,  False) -> ompXor  brr arg1 arg2 w
+      (False, True,  True,  True)  -> ompIor  brr arg1 arg2 w
+      (True,  False, False, False) -> ompNior brr arg1 arg2 w
+      (True,  False, False, True)  -> ompXnor brr arg1 arg2 w
+      (True,  False, True,  False) -> ompCom  brr arg2      w
+      (True,  False, True,  True)  -> ompIorn brr arg1 arg2 w
+      (True,  True,  False, False) -> ompCom  brr arg1      w
+      (True,  True,  False, True)  -> ompIorn brr arg2 arg1 w
+      (True,  True,  True,  False) -> ompNand brr arg1 arg2 w
       (True,  True,  True,  True)  -> setByteArray brr 0 w (complement zeroBits :: Word)
     BitVec 0 l <$> unsafeFreezeByteArray brr
 #endif
@@ -399,8 +429,14 @@ invertBits (BitVec _ 0 _) = U.empty
 #if UseLibGmp
 invertBits (BitVec 0 l arg) = runST $ do
   let w = nWords l
-  brr <- newByteArray (w `shiftL` gmpLimbShift)
+  brr <- newByteArray (w `shiftL` limbShift)
   mpnCom brr arg w
+  BitVec 0 l <$> unsafeFreezeByteArray brr
+#elif UseSIMD
+invertBits (BitVec 0 l arg) = runST $ do
+  let w = nWords l
+  brr <- newByteArray (w `shiftL` limbShift)
+  ompCom brr arg w
   BitVec 0 l <$> unsafeFreezeByteArray brr
 #endif
 invertBits xs = runST $ do

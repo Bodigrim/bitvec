@@ -63,6 +63,12 @@ flag libgmp
   default: False
   manual: True
 
+flag simd
+  description:
+    Use a C SIMD implementation for `zipBits`, `invertBits` and `countBits`.
+  default: False
+  manual: True
+
 library
   exposed-modules:
     Data.Bit
@@ -99,6 +105,13 @@ library
     cpp-options: -DUseLibGmp
     other-modules:
       Data.Bit.Gmp
+
+  if flag(simd)
+    c-sources: cbits/bitvec_simd.c
+    cc-options: -O2 -fopenmp
+    cpp-options: -DUseSIMD
+    other-modules:
+      Data.Bit.SIMD
 
 test-suite bitvec-tests
   type: exitcode-stdio-1.0
