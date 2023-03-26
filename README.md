@@ -122,9 +122,9 @@ For example, consider three possible representations of a set of `Word16`:
 
 When the `simd` flag is enabled,
 according to our benchmarks (see `bench` folder),
-the union of `Vector Bit` evaluates 34x-58x faster
+the union of `Vector Bit` evaluates 24x-36x faster
 than the union of not-too-sparse `IntSet`s
-and stunningly outperforms `Vector Bool` by 1000x-2000x.
+and stunningly outperforms `Vector Bool` by 500x-1000x.
 
 ## Binary polynomials
 
