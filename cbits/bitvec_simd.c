@@ -1,6 +1,21 @@
 #include <inttypes.h>
 #include <stddef.h>
 
+size_t _hs_bitvec_popcount(const uint32_t *src, size_t len) {
+    size_t count = 0;
+    #pragma omp simd
+    for (size_t i = 0; i < len; i++) {
+        uint32_t x = src[i];
+        // count += popcount(t);
+        // https://bits.stephan-brumme.com/countBits.html
+        x = x - ((x >> 1) & 0x55555555);
+        x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+        x = (x + (x >> 4)) & 0x0f0f0f0f;
+        count += (x * 0x01010101) >> 24;
+    }
+    return count;
+}
+
 void _hs_bitvec_com(uint8_t *dest, uint8_t *src, size_t len) {
     #pragma omp simd
     for (size_t i = 0; i < len; i++) {

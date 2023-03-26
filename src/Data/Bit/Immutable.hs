@@ -659,6 +659,9 @@ unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 
 -- | Return the number of set bits in a vector (population count, popcount).
 --
+-- Users are strongly encouraged to enable the
+-- @simd@ flag for the ultimate performance of 'countBits'.
+--
 -- >>> :set -XOverloadedLists
 -- >>> countBits [1,1,0,1,0,1]
 -- 4
@@ -670,6 +673,10 @@ unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 -- @since 0.1
 countBits :: U.Vector Bit -> Int
 countBits (BitVec _ 0 _)                      = 0
+#if UseSIMD
+countBits (BitVec 0 len arr) | modWordSize len == 0 =
+  fromIntegral (ompPopcount arr (len `shiftR` 5))
+#endif
 countBits (BitVec off len arr) | offBits == 0 = case modWordSize len of
   0    -> countBitsInWords (P.Vector offWords lWords arr)
   nMod -> countBitsInWords (P.Vector offWords (lWords - 1) arr)

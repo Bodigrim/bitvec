@@ -3,6 +3,7 @@
 
 module Data.Bit.SIMD
   ( ompCom
+  , ompPopcount
   , ompAnd
   , ompIor
   , ompXor
@@ -17,6 +18,15 @@ import Control.Monad.ST
 import Control.Monad.ST.Unsafe
 import Data.Primitive.ByteArray
 import GHC.Exts
+import System.IO.Unsafe
+
+foreign import ccall unsafe "_hs_bitvec_popcount"
+  omp_popcount :: ByteArray# -> Int# -> IO Word
+
+ompPopcount :: ByteArray -> Int -> Word
+ompPopcount (ByteArray arg#) (I# len#) =
+  unsafeDupablePerformIO (omp_popcount arg# len#)
+{-# INLINE ompPopcount #-}
 
 foreign import ccall unsafe "_hs_bitvec_com"
   omp_com :: MutableByteArray# s -> ByteArray# -> Int# -> IO ()
