@@ -44,9 +44,7 @@ module Data.Bit.ImmutableTS
 import Control.Monad
 import Control.Monad.ST
 import Data.Bits
-#if UseLibGmp
-import Data.Bit.Gmp
-#elif UseSIMD
+#if UseSIMD
 import Data.Bit.SIMD
 #endif
 #ifndef BITVEC_THREADSAFE
@@ -71,7 +69,7 @@ import Data.Word
 import GHC.Exts
 #endif
 
-#if UseLibGmp || UseSIMD
+#if UseSIMD
 limbShift :: Int
 limbShift = case wordSize of
   32 -> 2
@@ -305,7 +303,7 @@ uncurry3 f (x, y, z) = f x y z
 -- 'Data.IntSet.union', 'Data.IntSet.intersection', etc.
 --
 -- Users are strongly encouraged to enable the
--- @libgmp@ flag for the ultimate performance of 'zipBits'.
+-- @simd@ flag for the ultimate performance of 'zipBits'.
 --
 -- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
@@ -326,35 +324,7 @@ zipBits
   -> U.Vector Bit
 zipBits _ (BitVec _ 0 _) _ = U.empty
 zipBits _ _ (BitVec _ 0 _) = U.empty
-#if UseLibGmp
-zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2) = runST $ do
-    let l = l1 `min` l2
-        w = nWords l
-        b = w `shiftL` limbShift
-    brr <- newByteArray b
-    let ff = unBit $ f (Bit False) (Bit False)
-        ft = unBit $ f (Bit False) (Bit True)
-        tf = unBit $ f (Bit True)  (Bit False)
-        tt = unBit $ f (Bit True)  (Bit True)
-    case (ff, ft, tf, tt) of
-      (False, False, False, False) -> setByteArray brr 0 w (zeroBits :: Word)
-      (False, False, False, True)  -> mpnAndN  brr arg1 arg2 w
-      (False, False, True,  False) -> mpnAndnN brr arg1 arg2 w
-      (False, False, True,  True)  -> copyByteArray brr 0 arg1 0 b
-      (False, True,  False, False) -> mpnAndnN brr arg2 arg1 w
-      (False, True,  False, True)  -> copyByteArray brr 0 arg2 0 b
-      (False, True,  True,  False) -> mpnXorN  brr arg1 arg2 w
-      (False, True,  True,  True)  -> mpnIorN  brr arg1 arg2 w
-      (True,  False, False, False) -> mpnNiorN brr arg1 arg2 w
-      (True,  False, False, True)  -> mpnXnorN brr arg1 arg2 w
-      (True,  False, True,  False) -> mpnCom   brr arg2      w
-      (True,  False, True,  True)  -> mpnIornN brr arg1 arg2 w
-      (True,  True,  False, False) -> mpnCom   brr arg1      w
-      (True,  True,  False, True)  -> mpnIornN brr arg2 arg1 w
-      (True,  True,  True,  False) -> mpnNandN brr arg1 arg2 w
-      (True,  True,  True,  True)  -> setByteArray brr 0 w (complement zeroBits :: Word)
-    BitVec 0 l <$> unsafeFreezeByteArray brr
-#elif UseSIMD
+#if UseSIMD
 zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2) = runST $ do
     let l = l1 `min` l2
         w = nWords l
@@ -415,7 +385,7 @@ mapBits f = case (unBit (f (Bit False)), unBit (f (Bit True))) of
 -- | Invert (flip) all bits.
 --
 -- Users are strongly encouraged to enable the
--- @libgmp@ flag for the ultimate performance of 'invertBits'.
+-- @simd@ flag for the ultimate performance of 'invertBits'.
 --
 -- >>> :set -XOverloadedLists
 -- >>> invertBits [0,1,0,1,0]
@@ -426,13 +396,7 @@ invertBits
   :: U.Vector Bit
   -> U.Vector Bit
 invertBits (BitVec _ 0 _) = U.empty
-#if UseLibGmp
-invertBits (BitVec 0 l arg) = runST $ do
-  let w = nWords l
-  brr <- newByteArray (w `shiftL` limbShift)
-  mpnCom brr arg w
-  BitVec 0 l <$> unsafeFreezeByteArray brr
-#elif UseSIMD
+#if UseSIMD
 invertBits (BitVec 0 l arg) = runST $ do
   let w = nWords l
   brr <- newByteArray (w `shiftL` limbShift)
@@ -702,9 +666,6 @@ unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 
 -- | Return the number of set bits in a vector (population count, popcount).
 --
--- Users are strongly encouraged to enable the
--- @libgmp@ flag for the ultimate performance of 'countBits'.
---
 -- >>> :set -XOverloadedLists
 -- >>> countBits [1,1,0,1,0,1]
 -- 4
@@ -716,10 +677,6 @@ unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 -- @since 0.1
 countBits :: U.Vector Bit -> Int
 countBits (BitVec _ 0 _)                      = 0
-#if UseLibGmp
-countBits (BitVec 0 len arr) | modWordSize len == 0 =
-  fromIntegral (mpnPopcount arr (divWordSize len))
-#endif
 countBits (BitVec off len arr) | offBits == 0 = case modWordSize len of
   0    -> countBitsInWords (P.Vector offWords lWords arr)
   nMod -> countBitsInWords (P.Vector offWords (lWords - 1) arr)
