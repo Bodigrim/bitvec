@@ -95,7 +95,7 @@ library
 
   if flag(simd)
     c-sources: cbits/bitvec_simd.c
-    cc-options: -fopenmp
+    cc-options: -fopenmp-simd
     cpp-options: -DUseSIMD
     other-modules:
       Data.Bit.SIMD
