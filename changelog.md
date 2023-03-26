@@ -1,3 +1,8 @@
+# x.x.x.x
+
+* Add `simd` flag to use a C SIMD implementation for `zipBits` and `invertBits`,
+  replacing the `libgmp` flag.
+
 # 1.1.4.0
 
 * Include `Data.Bit.Gmp` only if `libgmp` flag is set.

@@ -120,11 +120,11 @@ For example, consider three possible representations of a set of `Word16`:
 * As a 64k-long unboxed `Vector Bool`, implementing union as `zipWith (||)`.
 * As a 64k-long unboxed `Vector Bit`, implementing union as `zipBits (.|.)`.
 
-When the `libgmp` flag is enabled,
+When the `simd` flag is enabled,
 according to our benchmarks (see `bench` folder),
-the union of `Vector Bit` evaluates 24x-36x faster
+the union of `Vector Bit` evaluates 34x-58x faster
 than the union of not-too-sparse `IntSet`s
-and stunningly outperforms `Vector Bool` by 500x-1000x.
+and stunningly outperforms `Vector Bool` by 1000x-2000x.
 
 ## Binary polynomials
 
@@ -147,15 +147,9 @@ from `Integer` to `F2Poly` and back.
 
 ## Package flags
 
-* Flag `libgmp`, disabled by default.
+* Flag `simd`, disabled by default.
 
-  Link against the [GMP](https://gmplib.org/) library for the ultimate performance of
-  `zipBits`, `invertBits` and `countBits`. GMP is readily available on most machines
-  ([`apt-get install libgmp-dev`](https://packages.ubuntu.com/focal/libgmp-dev) on Ubuntu,
-  [`brew install gmp`](https://formulae.brew.sh/formula/gmp)
-  or [`port install gmp`](https://ports.macports.org/port/gmp/summary) on macOS,
-  [`pacman -S mingw-w64-x86_64-gmp`](https://packages.msys2.org/package/mingw-w64-x86_64-gmp) on MinGW),
-  so users are strongly encouraged to enable it whenever possible.
+  Use a C SIMD implementation for the ultimate performance of `zipBits` and `invertBits`.
 
 ## Similar packages
 

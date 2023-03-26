@@ -55,17 +55,10 @@ source-repository head
   type: git
   location: git://github.com/Bodigrim/bitvec.git
 
-flag libgmp
-  description:
-    Link against the GMP library for the ultimate performance of
-    `zipBits`, `invertBits` and `countBits`. Users are strongly encouraged
-    to enable this flag whenever possible.
-  default: False
-  manual: True
-
 flag simd
   description:
-    Use a C SIMD implementation for `zipBits`, `invertBits` and `countBits`.
+    Use a C SIMD implementation for the ultimate performance of `zipBits` and `invertBits`.
+    Users are strongly encouraged to enable this flag whenever possible.
   default: False
   manual: True
 
@@ -99,15 +92,6 @@ library
     build-depends: integer-gmp
   else
     build-depends: ghc-bignum
-
-  if flag(libgmp) && flag(simd)
-    buildable: False
-
-  if flag(libgmp)
-    extra-libraries: gmp
-    cpp-options: -DUseLibGmp
-    other-modules:
-      Data.Bit.Gmp
 
   if flag(simd)
     c-sources: cbits/bitvec_simd.c

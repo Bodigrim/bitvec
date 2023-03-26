@@ -42,10 +42,9 @@ jobs:
         cabal bench --benchmark-option=-l
         cabal sdist
         cabal check
-    - name: Build with GMP
-      if: ${{ matrix.os != 'windows-latest' }}
+    - name: Build with SIMD
       run: |
-        cabal test -flibgmp --test-show-details=direct
+        cabal test -fsimd --test-show-details=direct
     - name: Haddock
       if: ${{ matrix.ghc != '8.0' && matrix.ghc != '8.2' && matrix.ghc != '8.4' }}
       run: cabal haddock
@@ -67,7 +66,7 @@ jobs:
         source ~/.ghcup/env
         cabal --version
         cabal update
-        cabal test -flibgmp --test-show-details=direct
+        cabal test -fsimd --test-show-details=direct
         cabal test --test-show-details=direct
 
   emulated:
@@ -121,5 +120,5 @@ jobs:
         echo "constraints:vector +unsafechecks +internalchecks" >> cabal.project
         # Some tests are filtered out because of
         # https://gitlab.haskell.org/ghc/ghc/-/issues/23132
-        cabal run tests -flibgmp --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
+        cabal run tests -fsimd --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
         cabal run tests --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
