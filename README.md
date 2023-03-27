@@ -147,7 +147,7 @@ from `Integer` to `F2Poly` and back.
 
 ## Package flags
 
-* Flag `simd`, disabled by default.
+* Flag `simd`, enabled by default.
 
   Use a C SIMD implementation for the ultimate performance of `zipBits`, `invertBits` and `countBits`.
 
