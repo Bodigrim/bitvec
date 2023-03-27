@@ -7,5 +7,5 @@ task:
     - ghc --version
     - cabal --version
     - cabal update
-    - cabal test -fsimd --test-show-details=direct --enable-tests
-    - cabal test --test-show-details=direct
+    - cabal test --test-show-details=direct --enable-tests
+    - cabal test -f-simd --test-show-details=direct

@@ -1,7 +1,7 @@
 # x.x.x.x
 
-* Add `simd` flag to use a C SIMD implementation for `zipBits` and `invertBits`,
-  replacing the `libgmp` flag.
+* Add `simd` flag to use a C SIMD implementation for `zipBits`, `invertBits` and `countBits`,
+  replacing the `libgmp` flag, and enable it by default.
 
 # 1.1.4.0
 

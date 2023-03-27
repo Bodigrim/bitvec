@@ -294,9 +294,6 @@ uncurry3 f (x, y, z) = f x y z
 -- 'zipBits' is up to 32x faster than
 -- 'Data.IntSet.union', 'Data.IntSet.intersection', etc.
 --
--- Users are strongly encouraged to enable the
--- @simd@ flag for the ultimate performance of 'zipBits'.
---
 -- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
 -- >>> zipBits (.&.) [1,1,0] [0,1,1] -- intersection
@@ -375,9 +372,6 @@ mapBits f = case (unBit (f (Bit False)), unBit (f (Bit True))) of
 {-# INLINE mapBits #-}
 
 -- | Invert (flip) all bits.
---
--- Users are strongly encouraged to enable the
--- @simd@ flag for the ultimate performance of 'invertBits'.
 --
 -- >>> :set -XOverloadedLists
 -- >>> invertBits [0,1,0,1,0]
@@ -658,9 +652,6 @@ unsafeNthTrueInWord :: Int -> Word -> Int
 unsafeNthTrueInWord l w = countTrailingZeros (pdep (1 `shiftL` (l - 1)) w)
 
 -- | Return the number of set bits in a vector (population count, popcount).
---
--- Users are strongly encouraged to enable the
--- @simd@ flag for the ultimate performance of 'countBits'.
 --
 -- >>> :set -XOverloadedLists
 -- >>> countBits [1,1,0,1,0,1]
