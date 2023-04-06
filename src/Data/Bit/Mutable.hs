@@ -263,6 +263,7 @@ selectBitsInPlace is xs = loop 0 0
       let !(nSet, x') = selectWord (masked (n - i) (indexWord is i)) x
       writeWord xs ct x'
       loop (i + wordSize) (ct + nSet)
+{-# SPECIALIZE selectBitsInPlace :: U.Vector Bit -> U.MVector s Bit -> ST s Int #-}
 
 -- | Same as 'Data.Bit.excludeBits', but deposit
 -- excluded bits in-place. Returns the number of excluded bits.
@@ -288,6 +289,7 @@ excludeBitsInPlace is xs = loop 0 0
             selectWord (masked (n - i) (complement (indexWord is i))) x
       writeWord xs ct x'
       loop (i + wordSize) (ct + nSet)
+{-# SPECIALIZE excludeBitsInPlace :: U.Vector Bit -> U.MVector s Bit -> ST s Int #-}
 
 -- | Reverse the order of bits in-place.
 --
