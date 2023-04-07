@@ -666,7 +666,7 @@ countBits :: U.Vector Bit -> Int
 countBits (BitVec _ 0 _)                      = 0
 #if UseSIMD
 countBits (BitVec 0 len arr) | modWordSize len == 0 =
-  fromIntegral (ompPopcount arr (len `shiftR` 5))
+  ompPopcount arr (len `shiftR` 5)
 #endif
 countBits (BitVec off len arr) | offBits == 0 = case modWordSize len of
   0    -> countBitsInWords (P.Vector offWords lWords arr)

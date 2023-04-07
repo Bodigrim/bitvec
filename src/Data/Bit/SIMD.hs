@@ -21,10 +21,10 @@ import GHC.Exts
 import System.IO.Unsafe
 
 foreign import ccall unsafe "_hs_bitvec_popcount"
-  omp_popcount :: ByteArray# -> Int# -> IO Word
+  omp_popcount :: ByteArray# -> Int# -> IO Int
 
 -- | SIMD optimized popcount. The length is in 32 bit words.
-ompPopcount :: ByteArray -> Int -> Word
+ompPopcount :: ByteArray -> Int -> Int
 ompPopcount (ByteArray arg#) (I# len#) =
   unsafeDupablePerformIO (omp_popcount arg# len#)
 {-# INLINE ompPopcount #-}
