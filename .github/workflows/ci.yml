@@ -93,6 +93,8 @@ jobs:
           echo "#define UNSAFE_CHECK(f) (\_ _ _ -> id)" >> src/vector.h
           ghc --make -Isrc:test -isrc:test -o Tests test/Main.hs +RTS -s
           ./Tests +RTS -s
+          ghc --make -Isrc:test -isrc:test -DUseSIMD -o Tests cbits/bitvec_simd.c test/Main.hs +RTS -s
+          ./Tests +RTS -s
 
   bounds-checking:
     needs: build
