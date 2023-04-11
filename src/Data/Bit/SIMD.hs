@@ -123,7 +123,7 @@ ompXnor (MutableByteArray res#) (ByteArray arg1#) (ByteArray arg2#) (I# len#) =
 foreign import ccall unsafe "_hs_bitvec_reverse_bits"
   reverse_bits :: MutableByteArray# s -> ByteArray# -> Int# -> IO ()
 
--- | The length is in 32 bit words.
+-- | The length is in words.
 reverseBitsC :: MutableByteArray s -> ByteArray -> Int -> ST s ()
 reverseBitsC (MutableByteArray res#) (ByteArray arg#) (I# len#) =
   unsafeIOToST (reverse_bits res# arg# len#)
