@@ -41,7 +41,7 @@ setOpTests = testGroup "Set operations"
   , testProperty "invertInPlace middle"     prop_invertInPlace_middle
   , testProperty "invertInPlaceLong middle" prop_invertInPlaceLong_middle
 
-  , mkGroup "reverseBits" prop_reverseBits
+  , localOption (QuickCheckTests 500) $ mkGroup "reverseBits" prop_reverseBits
 
   , testProperty "reverseInPlace"            prop_reverseInPlace
   , testProperty "reverseInPlaceWords"       prop_reverseInPlaceWords

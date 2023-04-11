@@ -12,6 +12,7 @@ module Data.Bit.SIMD
   , ompNand
   , ompNior
   , ompXnor
+  , reverseBitsC
   ) where
 
 import Control.Monad.ST
@@ -118,3 +119,12 @@ ompXnor :: MutableByteArray s -> ByteArray -> ByteArray -> Int -> ST s ()
 ompXnor (MutableByteArray res#) (ByteArray arg1#) (ByteArray arg2#) (I# len#) =
   unsafeIOToST (omp_xnor res# arg1# arg2# len#)
 {-# INLINE ompXnor #-}
+
+foreign import ccall unsafe "_hs_bitvec_reverse_bits"
+  reverse_bits :: MutableByteArray# s -> ByteArray# -> Int# -> IO ()
+
+-- | The length is in 32 bit words.
+reverseBitsC :: MutableByteArray s -> ByteArray -> Int -> ST s ()
+reverseBitsC (MutableByteArray res#) (ByteArray arg#) (I# len#) =
+  unsafeIOToST (reverse_bits res# arg# len#)
+{-# INLINE reverseBitsC #-}

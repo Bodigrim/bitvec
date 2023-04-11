@@ -449,6 +449,13 @@ excludeBits is xs = runST $ do
 --
 -- @since 1.0.1.0
 reverseBits :: U.Vector Bit -> U.Vector Bit
+#ifdef UseSIMD
+reverseBits (BitVec 0 len arr) | modWordSize len == 0 = runST $ do
+  let n = len `shiftR` 5 -- length in 32 bit words
+  marr <- newByteArray (n `shiftL` 2)
+  reverseBitsC marr arr n
+  BitVec 0 len <$> unsafeFreezeByteArray marr
+#endif
 reverseBits xs = runST $ do
   let n    = U.length xs
   ys <- MU.new n
