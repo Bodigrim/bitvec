@@ -397,10 +397,10 @@ invertBits xs = runST $ do
     writeWord ys i (complement (indexWord xs i))
   U.unsafeFreeze ys
 
--- | For each set bit of the first argument, deposit
+-- | For each set bit of the first argument, extract
 -- the corresponding bit of the second argument
 -- to the result. Similar to the
--- [parallel bit deposit instruction (PDEP)](https://en.wikipedia.org/wiki/X86_Bit_manipulation_instruction_set#Parallel_bit_deposit_and_extract).
+-- [parallel bit extract instruction (PEXT)](https://en.wikipedia.org/wiki/X86_Bit_manipulation_instruction_set#Parallel_bit_deposit_and_extract).
 --
 -- >>> :set -XOverloadedLists
 -- >>> selectBits [0,1,0,1,1] [1,1,0,0,1]
@@ -418,7 +418,7 @@ selectBits is xs = runST $ do
   n   <- selectBitsInPlace is xs1
   U.unsafeFreeze (MU.take n xs1)
 
--- | For each unset bit of the first argument, deposit
+-- | For each unset bit of the first argument, extract
 -- the corresponding bit of the second argument
 -- to the result.
 --
