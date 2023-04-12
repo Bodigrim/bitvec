@@ -240,7 +240,7 @@ invertInPlace xs = do
     writeWord xs i (complement x)
 {-# SPECIALIZE invertInPlace :: U.MVector s Bit -> ST s () #-}
 
--- | Same as 'Data.Bit.selectBits', but deposit
+-- | Same as 'Data.Bit.selectBits', but extract
 -- selected bits in-place. Returns the number of selected bits.
 -- It is the caller's responsibility to trim the result to this number.
 --
@@ -265,7 +265,7 @@ selectBitsInPlace is xs = loop 0 0
       loop (i + wordSize) (ct + nSet)
 {-# SPECIALIZE selectBitsInPlace :: U.Vector Bit -> U.MVector s Bit -> ST s Int #-}
 
--- | Same as 'Data.Bit.excludeBits', but deposit
+-- | Same as 'Data.Bit.excludeBits', but extract
 -- excluded bits in-place. Returns the number of excluded bits.
 -- It is the caller's responsibility to trim the result to this number.
 --
