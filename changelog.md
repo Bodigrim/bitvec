@@ -1,5 +1,7 @@
 # x.x.x.x
 
+* Make `zipBits` unconditionally strict in its second bit vector argument.
+
 * Add `simd` flag to use a C SIMD implementation for `zipBits`, `invertBits` and `countBits`,
   replacing the `libgmp` flag, and enable it by default.
 
