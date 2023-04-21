@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                  #-}
 
 {-# LANGUAGE BangPatterns         #-}
+{-# LANGUAGE BinaryLiterals       #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE MagicHash            #-}
 {-# LANGUAGE RankNTypes           #-}
@@ -294,6 +295,12 @@ uncurry3 f (x, y, z) = f x y z
 -- 'zipBits' is up to 32x faster than
 -- 'Data.IntSet.union', 'Data.IntSet.intersection', etc.
 --
+-- The function passed to zipBits may only use the following
+-- 'Bits' methods:
+--
+-- '.&.', '.|.', 'xor', 'complement', 'zeroBits', and (likely uselessly)
+-- 'bitSizeMaybe' and 'isSigned'.
+--
 -- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
 -- >>> zipBits (.&.) [1,1,0] [0,1,1] -- intersection
@@ -311,44 +318,97 @@ zipBits
   -> U.Vector Bit
   -> U.Vector Bit
   -> U.Vector Bit
-zipBits _ (BitVec _ 0 _) _ = U.empty
-zipBits _ _ (BitVec _ 0 _) = U.empty
+zipBits f = \xs ys -> case (xs, ys) of
+  (BitVec _ 0 _, !_) -> U.empty
+  (_, BitVec _ 0 _) -> U.empty
 #if UseSIMD
-zipBits f (BitVec 0 l1 arg1) (BitVec 0 l2 arg2) = runST $ do
-    let l = l1 `min` l2
+  (BitVec 0 l1 arg1, BitVec 0 l2 arg2) -> runST $ do
+    let
+        l = noinlineMin l1 l2
         w = nWords l
         b = wordsToBytes w
     brr <- newByteArray b
-    let ff = unBit $ f (Bit False) (Bit False)
-        ft = unBit $ f (Bit False) (Bit True)
-        tf = unBit $ f (Bit True)  (Bit False)
-        tt = unBit $ f (Bit True)  (Bit True)
-    case (ff, ft, tf, tt) of
-      (False, False, False, False) -> setByteArray brr 0 w (zeroBits :: Word)
-      (False, False, False, True)  -> ompAnd  brr arg1 arg2 b
-      (False, False, True,  False) -> ompAndn brr arg1 arg2 b
-      (False, False, True,  True)  -> copyByteArray brr 0 arg1 0 b
-      (False, True,  False, False) -> ompAndn brr arg2 arg1 b
-      (False, True,  False, True)  -> copyByteArray brr 0 arg2 0 b
-      (False, True,  True,  False) -> ompXor  brr arg1 arg2 b
-      (False, True,  True,  True)  -> ompIor  brr arg1 arg2 b
-      (True,  False, False, False) -> ompNior brr arg1 arg2 b
-      (True,  False, False, True)  -> ompXnor brr arg1 arg2 b
-      (True,  False, True,  False) -> ompCom  brr arg2      b
-      (True,  False, True,  True)  -> ompIorn brr arg1 arg2 b
-      (True,  True,  False, False) -> ompCom  brr arg1      b
-      (True,  True,  False, True)  -> ompIorn brr arg2 arg1 b
-      (True,  True,  True,  False) -> ompNand brr arg1 arg2 b
-      (True,  True,  True,  True)  -> setByteArray brr 0 w (complement zeroBits :: Word)
+    -- We used to calculate (f False False, f False True, f True False, f True True).
+    -- Now we calculate all those in one go by passing all four possibilities within
+    -- a word.
+    case 0b1111 .&. (unBitsy $ f (Bitsy 0b0011) (Bitsy 0b0101)) of
+     0b0000 -> setByteArray brr 0 w (zeroBits :: Word)
+     0b0001 -> ompAnd  brr arg1 arg2 b
+     0b0010 -> ompAndn brr arg1 arg2 b
+     0b0011 -> copyByteArray brr 0 arg1 0 b
+     0b0100 -> ompAndn brr arg2 arg1 b
+     0b0101 -> copyByteArray brr 0 arg2 0 b
+     0b0110 -> ompXor  brr arg1 arg2 b
+     0b0111 -> ompIor  brr arg1 arg2 b
+     0b1000 -> ompNior brr arg1 arg2 b
+     0b1001 -> ompXnor brr arg1 arg2 b
+     0b1010 -> ompCom  brr arg2      b
+     0b1011 -> ompIorn brr arg1 arg2 b
+     0b1100 -> ompCom  brr arg1      b
+     0b1101 -> ompIorn brr arg2 arg1 b
+     0b1110 -> ompNand brr arg1 arg2 b
+     _0b1111 -> setByteArray brr 0 w (complement zeroBits :: Word)
     BitVec 0 l <$> unsafeFreezeByteArray brr
 #endif
-zipBits f xs ys = runST $ do
-  let n = min (U.length xs) (U.length ys)
-  zs <- MU.new n
-  forM_ [0, wordSize .. n - 1] $ \i ->
-    writeWord zs i (f (indexWord xs i) (indexWord ys i))
-  U.unsafeFreeze zs
-{-# INLINABLE zipBits #-}
+  _ -> runST $ do
+    let n = noinlineMin (U.length xs) (U.length ys)
+    zs <- MU.new n
+    forM_ [0, wordSize .. n - 1] $ \i ->
+      writeWord zs i . unBitsy $ f (Bitsy $ indexWord xs i) (Bitsy $ indexWord ys i)
+    U.unsafeFreeze zs
+{-# INLINE zipBits #-}
+
+-- | This is hideous, but it keeps the code size down in applications of
+-- 'zipBits'. Otherwise we end up taking different code paths depending
+-- on how the comparison goes in the min calculation, and the Core gets
+-- seriously ugly. Ugh!
+noinlineMin :: Int -> Int -> Int
+noinlineMin = min
+{-# NOINLINE noinlineMin #-}
+
+-- | A version of 'Word' that only supports operations that make sense in
+-- zipBits. This ensures that if someone does something overly silly in the function
+-- they pass to zipBits, then they'll get a helpful (albeit run-time) error rather than just
+-- weird garbage results.
+newtype Bitsy = Bitsy {unBitsy :: Word}
+instance Eq Bitsy where
+  _ == _ = notBitsy "=="
+instance Bits Bitsy where
+  Bitsy x .&. Bitsy y = Bitsy (x .&. y)
+  Bitsy x .|. Bitsy y = Bitsy (x .|. y)
+  Bitsy x `xor` Bitsy y = Bitsy (x `xor` y)
+  complement (Bitsy x) = Bitsy (complement x)
+  zeroBits = Bitsy zeroBits
+  bitSizeMaybe _ = Nothing
+  isSigned _ = False  -- Not useful, but not harmful
+  {-# INLINE (.&.) #-}
+  {-# INLINE (.|.) #-}
+  {-# INLINE xor #-}
+  {-# INLINE complement #-}
+  {-# INLINE zeroBits #-}
+
+  shiftL _ _ = notBitsy "shiftL"
+  shiftR _ _ = notBitsy "shiftR"
+  shift _ _ = notBitsy "shift"
+  unsafeShiftL _ _ = notBitsy "unsafeShiftL"
+  unsafeShiftR _ _ = notBitsy "unsafeShiftR"
+  rotateL _ _ = notBitsy "rotateL"
+  rotateR _ _ = notBitsy "rotateR"
+  rotate _ _ = notBitsy "rotate"
+  bitSize _ = notBitsy "bitSize"
+  testBit _ _ = notBitsy "testBit"
+  bit _ = notBitsy "bit"
+  setBit _ _ = notBitsy "setBit"
+  clearBit _ _ = notBitsy "clearBit"
+  complementBit _ _ = notBitsy "complementBit"
+  popCount _ = notBitsy "popCount"
+
+{-# NOINLINE notBitsy #-}
+notBitsy :: String -> a
+notBitsy fun = error $
+  "The function passed to zipBits may only use\n" ++
+  ".&., .|., xor, complement, zeroBits, bitSizeMaybe, and isSigned.\n" ++
+  "You used " ++ fun
 
 -- | Map a vectors with the given function.
 -- Similar to 'Data.Vector.Unboxed.map',
