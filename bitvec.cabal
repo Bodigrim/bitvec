@@ -25,12 +25,17 @@ description:
   .
   === Thread safety
   .
-  * "Data.Bit" is faster, but writes and flips are thread-unsafe.
+  * "Data.Bit" is faster, but writes and flips are not thread-safe.
     This is because naive updates are not atomic:
     they read the whole word from memory,
     then modify a bit, then write the whole word back.
+    Concurrently modifying separate slices of the same underlying array
+    may also lead to unexpected results, since they can share a word in memory.
   * "Data.Bit.ThreadSafe" is slower (usually 10-20%),
     but writes and flips are thread-safe.
+    Additionally, concurrently modifying separate slices of the same underlying array
+    works as expected. However, operations that affect multiple elements are not
+    guaranteed to be atomic.
   .
   === Similar packages
   .

@@ -8,7 +8,9 @@
 -- Licence:     BSD3
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- This module exposes an interface with thread-unsafe writes and flips.
+-- This module exposes an interface with non-thread-safe writes and flips.
+-- Additionally, concurrently modifying separate slices of the same underlying array
+-- may lead to unexpected results.
 -- Consider using "Data.Bit.ThreadSafe", which is thread-safe, but slower
 -- (usually 10-20%, up to 50% for short vectors).
 --
@@ -22,8 +24,11 @@ module Data.Bit
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 -- This module exposes an interface with thread-safe writes and flips.
+-- Additionally, concurrently modifying separate slices of the same underlying array
+-- works as expected. However, operations that affect multiple elements are not
+-- guaranteed to be atomic.
 -- Consider using "Data.Bit", which is faster
--- (usually 10-20%, up to 50% for short vectors), but thread-unsafe.
+-- (usually 10-20%, up to 50% for short vectors), but not thread-safe.
 --
 -- @since 1.0
 module Data.Bit.ThreadSafe

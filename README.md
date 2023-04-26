@@ -16,12 +16,17 @@ On the other hand, for certain bulk bit operations
 
 ## Thread safety
 
-* `Data.Bit` is faster, but writes and flips are thread-unsafe.
+* `Data.Bit` is faster, but writes and flips are not thread-safe.
   This is because naive updates are not atomic:
   they read the whole word from memory,
   then modify a bit, then write the whole word back.
+  Concurrently modifying separate slices of the same underlying array
+  may also lead to unexpected results, since they can share a word in memory.
 * `Data.Bit.ThreadSafe` is slower (usually 10-20%),
   but writes and flips are thread-safe.
+  Additionally, concurrently modifying separate slices of the same underlying array
+  works as expected. However, operations that affect multiple elements are not
+  guaranteed to be atomic.
 
 ## Quick start
 
@@ -104,7 +109,7 @@ Just 29
 One may notice that the order of the inner traversal by `i`
 does not matter and get tempted to run it in several parallel threads.
 In this case it is vital to switch from `Data.Bit` to `Data.Bit.ThreadSafe`,
-because the former is thread-unsafe with regards to writes.
+because the former is not thread-safe with regards to writes.
 There is a moderate performance penalty (usually 10-20%)
 for using the thread-safe interface.
 
