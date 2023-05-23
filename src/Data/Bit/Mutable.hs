@@ -116,6 +116,8 @@ cloneToWords8M v = do
 -- rewriting the contents of the second argument.
 -- Cf. 'Data.Bit.zipBits'.
 --
+-- Note: If one input is larger than the other, the remaining bits will be ignored.
+--
 -- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
 -- >>> Data.Vector.Unboxed.modify (zipInPlace (.&.) [1,1,0]) [0,1,1]
@@ -244,6 +246,8 @@ invertInPlace xs = do
 -- selected bits in-place. Returns the number of selected bits.
 -- It is the caller's responsibility to trim the result to this number.
 --
+-- Note: If one input is larger than the other, the remaining bits will be ignored.
+--
 -- >>> :set -XOverloadedLists
 -- >>> import Control.Monad.ST (runST)
 -- >>> import qualified Data.Vector.Unboxed as U
@@ -268,6 +272,8 @@ selectBitsInPlace is xs = loop 0 0
 -- | Same as 'Data.Bit.excludeBits', but extract
 -- excluded bits in-place. Returns the number of excluded bits.
 -- It is the caller's responsibility to trim the result to this number.
+--
+-- Note: If one input is larger than the other, the remaining bits will be ignored.
 --
 -- >>> :set -XOverloadedLists
 -- >>> import Control.Monad.ST (runST)

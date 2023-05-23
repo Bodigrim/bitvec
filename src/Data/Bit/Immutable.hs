@@ -70,6 +70,9 @@ import Data.Word
 import GHC.Exts
 #endif
 
+-- | Note: For '(.&.)', '(.|.)' and 'xor',
+-- if one input is larger than the other, the remaining bits will be ignored.
+-- 'bitSize' is undefined (throws an exception).
 instance {-# OVERLAPPING #-} Bits (Vector Bit) where
   (.&.) = zipBits (.&.)
   (.|.) = zipBits (.|.)
@@ -291,6 +294,8 @@ uncurry3 f (x, y, z) = f x y z
 -- Similar to 'Data.Vector.Unboxed.zipWith',
 -- but up to 1000x (!) faster.
 --
+-- Note: If one input is larger than the other, the remaining bits will be ignored.
+--
 -- For sufficiently dense sets, represented as bitmaps,
 -- 'zipBits' is up to 32x faster than
 -- 'Data.IntSet.union', 'Data.IntSet.intersection', etc.
@@ -462,6 +467,8 @@ invertBits xs = runST $ do
 -- to the result. Similar to the
 -- [parallel bit extract instruction (PEXT)](https://en.wikipedia.org/wiki/X86_Bit_manipulation_instruction_set#Parallel_bit_deposit_and_extract).
 --
+-- Note: If one input is larger than the other, the remaining bits will be ignored.
+--
 -- >>> :set -XOverloadedLists
 -- >>> selectBits [0,1,0,1,1] [1,1,0,0,1]
 -- [1,0,1]
@@ -481,6 +488,8 @@ selectBits is xs = runST $ do
 -- | For each unset bit of the first argument, extract
 -- the corresponding bit of the second argument
 -- to the result.
+--
+-- Note: If one input is larger than the other, the remaining bits will be ignored.
 --
 -- >>> :set -XOverloadedLists
 -- >>> excludeBits [0,1,0,1,1] [1,1,0,0,1]
