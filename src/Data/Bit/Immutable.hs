@@ -558,6 +558,11 @@ clipHiBits (Bit False) k w = w .|. hiMask k
 --
 -- @since 1.0.0.0
 bitIndex :: Bit -> U.Vector Bit -> Maybe Int
+#if UseSIMD
+bitIndex (Bit b) (BitVec 0 len arr) | modWordSize len == 0 =
+  let res = bitIndexC arr (divWordSize len) b
+  in if res < 0 then Nothing else Just res
+#endif
 bitIndex b (BitVec off len arr)
   | len == 0 = Nothing
   | offBits == 0 = case modWordSize len of
@@ -642,6 +647,11 @@ bitIndexInWords (Bit False) !off !len !arr = go off
 -- @since 1.0.0.0
 nthBitIndex :: Bit -> Int -> U.Vector Bit -> Maybe Int
 nthBitIndex _ k _ | k <= 0 = error "nthBitIndex: n must be positive"
+#if UseSIMD
+nthBitIndex (Bit b) n (BitVec 0 len arr) | modWordSize len == 0 =
+  let res = nthBitIndexC arr (divWordSize len) b n
+  in if res < 0 then Nothing else Just res
+#endif
 nthBitIndex b k (BitVec off len arr)
   | len == 0 = Nothing
   | offBits == 0 = either (const Nothing) Just $ case modWordSize len of
