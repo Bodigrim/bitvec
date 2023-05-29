@@ -13,10 +13,12 @@ module Data.Bit.SIMD
   , ompNior
   , ompXnor
   , reverseBitsC
+  , bitIndexC
+  , nthBitIndexC
   ) where
 
 import Control.Monad.ST
-import Control.Monad.ST.Unsafe
+import Control.Monad.ST.Unsafe (unsafeIOToST)
 import Data.Primitive.ByteArray
 import GHC.Exts
 
@@ -127,3 +129,19 @@ reverseBitsC :: MutableByteArray s -> ByteArray -> Int -> ST s ()
 reverseBitsC (MutableByteArray res#) (ByteArray arg#) (I# len#) =
   unsafeIOToST (reverse_bits res# arg# len#)
 {-# INLINE reverseBitsC #-}
+
+foreign import ccall unsafe "_hs_bitvec_bit_index"
+  bit_index :: ByteArray# -> Int# -> Bool -> Int#
+
+bitIndexC :: ByteArray -> Int -> Bool -> Int
+bitIndexC (ByteArray arg#) (I# len#) bit =
+  I# (bit_index arg# len# bit)
+{-# INLINE bitIndexC #-}
+
+foreign import ccall unsafe "_hs_bitvec_nth_bit_index"
+  nth_bit_index :: ByteArray# -> Int# -> Bool -> Int# -> Int#
+
+nthBitIndexC :: ByteArray -> Int -> Bool -> Int -> Int
+nthBitIndexC (ByteArray arg#) (I# len#) bit (I# n#) =
+  I# (nth_bit_index arg# len# bit n#)
+{-# INLINE nthBitIndexC #-}

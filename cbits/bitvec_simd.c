@@ -85,6 +85,7 @@ void _hs_bitvec_xnor(uint8_t *dest, const uint8_t *src1, const uint8_t *src2, Hs
     }
 }
 
+
 #ifdef __x86_64__
 static void reverse_bits_sse(uint64_t *dest, const uint64_t *src, HsInt len) {
     __m128i mask1l  = _mm_set1_epi32(0x55555555);
@@ -201,4 +202,154 @@ void _hs_bitvec_reverse_bits(HsWord *dest, const HsWord *src, HsInt len) {
         }
     }
 #endif
+}
+
+
+#ifdef __x86_64__
+static HsInt bit_index_sse(const uint64_t *src, HsInt len, HsBool bit) {
+    __m128i zero = _mm_setzero_si128();
+    __m128i bit_mask_128;
+    uint64_t bit_mask_64;
+    if (bit) {
+        bit_mask_128 = zero;
+        bit_mask_64 = 0;
+    } else {
+        bit_mask_128 = _mm_set1_epi64x(0xffffffffffffffff);
+        bit_mask_64 = 0xffffffffffffffff;
+    }
+    size_t i = 0;
+    for (; i < (len & (~0x1)); i += 2) {
+        __m128i x = _mm_xor_si128(_mm_loadu_si128((const __m128i *) (src + i)), bit_mask_128);
+        uint16_t mask = ~_mm_movemask_epi8(_mm_cmpeq_epi32(x, zero));
+        if (mask != 0) {
+            size_t idx = __builtin_ctz(mask) >> 3;
+            uint64_t x = src[i + idx] ^ bit_mask_64;
+            return ((i + idx) << 6) + __builtin_ctzll(x);
+        }
+    }
+    for (; i < len; i++) {
+        uint64_t x = src[i] ^ bit_mask_64;
+        if (x != 0) {
+            return (i << 6) + __builtin_ctzll(x);
+        }
+    }
+    return -1;
+}
+
+__attribute__((target("avx2")))
+static HsInt bit_index_avx(const uint64_t *src, HsInt len, HsBool bit) {
+    __m256i zero = _mm256_setzero_si256();
+    __m256i bit_mask_256;
+    uint64_t bit_mask_64;
+    if (bit) {
+        bit_mask_256 = zero;
+        bit_mask_64 = 0;
+    } else {
+        bit_mask_256 = _mm256_set1_epi64x(0xffffffffffffffff);
+        bit_mask_64 = 0xffffffffffffffff;
+    }
+    size_t i = 0;
+    for (; i < (len & (~0x3)); i += 4) {
+        __m256i x = _mm256_xor_si256(_mm256_loadu_si256((const __m256i *) (src + i)), bit_mask_256);
+        uint32_t mask = ~_mm256_movemask_epi8(_mm256_cmpeq_epi32(x, zero));
+        if (mask != 0) {
+            size_t idx = __builtin_ctzl(mask) >> 3;
+            uint64_t x = src[i + idx] ^ bit_mask_64;
+            return ((i + idx) << 6) + __builtin_ctzll(x);
+        }
+    }
+    for (; i < len; i++) {
+        uint64_t x = src[i] ^ bit_mask_64;
+        if (x != 0) {
+            return (i << 6) + __builtin_ctzll(x);
+        }
+    }
+    return -1;
+}
+#endif
+
+HsInt _hs_bitvec_bit_index(const HsWord *src, HsInt len, HsBool bit) {
+#ifdef __x86_64__
+    if (__builtin_cpu_supports("avx2")) {
+        return bit_index_avx(src, len, bit);
+    } else {
+        return bit_index_sse(src, len, bit);
+    }
+#else
+    HsWord bit_mask;
+    if (bit) {
+        bit_mask = 0;
+    } else {
+        bit_mask = -1;
+    }
+    for (size_t i = 0; i < len; i++) {
+        HsWord x = src[i] ^ bit_mask;
+        if (x != 0) {
+            return (i << 3) * sizeof(HsWord) + __builtin_ctzll(x);
+        }
+    }
+    return -1;
+#endif
+}
+
+
+#ifdef __x86_64__
+__attribute__((target("popcnt")))
+static HsInt nth_bit_index_popcnt(const uint64_t *src, HsInt len, HsBool bit, HsInt n) {
+    uint64_t bit_mask;
+    if (bit) {
+        bit_mask = 0;
+    } else {
+        bit_mask = -1;
+    }
+    for (size_t i = 0; i < len; i++) {
+        uint64_t x = src[i] ^ bit_mask;
+
+        HsInt count = _mm_popcnt_u64(x);
+        if (n <= count) {
+            for (size_t i = 0; i < n - 1; i++) {
+                // clear lowest set bit
+                x &= x - 1;
+            }
+            return (i << 6) + __builtin_ctzll(x);
+        } else {
+            n -= count;
+        }
+    }
+    return -1;
+}
+#endif
+
+HsInt _hs_bitvec_nth_bit_index(const HsWord *src, HsInt len, HsBool bit, HsInt n) {
+#ifdef __x86_64__
+    if (__builtin_cpu_supports("popcnt")) {
+        return nth_bit_index_popcnt(src, len, bit, n);
+    }
+#endif
+    HsWord bit_mask;
+    if (bit) {
+        bit_mask = 0;
+    } else {
+        bit_mask = -1;
+    }
+    for (size_t i = 0; i < len; i++) {
+        HsWord x = src[i] ^ bit_mask;
+
+        // popcount
+        HsWord count = x - ((x >> 1) & 0x5555555555555555);
+        count = (count & 0x3333333333333333) + ((count >> 2) & 0x3333333333333333);
+        count = (count + (count >> 4)) & 0x0f0f0f0f0f0f0f0f;
+        count = (count * 0x101010101010101) >> 56;
+
+        if (n <= count) {
+            for (size_t i = 0; i < n - 1; i++) {
+                // clear lowest set bit
+                x &= x - 1;
+            }
+            return (i << 3) * sizeof(HsWord) + __builtin_ctzll(x);
+        } else {
+            n -= count;
+        }
+    }
+    return -1;
 }
