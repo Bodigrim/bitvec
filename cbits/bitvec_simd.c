@@ -353,3 +353,85 @@ HsInt _hs_bitvec_nth_bit_index(const HsWord *src, HsInt len, HsBool bit, HsInt n
     }
     return -1;
 }
+
+
+__attribute__((target("popcnt,bmi2")))
+static HsInt select_bits_pext(uint64_t *dest, const uint64_t *src, const uint64_t *mask, HsInt len, HsBool exclude) {
+    uint64_t bit_mask;
+    if (exclude) {
+        bit_mask = -1;
+    } else {
+        bit_mask = 0;
+    }
+    HsInt off = 0; // offset in bits into `dest`
+    for (size_t i = 0; i < len; i++) {
+        uint64_t x = src[i];
+        uint64_t m = mask[i] ^ bit_mask;
+        HsInt count = _mm_popcnt_u64(m);
+        uint64_t y = _pext_u64(x, m);
+        HsInt off_words = off >> 6;
+        HsInt off_bits = off & 0x3f;
+        if (off_bits == 0) {
+            dest[off_words] = y;
+        } else {
+            dest[off_words] |= y << off_bits;
+            dest[off_words + 1] = y >> (64 - off_bits);
+        }
+        off += count;
+    }
+    return off;
+}
+
+HsInt _hs_bitvec_select_bits(HsWord *dest, const HsWord *src, const HsWord *mask, HsInt len, HsBool exclude) {
+#ifdef __x86_64__
+    if (__builtin_cpu_supports("popcnt") && __builtin_cpu_supports("bmi2")) {
+        return select_bits_pext(dest, src, mask, len, exclude);
+    }
+#endif
+    HsWord bit_mask;
+    if (exclude) {
+        bit_mask = -1;
+    } else {
+        bit_mask = 0;
+    }
+    HsInt off = 0; // offset in bits into `dest`
+    for (size_t i = 0; i < len; i++) {
+        HsWord x = src[i];
+        HsWord m = mask[i] ^ bit_mask;
+
+        // pext
+        HsWord y = 0;
+        HsWord bb = 1;
+        for (; m != 0; bb <<= 1) {
+            if (x & m & -m) {
+                y |= bb;
+            }
+            m &= m - 1;
+        }
+
+        if (sizeof(HsWord) == 8) {
+            // 64 bit
+            HsInt off_words = off >> 6;
+            HsInt off_bits = off & 0x3f;
+            if (off_bits == 0) {
+                dest[off_words] = y;
+            } else {
+                dest[off_words] |= y << off_bits;
+                dest[off_words + 1] = y >> (64 - off_bits);
+            }
+            off += __builtin_ctzll(bb);
+        } else {
+            // 32 bit
+            HsInt off_words = off >> 5;
+            HsInt off_bits = off & 0x1f;
+            if (off_bits == 0) {
+                dest[off_words] = y;
+            } else {
+                dest[off_words] |= y << off_bits;
+                dest[off_words + 1] = y >> (32 - off_bits);
+            }
+            off += __builtin_ctzl(bb);
+        }
+    }
+    return off;
+}

@@ -480,6 +480,14 @@ invertBits xs = runST $ do
 --
 -- @since 0.1
 selectBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+#ifdef UseSIMD
+selectBits (BitVec 0 iLen iArr) (BitVec 0 xLen xArr) | modWordSize len == 0 = runST $ do
+  marr <- newByteArray (len `shiftR` 3)
+  n <- selectBitsC marr xArr iArr (divWordSize len) False
+  BitVec 0 n <$> unsafeFreezeByteArray marr
+ where
+  len = min iLen xLen
+#endif
 selectBits is xs = runST $ do
   xs1 <- U.thaw xs
   n   <- selectBitsInPlace is xs1
@@ -502,6 +510,14 @@ selectBits is xs = runST $ do
 --
 -- @since 0.1
 excludeBits :: U.Vector Bit -> U.Vector Bit -> U.Vector Bit
+#ifdef UseSIMD
+excludeBits (BitVec 0 iLen iArr) (BitVec 0 xLen xArr) | modWordSize len == 0 = runST $ do
+  marr <- newByteArray (len `shiftR` 3)
+  n <- selectBitsC marr xArr iArr (divWordSize len) True
+  BitVec 0 n <$> unsafeFreezeByteArray marr
+ where
+  len = min iLen xLen
+#endif
 excludeBits is xs = runST $ do
   xs1 <- U.thaw xs
   n   <- excludeBitsInPlace is xs1

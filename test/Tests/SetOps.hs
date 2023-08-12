@@ -48,8 +48,8 @@ setOpTests = testGroup "Set operations"
   , testProperty "reverseInPlace middle"     prop_reverseInPlace_middle
   , testProperty "reverseInPlaceLong middle" prop_reverseInPlaceLong_middle
 
-  , testProperty "selectBits"                prop_selectBits_def
-  , testProperty "excludeBits"               prop_excludeBits_def
+  , adjustOption (\n -> max 500 n :: QuickCheckTests) $ mkGroup2 "selectBits" prop_selectBits_def
+  , adjustOption (\n -> max 500 n :: QuickCheckTests) $ mkGroup2 "excludeBits" prop_excludeBits_def
 
   , mkGroup "countBits" prop_countBits_def
   ]
@@ -68,6 +68,21 @@ mkGroup name prop = testGroup name
       prop (U.slice from len (U.generate (from + len + excess) (Bit . f)))
     propMiddleLong (NonNegative x) (NonNegative y) (NonNegative z) =
       propMiddle (NonNegative $ x * 31) (NonNegative $ y * 37) (NonNegative $ z * 29)
+
+mkGroup2 :: String -> (U.Vector Bit -> U.Vector Bit -> Property) -> TestTree
+mkGroup2 name prop = testGroup name
+  [ testProperty "simple" prop
+  , testProperty "simple_long" (\(Large xs) (Large ys) -> prop xs ys)
+  , testProperty "middle" propMiddle
+  , testProperty "middle_long" propMiddleLong
+  ]
+  where
+    f m = let n = fromIntegral m :: Double in
+      odd (truncate (exp (abs (sin n) * 10)) :: Integer)
+    propMiddle (NonNegative from1) (NonNegative len1) (NonNegative excess1) (NonNegative from2) (NonNegative len2) (NonNegative excess2) =
+      prop (U.slice from1 len1 (U.generate (from1 + len1 + excess1) (Bit . f))) (U.slice from2 len2 (U.generate (from2 + len2 + excess2) (Bit . f)))
+    propMiddleLong (NonNegative x1) (NonNegative y1) (NonNegative z1) (NonNegative x2) (NonNegative y2) (NonNegative z2) =
+      propMiddle (NonNegative $ x1 * 31) (NonNegative $ y1 * 37) (NonNegative $ z1 * 29) (NonNegative $ x2 * 31) (NonNegative $ y2 * 37) (NonNegative $ z2 * 29)
 
 prop_generalize1 :: Fun Bit Bit -> Bit -> Property
 prop_generalize1 fun x =
