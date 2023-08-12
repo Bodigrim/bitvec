@@ -15,6 +15,7 @@ module Data.Bit.SIMD
   , reverseBitsC
   , bitIndexC
   , nthBitIndexC
+  , selectBitsC
   ) where
 
 import Control.Monad.ST
@@ -145,3 +146,11 @@ nthBitIndexC :: ByteArray -> Int -> Bool -> Int -> Int
 nthBitIndexC (ByteArray arg#) (I# len#) bit (I# n#) =
   I# (nth_bit_index arg# len# bit n#)
 {-# INLINE nthBitIndexC #-}
+
+foreign import ccall unsafe "_hs_bitvec_select_bits"
+  select_bits_c :: MutableByteArray# s -> ByteArray# -> ByteArray# -> Int# -> Bool -> IO Int
+
+selectBitsC :: MutableByteArray s -> ByteArray -> ByteArray -> Int -> Bool -> ST s Int
+selectBitsC (MutableByteArray res#) (ByteArray arg1#) (ByteArray arg2#) (I# len#) exclude =
+  unsafeIOToST (select_bits_c res# arg1# arg2# len# exclude)
+{-# INLINE selectBitsC #-}
