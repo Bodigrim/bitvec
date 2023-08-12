@@ -355,6 +355,7 @@ HsInt _hs_bitvec_nth_bit_index(const HsWord *src, HsInt len, HsBool bit, HsInt n
 }
 
 
+#ifdef __x86_64__
 __attribute__((target("popcnt,bmi2")))
 static HsInt select_bits_pext(uint64_t *dest, const uint64_t *src, const uint64_t *mask, HsInt len, HsBool exclude) {
     uint64_t bit_mask;
@@ -381,6 +382,7 @@ static HsInt select_bits_pext(uint64_t *dest, const uint64_t *src, const uint64_
     }
     return off;
 }
+#endif
 
 HsInt _hs_bitvec_select_bits(HsWord *dest, const HsWord *src, const HsWord *mask, HsInt len, HsBool exclude) {
 #ifdef __x86_64__
@@ -401,12 +403,23 @@ HsInt _hs_bitvec_select_bits(HsWord *dest, const HsWord *src, const HsWord *mask
 
         // pext
         HsWord y = 0;
-        HsWord bb = 1;
-        for (; m != 0; bb <<= 1) {
-            if (x & m & -m) {
-                y |= bb;
+        HsInt count = 0;
+        if (m == -1) {
+            y = x;
+            count = sizeof(HsWord) * 8;
+        } else {
+            HsWord bb = 1;
+            for (; m != 0; bb <<= 1) {
+                if (x & m & -m) {
+                    y |= bb;
+                }
+                m &= m - 1;
             }
-            m &= m - 1;
+            if (sizeof(HsWord) == 8) {
+                count = __builtin_ctzll(bb);
+            } else {
+                count = __builtin_ctzl(bb);
+            }
         }
 
         if (sizeof(HsWord) == 8) {
@@ -419,7 +432,7 @@ HsInt _hs_bitvec_select_bits(HsWord *dest, const HsWord *src, const HsWord *mask
                 dest[off_words] |= y << off_bits;
                 dest[off_words + 1] = y >> (64 - off_bits);
             }
-            off += __builtin_ctzll(bb);
+            off += count;
         } else {
             // 32 bit
             HsInt off_words = off >> 5;
@@ -430,7 +443,7 @@ HsInt _hs_bitvec_select_bits(HsWord *dest, const HsWord *src, const HsWord *mask
                 dest[off_words] |= y << off_bits;
                 dest[off_words + 1] = y >> (32 - off_bits);
             }
-            off += __builtin_ctzl(bb);
+            off += count;
         }
     }
     return off;
