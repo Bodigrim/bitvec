@@ -151,6 +151,7 @@ benchmark bitvec-bench
   hs-source-dirs: bench
   other-modules:
     Bench.BitIndex
+    Bench.Common
     Bench.GCD
     Bench.Invert
     Bench.Intersection

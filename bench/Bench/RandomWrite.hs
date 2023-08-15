@@ -10,29 +10,23 @@ import Data.Bits
 import Data.Foldable
 import qualified Data.IntSet as IS
 import qualified Data.Vector.Unboxed.Mutable as MU
-import System.Random
 import Test.Tasty.Bench
 
-randomWrites :: [(Int, Bool)]
-randomWrites
-  = map (\x -> if x > 0 then (x, True) else (negate x, False))
-  . randoms
-  . mkStdGen
-  $ 42
+import Bench.Common
 
 benchRandomWrite :: Int -> Benchmark
 benchRandomWrite k = bgroup (show (1 `shiftL` k :: Int))
-  [ bench "Bit"    $ nf randomWriteBit    k
-  , bench "BitTS"  $ nf randomWriteBitTS  k
-  , bench "Vector" $ nf randomWriteVector k
-  , bench "IntSet" $ nf randomWriteIntSet k
+  [ bench labelBit    $ nf randomWriteBit    k
+  , bench labelBitTS  $ nf randomWriteBitTS  k
+  , bench labelVector $ nf randomWriteVector k
+  , bench labelIntSet $ nf randomWriteIntSet k
   ]
 
 randomWriteBit :: Int -> Int
 randomWriteBit k = runST $ do
   let n = 1 `shiftL` k
   vec <- MU.new n
-  forM_ (take (mult * n) randomWrites) $
+  forM_ (take (mult * n) randomIndicesAndBools) $
     \(i, b) -> MU.unsafeWrite vec (i .&. (1 `shiftL` k - 1)) (Bit b)
   Bit i <- MU.unsafeRead vec 0
   pure $ if i then 1 else 0
@@ -41,7 +35,7 @@ randomWriteBitTS :: Int -> Int
 randomWriteBitTS k = runST $ do
   let n = 1 `shiftL` k
   vec <- MU.new n
-  forM_ (take (mult * n) randomWrites) $
+  forM_ (take (mult * n) randomIndicesAndBools) $
     \(i, b) -> MU.unsafeWrite vec (i .&. (1 `shiftL` k - 1)) (TS.Bit b)
   TS.Bit i <- MU.unsafeRead vec 0
   pure $ if i then 1 else 0
@@ -50,7 +44,7 @@ randomWriteVector :: Int -> Int
 randomWriteVector k = runST $ do
   let n = 1 `shiftL` k
   vec <- MU.new n
-  forM_ (take (mult * n) randomWrites) $
+  forM_ (take (mult * n) randomIndicesAndBools) $
     \(i, b) -> MU.unsafeWrite vec (i .&. (1 `shiftL` k - 1)) b
   i <- MU.unsafeRead vec 0
   pure $ if i then 1 else 0
@@ -62,7 +56,7 @@ randomWriteIntSet k = if IS.member 0 vec then 1 else 0
     vec = foldl'
       (\acc (i, b) -> (if b then IS.insert else IS.delete) (i .&. (1 `shiftL` k - 1)) acc)
       mempty
-      (take (mult * n) randomWrites)
+      (take (mult * n) randomIndicesAndBools)
 
 mult :: Int
 mult = 100
