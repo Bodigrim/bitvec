@@ -32,7 +32,7 @@ main = defaultMain $ map (mapLeafBenchmarks addCompare)
   , bgroup "reverse"      $ map benchReverse      [5..14]
   , bgroup "square"       $ map benchSquare       [5..14]
   , bgroup "sum"          $ map benchSum          [5..14]
-  , bgroup "union"        $ map benchUnion        [5..14]
+  , bgroup "union"        $ map benchUnion        [5..20]
   , bgroup "write"        $ map benchRandomWrite  [5..14]
   ]
 

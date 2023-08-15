@@ -1,6 +1,6 @@
 # bitvec [![Hackage](https://img.shields.io/hackage/v/bitvec.svg)](https://hackage.haskell.org/package/bitvec) [![Stackage LTS](https://www.stackage.org/package/bitvec/badge/lts)](https://www.stackage.org/lts/package/bitvec) [![Stackage Nightly](https://www.stackage.org/package/bitvec/badge/nightly)](https://www.stackage.org/nightly/package/bitvec)
 
-A newtype over `Bool` with a better `Vector` instance: 8x less memory, up to 1000x faster.
+A newtype over `Bool` with a better `Vector` instance: 8x less memory, up to 3500x faster.
 
 The [`vector`](https://hackage.haskell.org/package/vector)
 package represents unboxed arrays of `Bool`s
@@ -12,7 +12,7 @@ The performance stays mostly the same;
 the most significant degradation happens for random writes
 (up to 10% slower).
 On the other hand, for certain bulk bit operations
-`Vector Bit` is up to 1000x faster than `Vector Bool`.
+`Vector Bit` is up to 3500x faster than `Vector Bool`.
 
 ## Thread safety
 
@@ -127,9 +127,49 @@ For example, consider three possible representations of a set of `Word16`:
 
 When the `simd` flag is enabled,
 according to our benchmarks (see `bench` folder),
-the union of `Vector Bit` evaluates 24x-36x faster
+the union of `Vector Bit` evaluates magnitudes faster
 than the union of not-too-sparse `IntSet`s
-and stunningly outperforms `Vector Bool` by 500x-1000x.
+and stunningly outperforms `Vector Bool`.
+Here are benchmarks on MacBook M2:
+
+```
+union
+  16384
+    Vector Bit:
+      61.2 ns ± 3.2 ns
+    Vector Bool:
+      96.1 μs ± 4.5 μs, 1570.84x
+    IntSet:
+      2.15 μs ± 211 ns, 35.06x
+  32768
+    Vector Bit:
+      143  ns ± 7.4 ns
+    Vector Bool:
+      225  μs ±  16 μs, 1578.60x
+    IntSet:
+      4.34 μs ± 429 ns, 30.39x
+  65536
+    Vector Bit:
+      249  ns ±  18 ns
+    Vector Bool:
+      483  μs ±  28 μs, 1936.42x
+    IntSet:
+      8.77 μs ± 835 ns, 35.18x
+  131072
+    Vector Bit:
+      322  ns ±  30 ns
+    Vector Bool:
+      988  μs ±  53 μs, 3071.83x
+    IntSet:
+      17.6 μs ± 1.6 μs, 54.79x
+  262144
+    Vector Bit:
+      563  ns ±  27 ns
+    Vector Bool:
+      2.00 ms ± 112 μs, 3555.36x
+    IntSet:
+      36.8 μs ± 3.3 μs, 65.40x
+```
 
 ## Binary polynomials
 

@@ -292,12 +292,12 @@ uncurry3 f (x, y, z) = f x y z
 
 -- | Zip two vectors with the given function.
 -- Similar to 'Data.Vector.Unboxed.zipWith',
--- but up to 1000x (!) faster.
+-- but up to 3500x (!) faster.
 --
 -- Note: If one input is larger than the other, the remaining bits will be ignored.
 --
 -- For sufficiently dense sets, represented as bitmaps,
--- 'zipBits' is up to 32x faster than
+-- 'zipBits' is up to 64x faster than
 -- 'Data.IntSet.union', 'Data.IntSet.intersection', etc.
 --
 -- The function passed to zipBits may only use the following

@@ -9,7 +9,7 @@ maintainer: Andrew Lelechenko <andrew.lelechenko@gmail.com>
 homepage: https://github.com/Bodigrim/bitvec
 synopsis: Space-efficient bit vectors
 description:
-  A newtype over 'Bool' with a better 'Vector' instance: 8x less memory, up to 1000x faster.
+  A newtype over 'Bool' with a better 'Vector' instance: 8x less memory, up to 3500x faster.
   .
   The <https://hackage.haskell.org/package/vector vector>
   package represents unboxed arrays of 'Bool's
@@ -21,7 +21,7 @@ description:
   the most significant degradation happens for random writes
   (up to 10% slower).
   On the other hand, for certain bulk bit operations
-  'Vector' 'Bit' is up to 1000x faster than 'Vector' 'Bool'.
+  'Vector' 'Bit' is up to 3500x faster than 'Vector' 'Bool'.
   .
   === Thread safety
   .
