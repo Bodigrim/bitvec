@@ -111,7 +111,7 @@ test-suite bitvec-tests
   build-depends:
     base,
     bitvec,
-    primitive >=0.5 && <0.9,
+    primitive >=0.5 && <0.10,
     quickcheck-classes-base <0.7,
     quickcheck-classes >=0.6.1 && <0.7,
     vector >=0.11,
