@@ -7,5 +7,5 @@ task:
     - ghc --version
     - cabal --version
     - cabal update
-    - cabal test --test-show-details=direct --enable-tests
-    - cabal test -f-simd --test-show-details=direct
+    - cabal test --test-show-details=direct -c 'quickcheck-classes -semigroupoids -aeson -semirings' --enable-tests
+    - cabal test -f-simd --test-show-details=direct -c 'quickcheck-classes -semigroupoids -aeson -semirings' --enable-tests
