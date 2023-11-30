@@ -19,7 +19,7 @@ jobs:
         ghc: ['9.6', '9.4', '9.2', '9.0', '8.10', '8.8.4', '8.8.2', '8.8.1', '8.6', '8.4']
     steps:
     - uses: actions/checkout@v3
-    - uses: haskell/actions/setup@v2
+    - uses: haskell-actions/setup@v2
       id: setup-haskell-cabal
       with:
         ghc-version: ${{ matrix.ghc }}
@@ -31,8 +31,6 @@ jobs:
           ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
           dist-newstyle
         key: ${{ runner.os }}-${{ matrix.ghc }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.ghc }}-
     - name: Build
       run: |
         echo packages:. > cabal.project
@@ -97,9 +95,19 @@ jobs:
           ./Tests +RTS -s
 
   js:
+    needs: build
     runs-on: ubuntu-latest
+    env:
+      version: javascript-unknown-ghcjs-9.6.2
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/cache@v3
+      name: Cache cabal stuff
+      with:
+        path: |
+          ~/.cabal/store
+          dist-newstyle
+        key: ${{ env.version }}
     - name: Setup
       run: |
         ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-cross-0.0.8.yaml
@@ -112,15 +120,25 @@ jobs:
         ./emsdk activate latest
         source ./emsdk_env.sh
         cd ..
-        emconfigure ghcup install ghc --set javascript-unknown-ghcjs-9.6.2
+        emconfigure ghcup install ghc --set ${{ env.version }}
     - name: Build
       run: |
         cabal --with-compiler=javascript-unknown-ghcjs-ghc --with-hc-pkg=javascript-unknown-ghcjs-ghc-pkg build
 
   wasm:
+    needs: build
     runs-on: ubuntu-latest
+    env:
+      version: wasm32-wasi-9.8.0.20230927
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/cache@v3
+      name: Cache cabal stuff
+      with:
+        path: |
+          ~/.cabal/store
+          dist-newstyle
+        key: ${{ env.version }}
     - name: Setup
       run: |
         ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-cross-0.0.8.yaml
@@ -133,7 +151,7 @@ jobs:
         ./setup.sh
         source ~/.ghc-wasm/env
         cd ..
-        ghcup install ghc --set wasm32-wasi-9.8.0.20230927 -- --host=x86_64-linux --with-intree-gmp --with-system-libffi
+        ghcup install ghc --set ${{ env.version }} -- --host=x86_64-linux --with-intree-gmp --with-system-libffi
     - name: Build
       run: |
         cabal --with-compiler=wasm32-wasi-ghc --with-hc-pkg=wasm32-wasi-ghc-pkg build
@@ -143,7 +161,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: haskell/actions/setup@v2
+    - uses: haskell-actions/setup@v2
       id: setup-haskell-cabal
       with:
         ghc-version: 'latest'
