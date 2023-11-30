@@ -96,6 +96,48 @@ jobs:
           ghc --make -Isrc:test -isrc:test -DUseSIMD -o Tests cbits/bitvec_simd.c test/Main.hs +RTS -s
           ./Tests +RTS -s
 
+  js:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup
+      run: |
+        ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-cross-0.0.8.yaml
+        cabal update
+    - name: Install JS toolchain
+      run: |
+        git clone https://github.com/emscripten-core/emsdk.git
+        cd emsdk
+        ./emsdk install latest
+        ./emsdk activate latest
+        source ./emsdk_env.sh
+        cd ..
+        emconfigure ghcup install ghc --set javascript-unknown-ghcjs-9.6.2
+    - name: Build
+      run: |
+        cabal --with-compiler=javascript-unknown-ghcjs-ghc --with-hc-pkg=javascript-unknown-ghcjs-ghc-pkg build
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup
+      run: |
+        ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-cross-0.0.8.yaml
+        cabal update
+    - name: Install WASM toolchain
+      run: |
+        git clone https://gitlab.haskell.org/ghc/ghc-wasm-meta.git
+        cd ghc-wasm-meta/
+        export SKIP_GHC=yes
+        ./setup.sh
+        source ~/.ghc-wasm/env
+        cd ..
+        ghcup install ghc --set wasm32-wasi-9.8.0.20230927 -- --host=x86_64-linux --with-intree-gmp --with-system-libffi
+    - name: Build
+      run: |
+        cabal --with-compiler=wasm32-wasi-ghc --with-hc-pkg=wasm32-wasi-ghc-pkg build
+
   bounds-checking:
     needs: build
     runs-on: ubuntu-latest
