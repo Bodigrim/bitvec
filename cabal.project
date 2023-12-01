@@ -1,0 +1,4 @@
+packages: .
+
+package quickcheck-classes
+    flags: -aeson -semigroupoids -semirings
