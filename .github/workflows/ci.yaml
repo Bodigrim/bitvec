@@ -33,16 +33,13 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.ghc }}
     - name: Build
       run: |
-        echo packages:. > cabal.project
-        echo tests:True >> cabal.project
-        echo "constraints:quickcheck-classes -semigroupoids -aeson -semirings" >> cabal.project
-        cabal test --test-show-details=direct
+        cabal test --enable-tests --test-show-details=direct
         cabal bench --benchmark-option=-l
         cabal sdist
         cabal check
     - name: Build without SIMD
       run: |
-        cabal test -f-simd --test-show-details=direct
+        cabal test -f-simd --enable-tests --test-show-details=direct
     - name: Haddock
       if: ${{ matrix.ghc != '8.0' && matrix.ghc != '8.2' && matrix.ghc != '8.4' }}
       run: cabal haddock
@@ -176,11 +173,8 @@ jobs:
         key: ${{ runner.os }}-latest
     - name: Test
       run: |
-        echo packages:. > cabal.project
-        echo tests:True >> cabal.project
-        echo "constraints:quickcheck-classes -semigroupoids -aeson -semirings" >> cabal.project
         echo "constraints:vector +unsafechecks +internalchecks" >> cabal.project
         # Some tests are filtered out because of
         # https://gitlab.haskell.org/ghc/ghc/-/issues/23132
-        cabal run tests --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
-        cabal run tests -f-simd --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
+        cabal run tests --enable-tests --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
+        cabal run tests -f-simd --enable-tests --test-show-details=direct --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' -- -p '$NF!~/cloneFromWords8/&&$NF!~/cloneToByteString/'
