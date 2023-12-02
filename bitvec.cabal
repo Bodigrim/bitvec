@@ -128,7 +128,9 @@ test-suite bitvec-tests
     Tests.SetOps
     Tests.SetOpsTS
     Tests.Vector
-  ghc-options: -Wall -threaded -rtsopts -Wcompat
+  ghc-options: -Wall -Wcompat
+  if !arch(wasm32)
+    ghc-options: -threaded -rtsopts
   include-dirs: test
 
   if impl(ghc <9.0)
