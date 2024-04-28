@@ -16,15 +16,30 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        ghc: ['9.6', '9.4', '9.2', '9.0', '8.10', '8.8.4', '8.8.2', '8.8.1', '8.6', '8.4']
+        ghc: ['9.8', '9.6', '9.4', '9.2', '9.0', '8.10', '8.8.4', '8.8.2', '8.8.1', '8.6', '8.4']
+        exclude:
+          - os: macos-latest
+            ghc: '9.0'
+          - os: macos-latest
+            ghc: '8.10'
+          - os: macos-latest
+            ghc: '8.8.4'
+          - os: macos-latest
+            ghc: '8.8.2'
+          - os: macos-latest
+            ghc: '8.8.1'
+          - os: macos-latest
+            ghc: '8.6'
+          - os: macos-latest
+            ghc: '8.4'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: haskell-actions/setup@v2
       id: setup-haskell-cabal
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: 'latest'
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       name: Cache cabal stuff
       with:
         path: |
@@ -72,7 +87,7 @@ jobs:
       matrix:
         arch: ['s390x', 'ppc64le', 'armv7', 'aarch64']
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: uraimo/run-on-arch-action@v2
       timeout-minutes: 60
       with:
@@ -97,8 +112,8 @@ jobs:
     env:
       version: javascript-unknown-ghcjs-9.6.2
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/cache@v3
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v4
       name: Cache cabal stuff
       with:
         path: |
@@ -128,8 +143,8 @@ jobs:
     env:
       version: wasm32-wasi-9.8.0.20230927
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/cache@v3
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v4
       name: Cache cabal stuff
       with:
         path: |
@@ -161,14 +176,14 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: haskell-actions/setup@v2
       id: setup-haskell-cabal
       with:
         ghc-version: 'latest'
     - name: Update cabal package database
       run: cabal update
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       name: Cache cabal stuff
       with:
         path: |
