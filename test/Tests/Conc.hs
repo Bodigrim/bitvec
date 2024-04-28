@@ -29,7 +29,7 @@ runConcurrently action1 action2 = do
   takeMVar m
 
 case_conc_invert :: Property
-case_conc_invert = ioProperty $ replicateM_ 1000 $ do
+case_conc_invert = once $ ioProperty $ replicateM_ 1000 $ do
   let len  = 64
       len' = 37
   vec <- M.replicate len (Bit True)
@@ -41,7 +41,7 @@ case_conc_invert = ioProperty $ replicateM_ 1000 $ do
   pure $ ref === wec
 
 case_conc_reverse :: Property
-case_conc_reverse = ioProperty $ replicateM_ 1000 $ do
+case_conc_reverse = once $ ioProperty $ replicateM_ 1000 $ do
   let len  = 128
       len' = 66
   vec <- M.new len
@@ -54,7 +54,7 @@ case_conc_reverse = ioProperty $ replicateM_ 1000 $ do
   pure $ ref === wec
 
 case_conc_zip :: Property
-case_conc_zip = ioProperty $ replicateM_ 1000 $ do
+case_conc_zip = once $ ioProperty $ replicateM_ 1000 $ do
   let len  = 128
       len' = 37
   vec <- M.replicate len (Bit True)
