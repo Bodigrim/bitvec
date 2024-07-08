@@ -6,6 +6,7 @@ module Bench.Sum
   , benchSum
   ) where
 
+import Prelude hiding (Foldable(..))
 import Data.Bit
 import qualified Data.Bit.ThreadSafe as TS
 import Data.Bits

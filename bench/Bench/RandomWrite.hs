@@ -2,6 +2,7 @@ module Bench.RandomWrite
   ( benchRandomWrite
   ) where
 
+import Prelude hiding (Foldable(..))
 import Control.Monad
 import Control.Monad.ST
 import Data.Bit

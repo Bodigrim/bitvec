@@ -2,6 +2,7 @@ module Bench.RandomFlip
   ( benchRandomFlip
   ) where
 
+import Prelude hiding (Foldable(..))
 import Control.Monad
 import Control.Monad.ST
 import Data.Bit
