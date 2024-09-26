@@ -41,7 +41,6 @@ import Data.Bits
 import Data.Bit.Utils
 import Data.Primitive.ByteArray
 import Data.Ratio
-import Data.Typeable
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as MV
 import qualified Data.Vector.Unboxed as U
@@ -65,7 +64,7 @@ newtype Bit = Bit {
   } deriving
   (Bounded, Enum, Eq, Ord
   , FiniteBits -- ^ @since 0.2.0.0
-  , Bits, Typeable
+  , Bits
   , Generic    -- ^ @since 1.0.1.0
   , NFData     -- ^ @since 1.0.1.0
   )
@@ -83,7 +82,7 @@ newtype Bit = Bit {
   } deriving
   (Bounded, Enum, Eq, Ord
   , FiniteBits -- ^ @since 0.2.0.0
-  , Bits, Typeable
+  , Bits
   , Generic    -- ^ @since 1.0.1.0
   , NFData     -- ^ @since 1.0.1.0
   )

@@ -36,7 +36,6 @@ import Data.Bits
 import Data.Char
 import Data.Coerce
 import Data.Primitive.ByteArray
-import Data.Typeable
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
@@ -77,7 +76,7 @@ newtype F2Poly = F2Poly {
   --
   -- @since 1.0.1.0
   }
-  deriving (Eq, Ord, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Generic, NFData)
 
 -- | Make an 'F2Poly' from a list of coefficients
 -- (first element corresponds to a constant term).
