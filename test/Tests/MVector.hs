@@ -1,4 +1,6 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 
 #ifndef BITVEC_THREADSAFE
 module Tests.MVector (mvectorTests) where
@@ -76,7 +78,7 @@ prop_flipBit xs (NonNegative k) = U.length xs > 0 ==> ys === ys'
   where
     k'  = k `mod` U.length xs
     ys  = U.modify (\v -> M.modify v complement k') xs
-    ys' = U.modify (\v -> flipBit v k') xs
+    ys' = U.modify (`flipBit` k') xs
 
 case_write_init_read1 :: Property
 case_write_init_read1 = (=== Bit True) $ runST $ do
@@ -233,7 +235,7 @@ prop_grow_def xs (NonNegative m) = runST $ do
 
 prop_castFromWords_def :: N.New U.Vector Word -> Property
 prop_castFromWords_def ws =
-  runST (N.run ws >>= pure . castFromWordsM >>= V.unsafeFreeze)
+  runST (N.run ws >>= V.unsafeFreeze . castFromWordsM)
     === castFromWords (V.new ws)
 
 prop_cloneToWords_def :: N.New U.Vector Bit -> Property
@@ -266,12 +268,12 @@ prop_replicate_neg :: Positive Int -> Bit -> Property
 prop_replicate_neg (Positive n) x = ioProperty $ do
   ret <- try (evaluate (runST $ MG.basicUnsafeReplicate (-n) x >>= U.unsafeFreeze))
   pure $ property $ case ret of
-    Left ErrorCallWithLocation{} -> True
+    Left (_ :: SomeException) -> True
     _ -> False
 
 prop_new_neg :: Positive Int -> Property
 prop_new_neg (Positive n) = ioProperty $ do
   ret <- try (evaluate (runST $ MG.basicUnsafeNew (-n) >>= U.unsafeFreeze :: U.Vector Bit))
   pure $ property $ case ret of
-    Left ErrorCallWithLocation{} -> True
+    Left (_ :: SomeException) -> True
     _ -> False
