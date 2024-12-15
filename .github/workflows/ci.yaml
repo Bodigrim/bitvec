@@ -141,7 +141,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      version: wasm32-wasi-9.10.0.20240412
+      version: wasm32-wasi-9.10.1.20241021
     steps:
     - uses: actions/checkout@v4
     - uses: actions/cache@v4
