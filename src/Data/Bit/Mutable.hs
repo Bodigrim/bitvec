@@ -116,15 +116,19 @@ cloneToWords8M v = do
 -- rewriting the contents of the second argument.
 -- Cf. 'Data.Bit.zipBits'.
 --
--- Note: If one input is larger than the other, the remaining bits will be ignored.
---
 -- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
 -- >>> Data.Vector.Unboxed.modify (zipInPlace (.&.) [1,1,0]) [0,1,1]
 -- [0,1,0]
+-- >>> Data.Vector.Unboxed.modify (zipInPlace (\x y -> x .&. complement y) [1,1,0]) [0,1,1]
+-- [1,0,0]
 --
--- __Warning__: if the immutable vector is shorter than the mutable one,
--- it is the caller's responsibility to trim the result:
+-- __Warning__:
+-- If the immutable vector is longer than the mutable one,
+-- trailing bits will be ignored.
+-- If it's a mutable vector who is longer,
+-- trailing bits will be kept unchanged;
+-- it is caller's responsibility to trim the result:
 --
 -- >>> :set -XOverloadedLists
 -- >>> import Data.Bits
