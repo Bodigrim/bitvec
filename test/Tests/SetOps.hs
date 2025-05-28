@@ -25,6 +25,7 @@ setOpTests = testGroup "Set operations"
   , twoTimesMore
   $ testProperty "zipBits"                  prop_zipBits
   , testProperty "zipInPlace"               prop_zipInPlace
+  , testProperty "zipInPlace around"        prop_zipInPlace_around
 
   , testProperty "mapBits"                  prop_mapBits
   , testProperty "mapInPlace"               prop_mapInPlace
@@ -122,6 +123,18 @@ prop_zipInPlace fun xs ys =
   U.zipWith f xs ys === U.take (min (U.length xs) (U.length ys)) (U.modify (zipInPlace (generalize2 f) xs) ys)
   where
     f = curry $ applyFun fun
+
+prop_zipInPlace_around :: Fun (Bit, Bit) Bit -> U.Vector Bit -> U.Vector Bit -> Property
+prop_zipInPlace_around fun ts xs = ioProperty $ do
+  let l = U.length xs
+      f = curry $ applyFun fun
+  when (l < 2) discard
+  ys <- U.thaw xs
+  let zs = MU.slice 1 (l - 2) ys
+  zipInPlace (generalize2 f) ts zs
+  hd <- MU.read ys 0
+  lst <- MU.read ys (MU.length ys - 1)
+  pure $ hd === U.head xs .&&. lst === U.last xs
 
 prop_mapBits :: Fun Bit Bit -> U.Vector Bit -> Property
 prop_mapBits fun xs =
