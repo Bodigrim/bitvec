@@ -37,6 +37,7 @@ setOpTests = testGroup "Set operations"
   , mkGroup "invertBits" prop_invertBits
 
   , testProperty "invertInPlace"            prop_invertInPlace
+  , testProperty "invertInPlace around"     prop_invertInPlace_around
   , testProperty "invertInPlaceWords"       prop_invertInPlaceWords
   , testProperty "invertInPlace middle"     prop_invertInPlace_middle
   , testProperty "invertInPlaceLong middle" prop_invertInPlaceLong_middle
@@ -137,6 +138,17 @@ prop_invertBits xs =
 prop_invertInPlace :: U.Vector Bit -> Property
 prop_invertInPlace xs =
   U.map complement xs === U.modify invertInPlace xs
+
+prop_invertInPlace_around :: U.Vector Bit -> Property
+prop_invertInPlace_around xs = ioProperty $ do
+  let l = U.length xs
+  when (l < 2) discard
+  ys <- U.thaw xs
+  let zs = MU.slice 1 (l - 2) ys
+  invertInPlace zs
+  hd <- MU.read ys 0
+  lst <- MU.read ys (MU.length ys - 1)
+  pure $ hd === U.head xs .&&. lst === U.last xs
 
 prop_invertInPlaceWords :: Large (U.Vector Bit) -> Property
 prop_invertInPlaceWords = prop_invertInPlace . getLarge
