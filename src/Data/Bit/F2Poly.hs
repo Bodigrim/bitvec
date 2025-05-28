@@ -52,7 +52,7 @@ import GHC.Integer.Logarithms
 #endif
 
 -- | Binary polynomials of one variable, backed
--- by an unboxed 'Data.Vector.Unboxed.Vector' 'Bit'.
+-- by an unboxed 'Data.Vector.Unboxed.Vector' t'Bit'.
 --
 -- Polynomials are stored normalized, without leading zero coefficients.
 --
@@ -67,7 +67,7 @@ import GHC.Integer.Logarithms
 -- @since 1.0.1.0
 newtype F2Poly = F2Poly {
   unF2Poly :: U.Vector Bit
-  -- ^ Convert an 'F2Poly' to a vector of coefficients
+  -- ^ Convert an t'F2Poly' to a vector of coefficients
   -- (first element corresponds to a constant term).
   --
   -- >>> :set -XBinaryLiterals
@@ -78,7 +78,7 @@ newtype F2Poly = F2Poly {
   }
   deriving (Eq, Ord, Generic, NFData)
 
--- | Make an 'F2Poly' from a list of coefficients
+-- | Make an t'F2Poly' from a list of coefficients
 -- (first element corresponds to a constant term).
 --
 -- >>> :set -XOverloadedLists
@@ -105,7 +105,7 @@ one = F2Poly $ BitVec 0 1 $
   fromBigNat oneBigNat
 #endif
 
--- -- | A valid 'F2Poly' has offset 0 and no trailing garbage.
+-- -- | A valid t'F2Poly' has offset 0 and no trailing garbage.
 -- _isValid :: F2Poly -> Bool
 -- _isValid (F2Poly (BitVec o l arr)) = o == 0 && l == l'
 --   where
@@ -116,7 +116,7 @@ one = F2Poly $ BitVec 0 1 $
 -- 'abs' = 'id' and 'signum' = 'const' 1.
 --
 -- 'fromInteger' converts a binary polynomial, encoded as 'Integer',
--- to 'F2Poly' encoding.
+-- to t'F2Poly' encoding.
 instance Num F2Poly where
   (+) = coerce xorBits
   (-) = coerce xorBits
@@ -164,7 +164,7 @@ instance Enum F2Poly where
 instance Real F2Poly where
   toRational = fromIntegral
 
--- | 'toInteger' converts a binary polynomial, encoded as 'F2Poly',
+-- | 'toInteger' converts a binary polynomial, encoded as t'F2Poly',
 -- to an 'Integer' encoding.
 instance Integral F2Poly where
 #ifdef MIN_VERSION_ghc_bignum

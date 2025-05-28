@@ -54,7 +54,7 @@ import GHC.Exts
 -- | A newtype wrapper with a custom instance
 -- for "Data.Vector.Unboxed", which packs booleans
 -- as efficient as possible (8 values per byte).
--- Unboxed vectors of `Bit` use 8x less memory
+-- Unboxed vectors of t'Bit' use 8x less memory
 -- than unboxed vectors of 'Bool' (which store one value per byte),
 -- but random writes are slightly slower.
 --
@@ -72,7 +72,7 @@ newtype Bit = Bit {
 -- | A newtype wrapper with a custom instance
 -- for "Data.Vector.Unboxed", which packs booleans
 -- as efficient as possible (8 values per byte).
--- Unboxed vectors of `Bit` use 8x less memory
+-- Unboxed vectors of t'Bit' use 8x less memory
 -- than unboxed vectors of 'Bool' (which store one value per byte),
 -- but random writes are slightly slower.
 --
@@ -90,7 +90,7 @@ newtype Bit = Bit {
 
 -- | There is only one lawful 'Num' instance possible
 -- with '+' = 'xor' and
--- 'fromInteger' = 'Bit' . 'odd'.
+-- 'fromInteger' = v'Bit' . 'odd'.
 --
 -- @since 1.0.1.0
 instance Num Bit where
