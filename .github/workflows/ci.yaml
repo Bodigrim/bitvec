@@ -167,7 +167,6 @@ jobs:
         ghcup install ghc --set ${{ env.version }} -- --host=x86_64-linux --with-intree-gmp --with-system-libffi
     - name: Build
       run: |
-        mv cabal.project.wasi cabal.project.local
         cabal --with-compiler=wasm32-wasi-ghc --with-hc-pkg=wasm32-wasi-ghc-pkg build --enable-tests
         cabal --with-compiler=wasm32-wasi-ghc --with-hc-pkg=wasm32-wasi-ghc-pkg list-bin test:bitvec-tests --enable-tests
         wasmtime $(cabal --with-compiler=wasm32-wasi-ghc --with-hc-pkg=wasm32-wasi-ghc-pkg list-bin test:bitvec-tests --enable-tests)
