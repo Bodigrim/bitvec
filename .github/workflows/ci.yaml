@@ -141,7 +141,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      version: wasm32-wasi-9.10.1.20241021
+      version: wasm32-wasi-9.12.2.20250327
     steps:
     - uses: actions/checkout@v4
     - uses: actions/cache@v4
@@ -153,7 +153,7 @@ jobs:
         key: ${{ env.version }}
     - name: Setup
       run: |
-        ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-cross-0.0.8.yaml
+        ghcup config add-release-channel https://raw.githubusercontent.com/haskell/ghcup-metadata/develop/ghcup-cross-0.0.9.yaml
         cabal update
     - name: Install WASM toolchain
       run: |
