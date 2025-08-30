@@ -280,7 +280,7 @@ prop_nthBit_6 :: NonNegative Int -> U.Vector Bit -> Property
 prop_nthBit_6 (NonNegative n) xs = ioProperty $ do
   ret <- try (evaluate (nthBitIndex (Bit True) (-n) xs))
   pure $ property $ case ret of
-    Left ErrorCallWithLocation{} -> True
+    Left ErrorCall{} -> True
     _ -> False
 
 case_nthBit_1 :: Property
