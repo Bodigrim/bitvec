@@ -205,7 +205,6 @@ zipInPlace f (BitVec off l xs) (BitMVec off' l' ys) =
             writeByteArray ys i (f x y)
             loop (i + 1) accNew
 
-{-# SPECIALIZE zipInPlace :: (forall a. Bits a => a -> a -> a) -> Vector Bit -> MVector s Bit -> ST s () #-}
 {-# INLINABLE zipInPlace #-}
 
 -- | Apply a function to a mutable vector bitwise,
@@ -228,7 +227,6 @@ mapInPlace f = case (unBit (f (Bit False)), unBit (f (Bit True))) of
   (False, True)  -> const $ pure ()
   (True, False)  -> invertInPlace
   (True, True)   -> (`MU.set` Bit True)
-{-# SPECIALIZE mapInPlace :: (forall a. Bits a => a -> a) -> MVector s Bit -> ST s () #-}
 {-# INLINE mapInPlace #-}
 
 -- | Invert (flip) all bits in-place.
