@@ -25,12 +25,6 @@ module Data.Bit.InternalTS
   , modifyByteArray
   ) where
 
-#if MIN_VERSION_vector(0,13,0)
-import Data.Vector.Internal.Check (checkIndex, Checks(..))
-#else
-#include "vector.h"
-#endif
-
 import Control.DeepSeq
 import Control.Exception
 import Control.Monad.Primitive
@@ -41,6 +35,7 @@ import Data.Primitive.ByteArray
 import Data.Ratio
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as MV
+import Data.Vector.Internal.Check (checkIndex, Checks(..))
 import qualified Data.Vector.Unboxed as U
 import GHC.Generics
 
@@ -436,11 +431,7 @@ instance MV.MVector U.MVector Bit where
 -- @since 1.0.0.0
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit v i =
-#if MIN_VERSION_vector(0,13,0)
   checkIndex Unsafe
-#else
-  UNSAFE_CHECK(checkIndex) "flipBit"
-#endif
     i (MV.length v) $ basicFlipBit v i
 {-# INLINE unsafeFlipBit #-}
 
@@ -469,11 +460,7 @@ basicFlipBit (BitMVec off _ arr) !i' = do
 -- @since 1.0.0.0
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
-#if MIN_VERSION_vector(0,13,0)
   checkIndex Bounds
-#else
-  BOUNDS_CHECK(checkIndex) "flipBit"
-#endif
     i (MV.length v) $
       unsafeFlipBit v i
 {-# INLINE flipBit #-}
@@ -493,11 +480,7 @@ flipBit v i =
 -- [1,0,1]
 unsafeFlipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 unsafeFlipBit v i =
-#if MIN_VERSION_vector(0,13,0)
   checkIndex Unsafe
-#else
-  UNSAFE_CHECK(checkIndex) "flipBit"
-#endif
     i (MV.length v) $ basicFlipBit v i
 {-# INLINE unsafeFlipBit #-}
 
@@ -522,11 +505,7 @@ basicFlipBit (BitMVec off _ (MutableByteArray mba)) !i' = do
 -- [1,0,1]
 flipBit :: PrimMonad m => U.MVector (PrimState m) Bit -> Int -> m ()
 flipBit v i =
-#if MIN_VERSION_vector(0,13,0)
   checkIndex Bounds
-#else
-  BOUNDS_CHECK(checkIndex) "flipBit"
-#endif
     i (MV.length v) $ basicFlipBit v i
 {-# INLINE flipBit #-}
 
