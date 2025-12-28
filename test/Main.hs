@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP       #-}
-{-# LANGUAGE MagicHash #-}
 
 module Main where
 

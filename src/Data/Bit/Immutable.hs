@@ -1,15 +1,14 @@
-{-# LANGUAGE CPP                  #-}
-
 {-# LANGUAGE BangPatterns         #-}
 {-# LANGUAGE BinaryLiterals       #-}
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE MagicHash            #-}
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE TupleSections        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+{- HLINT ignore "Unused LANGUAGE pragma" -}
 
 #ifndef BITVEC_THREADSAFE
 module Data.Bit.Immutable

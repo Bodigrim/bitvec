@@ -1,6 +1,4 @@
-{-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE MagicHash #-}
 
 module Data.Bit.Utils
   ( lgWordSize
@@ -29,9 +27,7 @@ import Data.Bits
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Base as UB
-#if __GLASGOW_HASKELL__ >= 810
 import GHC.Exts
-#endif
 
 import Data.Bit.PdepPext
 
@@ -102,39 +98,8 @@ meld :: Int -> Word -> Word -> Word
 meld b lo hi = (lo .&. m) .|. (hi .&. complement m) where m = mask b
 {-# INLINE meld #-}
 
-#if __GLASGOW_HASKELL__ >= 810
-
 reverseWord :: Word -> Word
 reverseWord (W# w#) = W# (bitReverse# w#)
-
-#else
-
-reverseWord :: Word -> Word
-reverseWord = case wordSize of
-  32 -> reverseWord32
-  64 -> reverseWord64
-  _  -> error "reverseWord: unknown architecture"
-
-reverseWord64 :: Word -> Word
-reverseWord64 x0 = x6
- where
-  x1 = ((x0 .&. 0x5555555555555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAAAAAAAAAA) `shiftR`  1)
-  x2 = ((x1 .&. 0x3333333333333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCCCCCCCCCC) `shiftR`  2)
-  x3 = ((x2 .&. 0x0F0F0F0F0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0F0F0F0F0) `shiftR`  4)
-  x4 = ((x3 .&. 0x00FF00FF00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00FF00FF00) `shiftR`  8)
-  x5 = ((x4 .&. 0x0000FFFF0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000FFFF0000) `shiftR` 16)
-  x6 = ((x5 .&. 0x00000000FFFFFFFF) `shiftL` 32) .|. ((x5 .&. 0xFFFFFFFF00000000) `shiftR` 32)
-
-reverseWord32 :: Word -> Word
-reverseWord32 x0 = x5
- where
-  x1 = ((x0 .&. 0x55555555) `shiftL`  1) .|. ((x0 .&. 0xAAAAAAAA) `shiftR`  1)
-  x2 = ((x1 .&. 0x33333333) `shiftL`  2) .|. ((x1 .&. 0xCCCCCCCC) `shiftR`  2)
-  x3 = ((x2 .&. 0x0F0F0F0F) `shiftL`  4) .|. ((x2 .&. 0xF0F0F0F0) `shiftR`  4)
-  x4 = ((x3 .&. 0x00FF00FF) `shiftL`  8) .|. ((x3 .&. 0xFF00FF00) `shiftR`  8)
-  x5 = ((x4 .&. 0x0000FFFF) `shiftL` 16) .|. ((x4 .&. 0xFFFF0000) `shiftR` 16)
-
-#endif
 
 reversePartialWord :: Int -> Word -> Word
 reversePartialWord n w

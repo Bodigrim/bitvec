@@ -1,7 +1,5 @@
-{-# LANGUAGE CPP       #-}
 {-# LANGUAGE MagicHash #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Avoid lambda" #-}
+{- HLINT ignore "Avoid lambda" -}
 
 module Bench.Remainder
   ( benchRemainder
@@ -11,11 +9,7 @@ import Data.Bit
 import qualified Data.Bit.ThreadSafe as TS
 import Data.Bits
 import GHC.Exts
-#ifdef MIN_VERSION_ghc_bignum
 import GHC.Num.Integer
-#else
-import GHC.Integer.Logarithms
-#endif
 import Test.Tasty.Bench
 
 import Bench.Common
@@ -30,11 +24,7 @@ benchRemainder k = bgroup (show (1 `shiftL` k :: Int))
 binRem :: Integer -> Integer -> Integer
 binRem x y = go x
   where
-#ifdef MIN_VERSION_ghc_bignum
     binLog n = I# (word2Int# (integerLog2# n))
-#else
-    binLog n = I# (integerLog2# n)
-#endif
     ly = binLog y
 
     go z = if lz < ly then z else go (z `xor` (y `shiftL` (lz - ly)))

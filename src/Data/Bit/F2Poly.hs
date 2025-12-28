@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP                        #-}
 
 {-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
@@ -41,15 +40,9 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Exts
 import GHC.Generics
-import Numeric
-
-#ifdef MIN_VERSION_ghc_bignum
 import GHC.Num.BigNat
 import GHC.Num.Integer
-#else
-import GHC.Integer.GMP.Internals
-import GHC.Integer.Logarithms
-#endif
+import Numeric
 
 -- | Binary polynomials of one variable, backed
 -- by an unboxed 'Data.Vector.Unboxed.Vector' t'Bit'.
@@ -91,19 +84,11 @@ toF2Poly xs = F2Poly $ dropWhileEnd $ castFromWords $ cloneToWords xs
 
 zero :: F2Poly
 zero = F2Poly $ BitVec 0 0 $
-#ifdef MIN_VERSION_ghc_bignum
   ByteArray (unBigNat bigNatZero)
-#else
-  fromBigNat zeroBigNat
-#endif
 
 one :: F2Poly
 one = F2Poly $ BitVec 0 1 $
-#ifdef MIN_VERSION_ghc_bignum
   ByteArray (unBigNat bigNatOne)
-#else
-  fromBigNat oneBigNat
-#endif
 
 -- -- | A valid t'F2Poly' has offset 0 and no trailing garbage.
 -- _isValid :: F2Poly -> Bool
@@ -124,7 +109,6 @@ instance Num F2Poly where
   abs    = id
   signum = const one
   (*) = coerce ((dropWhileEnd .) . karatsuba)
-#ifdef MIN_VERSION_ghc_bignum
   fromInteger !n = case n of
     IS i#
       | n < 0     -> throw Underflow
@@ -133,16 +117,6 @@ instance Num F2Poly where
     IP bn# -> F2Poly $ BitVec 0 (I# (word2Int# (integerLog2# n)) + 1) $ ByteArray bn#
     IN{}   -> throw Underflow
   {-# INLINE fromInteger #-}
-#else
-  fromInteger !n = case n of
-    S# i#
-      | n < 0     -> throw Underflow
-      | otherwise -> F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
-                      $ fromBigNat $ wordToBigNat (int2Word# i#)
-    Jp# bn# -> F2Poly $ BitVec 0 (I# (integerLog2# n) + 1) $ fromBigNat bn#
-    Jn#{}   -> throw Underflow
-  {-# INLINE fromInteger #-}
-#endif
 
   {-# INLINE (+)         #-}
   {-# INLINE (-)         #-}
@@ -153,13 +127,8 @@ instance Num F2Poly where
 
 instance Enum F2Poly where
   fromEnum = fromIntegral
-#ifdef MIN_VERSION_ghc_bignum
   toEnum (I# i#) = F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
                            $ ByteArray (bigNatFromWord# (int2Word# i#))
-#else
-  toEnum (I# i#) = F2Poly $ BitVec 0 (wordSize - I# (word2Int# (clz# (int2Word# i#))))
-                           $ fromBigNat $ wordToBigNat (int2Word# i#)
-#endif
 
 instance Real F2Poly where
   toRational = fromIntegral
@@ -167,11 +136,7 @@ instance Real F2Poly where
 -- | 'toInteger' converts a binary polynomial, encoded as t'F2Poly',
 -- to an 'Integer' encoding.
 instance Integral F2Poly where
-#ifdef MIN_VERSION_ghc_bignum
   toInteger xs = integerFromBigNat# (bitsToByteArray (unF2Poly xs))
-#else
-  toInteger xs = bigNatToInteger (BN# (bitsToByteArray (unF2Poly xs)))
-#endif
   quotRem (F2Poly xs) (F2Poly ys) = (F2Poly (dropWhileEnd qs), F2Poly (dropWhileEnd rs))
     where
       (qs, rs) = quotRemBits xs ys
@@ -190,21 +155,12 @@ xorBits (BitVec _ 0 _) ys = ys
 xorBits xs (BitVec _ 0 _) = xs
 -- GMP has platform-dependent ASM implementations for mpn_xor_n,
 -- which are impossible to beat by native Haskell.
-#ifdef MIN_VERSION_ghc_bignum
 xorBits (BitVec 0 lx (ByteArray xarr)) (BitVec 0 ly (ByteArray yarr)) = case lx `compare` ly of
   LT -> BitVec 0 ly zs
   EQ -> dropWhileEnd $ BitVec 0 (lx `min` (sizeofByteArray zs `shiftL` 3)) zs
   GT -> BitVec 0 lx zs
   where
     zs = ByteArray (xarr `bigNatXor` yarr)
-#else
-xorBits (BitVec 0 lx xarr) (BitVec 0 ly yarr) = case lx `compare` ly of
-  LT -> BitVec 0 ly zs
-  EQ -> dropWhileEnd $ BitVec 0 (lx `min` (sizeofByteArray zs `shiftL` 3)) zs
-  GT -> BitVec 0 lx zs
-  where
-    zs = fromBigNat (toBigNat xarr `xorBigNat` toBigNat yarr)
-#endif
 xorBits xs ys = dropWhileEnd $ runST $ do
   let lx = U.length xs
       ly = U.length ys
@@ -329,15 +285,6 @@ bitsToByteArray xs = arr
   where
     ys = if U.null xs then U.singleton (0 :: Word) else cloneToWords xs
     !(P.Vector _ _ (ByteArray arr)) = toPrimVector ys
-
-#ifdef MIN_VERSION_ghc_bignum
-#else
-fromBigNat :: BigNat -> ByteArray
-fromBigNat (BN# arr) = ByteArray arr
-
-toBigNat :: ByteArray -> BigNat
-toBigNat (ByteArray arr) = BN# arr
-#endif
 
 -- | Execute the extended Euclidean algorithm.
 -- For polynomials @a@ and @b@, compute their unique greatest common divisor @g@

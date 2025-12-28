@@ -1,10 +1,10 @@
-{-# LANGUAGE CPP              #-}
-
 {-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{- HLINT ignore "Unused LANGUAGE pragma" -}
 
 #ifndef BITVEC_THREADSAFE
 module Data.Bit.Mutable
