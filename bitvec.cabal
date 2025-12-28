@@ -142,10 +142,10 @@ benchmark bitvec-bench
   build-depends:
     base,
     bitvec,
-    containers <0.8,
+    containers <0.9,
     random <1.4,
     tasty,
-    tasty-bench >=0.4 && <0.5,
+    tasty-bench >=0.4 && <0.6,
     vector
   type: exitcode-stdio-1.0
   main-is: Bench.hs
