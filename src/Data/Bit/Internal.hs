@@ -251,14 +251,10 @@ instance MV.MVector U.MVector Bit where
       pure $ BitMVec 0 n arr
 
   {-# INLINE basicOverlaps #-}
-  basicOverlaps (BitMVec i' m' arr1) (BitMVec j' n' arr2) =
+  basicOverlaps (BitMVec i m arr1) (BitMVec j n arr2) =
     sameMutableByteArray arr1 arr2
       && (between i j (j + n) || between j i (i + m))
    where
-    i = divWordSize i'
-    m = nWords (i' + m') - i
-    j = divWordSize j'
-    n = nWords (j' + n') - j
     between x y z = x >= y && x < z
 
   {-# INLINE basicLength #-}
