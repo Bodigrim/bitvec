@@ -11,6 +11,7 @@ module Tests.MVectorTS (mvectorTests) where
 import Support
 
 import Control.Exception
+import Control.Monad
 import Control.Monad.ST
 #ifndef BITVEC_THREADSAFE
 import Data.Bit
@@ -71,6 +72,9 @@ mvectorTests = testGroup "Data.Vector.Unboxed.Mutable.Bit"
     testProperty "flipBit" prop_flipBit
   , testProperty "new negative"       prop_new_neg
   , testProperty "replicate negative" prop_replicate_neg
+  , testProperty "move preserves data around" prop_move_around
+  , adjustOption (\(QuickCheckMaxRatio n) -> QuickCheckMaxRatio (max 1000 n)) $
+    testProperty "copy preserves data around" prop_copy_around
   ]
 
 prop_flipBit :: U.Vector Bit -> NonNegative Int -> Property
@@ -277,3 +281,37 @@ prop_new_neg (Positive n) = ioProperty $ do
   pure $ property $ case ret of
     Left (_ :: SomeException) -> True
     _ -> False
+
+prop_move_around :: Int -> Int -> Int -> U.Vector Bit -> Property
+prop_move_around srcFrom' sliceLen' dstFrom' xs = ioProperty $ do
+  let l = U.length xs
+  when (l < 1) discard
+  let sliceLen = sliceLen' `mod` l
+      srcFrom = srcFrom' `mod` (l - sliceLen)
+      dstFrom = dstFrom' `mod` (l - sliceLen)
+  ys <- V.thaw xs
+  let src = M.slice srcFrom sliceLen ys
+      dst = M.slice dstFrom sliceLen ys
+  M.move dst src
+  xs' <- V.unsafeFreeze ys
+  let slicePrefix = V.slice 0 dstFrom
+      sliceSuffix = V.slice (dstFrom + sliceLen) (l - dstFrom - sliceLen)
+  pure $ slicePrefix xs === slicePrefix xs' .&&. sliceSuffix xs === sliceSuffix xs'
+
+prop_copy_around :: Bool -> Int -> Int -> Int -> U.Vector Bit -> Property
+prop_copy_around b srcFrom' sliceLen' dstFrom' xs = ioProperty $ do
+  let l = U.length xs
+  when (l < 4) discard
+  let sliceLen = 1 + sliceLen' `mod` ((l - 2) `quot` 2)
+      firstFrom = srcFrom' `mod` (l - 2 * sliceLen)
+      secondFrom = firstFrom + sliceLen + dstFrom' `mod` (l - firstFrom - 2 * sliceLen)
+      (srcFrom, dstFrom) = if b then (firstFrom, secondFrom) else (secondFrom, firstFrom)
+  ys <- V.thaw xs
+  let src = M.slice srcFrom sliceLen ys
+      dst = M.slice dstFrom sliceLen ys
+  when (M.overlaps src dst) discard
+  M.copy dst src
+  xs' <- V.unsafeFreeze ys
+  let slicePrefix = V.slice 0 dstFrom
+      sliceSuffix = V.slice (dstFrom + sliceLen) (l - dstFrom - sliceLen)
+  pure $ slicePrefix xs === slicePrefix xs' .&&. sliceSuffix xs === sliceSuffix xs'
