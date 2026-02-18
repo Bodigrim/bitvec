@@ -1,3 +1,7 @@
+# 1.1.6.0
+
+* Make `basicOverlaps` precise instead of rounding bounds up to the next `Word`.
+
 # 1.1.5.0
 
 * Make `zipBits` unconditionally strict in its second bit
